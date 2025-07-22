@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../services/mock_database.dart';
 
 class OfflineBanner extends StatelessWidget {
+  const OfflineBanner({super.key});
+
   @override
   Widget build(BuildContext context) {
     final db = context.watch<MockDatabase>();

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'services/mock_database.dart';
-import 'widgets/offline_banner.dart';
 
 import 'screens/dashboard.dart';
 import 'screens/volunteers.dart';
@@ -19,6 +18,8 @@ void main() {
 }
 
 class AnimalRescueApp extends StatelessWidget {
+  const AnimalRescueApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

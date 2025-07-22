@@ -4,6 +4,8 @@ import '../services/mock_database.dart';
 import '../widgets/offline_banner.dart';
 
 class VolunteerRequestsScreen extends StatelessWidget {
+  const VolunteerRequestsScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final db = context.watch<MockDatabase>();

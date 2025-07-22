@@ -5,6 +5,8 @@ import '../widgets/offline_banner.dart';
 import '../models/animal.dart';
 
 class AnimalProfileListScreen extends StatelessWidget {
+  const AnimalProfileListScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final animals = context.watch<MockDatabase>().animals;
@@ -44,10 +46,10 @@ class AnimalProfileListScreen extends StatelessWidget {
 
 class AnimalDetailScreen extends StatefulWidget {
   final Animal animal;
-  AnimalDetailScreen({required this.animal});
+  const AnimalDetailScreen({super.key, required this.animal});
 
   @override
-  _AnimalDetailScreenState createState() => _AnimalDetailScreenState();
+  State<AnimalDetailScreen> createState() => _AnimalDetailScreenState();
 }
 
 class _AnimalDetailScreenState extends State<AnimalDetailScreen> {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/offline_banner.dart';
 
 class ShiftsScreen extends StatelessWidget {
+  const ShiftsScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // For prototyping, show a placeholder
