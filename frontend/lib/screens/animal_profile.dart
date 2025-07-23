@@ -1,3 +1,4 @@
+// lib/screens/animal_profile.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/mock_database.dart';
@@ -11,7 +12,7 @@ class AnimalProfileListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final animals = context.watch<MockDatabase>().animals;
     return Scaffold(
-      appBar: AppBar(title: Text('Animals')),
+      appBar: AppBar(title: const Text('Animals')),
       body: Column(
         children: [
           OfflineBanner(),
@@ -24,7 +25,7 @@ class AnimalProfileListScreen extends StatelessWidget {
                   title: Text(a.name),
                   subtitle: Text(a.personality),
                   trailing: a.isDangerous
-                      ? Icon(Icons.warning, color: Colors.red)
+                      ? const Icon(Icons.warning, color: Colors.red)
                       : null,
                   onTap: () {
                     Navigator.push(
@@ -55,61 +56,110 @@ class AnimalDetailScreen extends StatefulWidget {
 class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   late String personality;
   late bool isDangerous;
+  late String description;
+  late String history;
 
   @override
   void initState() {
     super.initState();
     personality = widget.animal.personality;
     isDangerous = widget.animal.isDangerous;
+    description = widget.animal.description;
+    history = widget.animal.history;
   }
 
   @override
   Widget build(BuildContext context) {
     final db = context.read<MockDatabase>();
+    final isStaff = db.isStaff;
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.animal.name)),
       body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
+        padding: const EdgeInsets.all(16),
+        child: ListView(
           children: [
-            Row(
-              children: [
-                Text('Personality:'),
-                SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    initialValue: personality,
-                    onChanged: (v) => personality = v,
-                  ),
-                ),
-              ],
+            _LabeledField(
+              label: 'Personality',
+              child: isStaff
+                  ? TextFormField(
+                      initialValue: personality,
+                      onChanged: (v) => personality = v,
+                    )
+                  : SelectableText(personality),
             ),
-            Row(
-              children: [
-                Text('Dangerous:'),
-                Switch(
-                  value: isDangerous,
-                  onChanged: (v) => setState(() => isDangerous = v),
-                ),
-              ],
+            const SizedBox(height: 16),
+            _LabeledField(
+              label: 'Dangerous',
+              child: isStaff
+                  ? Switch(
+                      value: isDangerous,
+                      onChanged: (v) => setState(() => isDangerous = v),
+                    )
+                  : Icon(
+                      isDangerous ? Icons.warning : Icons.check,
+                      color: isDangerous ? Colors.red : Colors.green,
+                    ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              child: Text('Save'),
-              onPressed: () {
-                db.updateAnimal(
-                  widget.animal.copyWith(
-                    personality: personality,
-                    isDangerous: isDangerous,
-                  ),
-                );
-                Navigator.pop(context);
-              },
+            const SizedBox(height: 16),
+            _LabeledField(
+              label: 'Description',
+              child: isStaff
+                  ? TextFormField(
+                      initialValue: description,
+                      maxLines: 3,
+                      onChanged: (v) => description = v,
+                    )
+                  : SelectableText(description.isEmpty ? '—' : description),
             ),
+            const SizedBox(height: 16),
+            _LabeledField(
+              label: 'History',
+              child: isStaff
+                  ? TextFormField(
+                      initialValue: history,
+                      maxLines: 4,
+                      onChanged: (v) => history = v,
+                    )
+                  : SelectableText(history.isEmpty ? '—' : history),
+            ),
+            const SizedBox(height: 24),
+            if (isStaff)
+              ElevatedButton(
+                onPressed: () {
+                  db.updateAnimal(
+                    widget.animal.copyWith(
+                      personality: personality,
+                      isDangerous: isDangerous,
+                      description: description,
+                      history: history,
+                    ),
+                  );
+                  Navigator.pop(context);
+                },
+                child: const Text('Save'),
+              ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LabeledField extends StatelessWidget {
+  final String label;
+  final Widget child;
+  const _LabeledField({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        child,
+      ],
     );
   }
 }

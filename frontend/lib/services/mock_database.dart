@@ -3,6 +3,7 @@ import '../models/volunteer_request.dart';
 import '../models/animal.dart';
 
 class MockDatabase extends ChangeNotifier {
+  bool isStaff = false;
   bool isOffline = true;
   int pendingChanges = 0;
 
@@ -11,8 +12,22 @@ class MockDatabase extends ChangeNotifier {
     VolunteerRequest(id: 'v2', name: 'Bob', endOfStay: DateTime(2025, 8, 5)),
   ];
   final List<Animal> _animals = [
-    Animal(id: 'a1', name: 'Rex', personality: 'Friendly', isDangerous: false),
-    Animal(id: 'a2', name: 'Luna', personality: 'Shy', isDangerous: true),
+    Animal(
+      id: 'a1',
+      name: 'Rex',
+      personality: 'Friendly',
+      isDangerous: false,
+      description: 'Loves belly rubs, high energy.',
+      history: 'Found stray near park. Vaccinated 2025-06-10.',
+    ),
+    Animal(
+      id: 'a2',
+      name: 'Luna',
+      personality: 'Shy',
+      isDangerous: true,
+      description: 'Very quiet, scared of loud noises.',
+      history: 'Surrendered by owner. Medical check pending.',
+    ),
   ];
 
   List<VolunteerRequest> get pendingRequests => List.unmodifiable(_volRequests);
