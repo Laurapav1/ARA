@@ -1,0 +1,39 @@
+# docker-compose.yml
+version: "3.8"
+
+services:
+  db:
+    image: postgres:17.5
+    environment:
+      POSTGRES_USER: ara_user
+      POSTGRES_PASSWORD: supersecret
+      POSTGRES_DB: ara_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ara_user -d ara_db"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: ara_user
+      DB_PASS: supersecret
+      DB_NAME: ara_db
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:
