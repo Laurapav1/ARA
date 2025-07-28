@@ -41,11 +41,9 @@ func main() {
 	router.POST("/signup", authHandlers.Signup(gormDB))
 	router.POST("/login", authHandlers.Login(gormDB))
 
-	// staff approves a volunteer
-	router.PUT(
-		"/volunteers/:id/approve",
-		authHandlers.ApproveVolunteer(gormDB),
-	)
+	// Staff actions (approve/decline)
+	router.PUT("/volunteers/:id/approve", authHandlers.ApproveVolunteer(gormDB))
+	router.PUT("/volunteers/:id/decline", authHandlers.DeclineVolunteer(gormDB))
 
 	// Start listening
 	addr := fmt.Sprintf(":%s", cfg.Port)
