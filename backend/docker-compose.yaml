@@ -32,13 +32,14 @@ services:
       DB_USER: ara_user
       DB_PASS: supersecret
       DB_NAME: ara_db
+      JWT_SECRET: "your-super-long-secret-here"
     ports:
       - "8080:8080"
 
   pgadmin:
     image: dpage/pgadmin4:9.6
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com 
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin123
     depends_on:
       db:

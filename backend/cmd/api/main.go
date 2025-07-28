@@ -8,14 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/winrarr/ARA/internal/config"
 	"github.com/winrarr/ARA/internal/db"
-	"github.com/winrarr/ARA/internal/handlers"
+	authHandlers "github.com/winrarr/ARA/internal/handlers/auth"
 	"github.com/winrarr/ARA/internal/models"
 )
 
 func main() {
-	// 1) Load configuration
+	// 1) Load configuration (including JWT_SECRET for login)
 	cfg := config.Load()
-
 	// 2) Connect to the database via GORM
 	gormDB := db.ConnectGORM(cfg)
 
@@ -39,17 +38,16 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	router.POST(
-		"/signup",
-		handlers.Signup(gormDB),
-	)
+	router.POST("/signup", authHandlers.Signup(gormDB))
+	router.POST("/login", authHandlers.Login(gormDB))
+
 	// staff approves a volunteer
 	router.PUT(
 		"/volunteers/:id/approve",
-		handlers.ApproveVolunteer(gormDB),
+		authHandlers.ApproveVolunteer(gormDB),
 	)
 
-	// 6) Start listening
+	// Start listening
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("Starting server on %s", addr)
 	if err := router.Run(addr); err != nil {
