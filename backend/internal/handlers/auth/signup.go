@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import (
 	"net/http"
@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/winrarr/ARA/internal/auth"
 	"github.com/winrarr/ARA/internal/models"
-	"gorm.io/gorm"
 )
 
 type SignupRequest struct {
@@ -16,32 +15,30 @@ type SignupRequest struct {
 	Password  string `json:"password" binding:"required"`
 }
 
-func Signup(db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var req SignupRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		hash, err := auth.HashPassword(req.Password)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn’t hash password"})
-			return
-		}
-
-		user := models.User{
-			FirstName: req.FirstName,
-			LastName:  req.LastName,
-			Email:     req.Email,
-			Password:  hash,
-			Role:      "volunteer",
-			Status:    "pending",
-		}
-		if err := db.Create(&user).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn’t create user"})
-			return
-		}
-		c.JSON(http.StatusCreated, gin.H{"message": "signup successful; awaiting approval"})
+func (api *API) Signup(c *gin.Context) {
+	var req SignupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
+
+	hash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn’t hash password"})
+		return
+	}
+
+	user := models.User{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  hash,
+		Role:      "volunteer",
+		Status:    "pending",
+	}
+	if err := api.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn’t create user"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "signup successful; awaiting approval"})
 }
