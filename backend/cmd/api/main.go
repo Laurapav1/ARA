@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/winrarr/ARA/internal/config"
 	"github.com/winrarr/ARA/internal/db"
+	"github.com/winrarr/ARA/internal/handlers"
 	"github.com/winrarr/ARA/internal/models"
 )
 
@@ -37,7 +38,16 @@ func main() {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
-	// TODO: mount your other handlers here
+
+	router.POST(
+		"/signup",
+		handlers.Signup(gormDB),
+	)
+	// staff approves a volunteer
+	router.PUT(
+		"/volunteers/:id/approve",
+		handlers.ApproveVolunteer(gormDB),
+	)
 
 	// 6) Start listening
 	addr := fmt.Sprintf(":%s", cfg.Port)

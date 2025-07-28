@@ -1,13 +1,21 @@
-// internal/models/user.go
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type User struct {
-	gorm.Model // provides ID, CreatedAt, UpdatedAt, DeletedAt
-	FirstName  string
-	LastName   string
-	Email      string `gorm:"uniqueIndex"`
-	Role       string // "volunteer" or "staff"
-	Status     string // "pending", "approved", "declined"
+	ID        uint `gorm:"primaryKey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+
+	FirstName string `gorm:"not null"`
+	LastName  string `gorm:"not null"`
+	Email     string `gorm:"uniqueIndex;not null"`
+	Password  string `gorm:"not null"`                   // bcrypt hash
+	Role      string `gorm:"not null;default:volunteer"` // volunteer or staff
+	Status    string `gorm:"not null;default:pending"`   // pending, approved, declined
 }
