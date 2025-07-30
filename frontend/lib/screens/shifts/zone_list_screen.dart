@@ -1,7 +1,7 @@
 // File: lib/screens/zone_list_screen.dart
 import 'package:flutter/material.dart';
-import '../widgets/offline_banner.dart';
-import '../models/zone.dart';
+import '../../widgets/offline_banner.dart';
+import '../../models/zone.dart';
 
 class ZoneListScreen extends StatefulWidget {
   final String shiftType;

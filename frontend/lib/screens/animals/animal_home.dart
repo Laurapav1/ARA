@@ -1,6 +1,6 @@
 // File: lib/screens/animal_home.dart
 import 'package:flutter/material.dart';
-import '../widgets/offline_banner.dart';
+import '../../widgets/offline_banner.dart';
 import 'dogs_screen.dart';
 import 'cats_screen.dart';
 

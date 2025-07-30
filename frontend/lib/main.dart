@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'services/mock_database.dart';
 
-import 'screens/volunteers.dart';
-import 'screens/shifts.dart';
-import 'screens/information.dart';
-import 'screens/account.dart';
-import 'screens/animal_home.dart';
+import 'screens/account/volunteers.dart';
+import 'screens/shifts/shifts.dart';
+import 'screens/info/information.dart';
+import 'screens/account/account.dart';
+import 'screens/animals/animal_home.dart';
 
 void main() {
   runApp(

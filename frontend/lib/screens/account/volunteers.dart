@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/mock_database.dart';
-import '../widgets/offline_banner.dart';
+import '../../services/mock_database.dart';
+import '../../widgets/offline_banner.dart';
 
 class VolunteerRequestsScreen extends StatelessWidget {
   const VolunteerRequestsScreen({super.key});

@@ -1,9 +1,9 @@
 // File: lib/screens/dogs_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/offline_banner.dart';
-import '../services/mock_database.dart';
-import '../models/animal.dart';
+import '../../widgets/offline_banner.dart';
+import '../../services/mock_database.dart';
+import '../../models/animal.dart';
 import 'animal_detail.dart';
 
 class DogsScreen extends StatelessWidget {

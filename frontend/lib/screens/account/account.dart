@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/offline_banner.dart';
+import '../../widgets/offline_banner.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});

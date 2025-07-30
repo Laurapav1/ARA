@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/offline_banner.dart';
+import '../../widgets/offline_banner.dart';
 
 class InformationScreen extends StatelessWidget {
   const InformationScreen({super.key});

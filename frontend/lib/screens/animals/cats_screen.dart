@@ -1,8 +1,8 @@
 // File: lib/screens/cats_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/offline_banner.dart';
-import '../services/mock_database.dart';
+import '../../widgets/offline_banner.dart';
+import '../../services/mock_database.dart';
 import 'animal_detail.dart';
 
 class CatsScreen extends StatelessWidget {

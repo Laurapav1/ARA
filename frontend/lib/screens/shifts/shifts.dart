@@ -1,6 +1,6 @@
 // File: lib/screens/shifts.dart
 import 'package:flutter/material.dart';
-import '../widgets/offline_banner.dart';
+import '../../widgets/offline_banner.dart';
 import 'morning_shift.dart';
 import 'evening_shift.dart';
 

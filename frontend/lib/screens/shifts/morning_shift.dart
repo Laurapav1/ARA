@@ -1,8 +1,8 @@
 // File: lib/screens/morning_shift.dart
 import 'package:flutter/material.dart';
-import '../widgets/offline_banner.dart';
+import '../../widgets/offline_banner.dart';
 import 'zone_list_screen.dart';
-import '../models/zone_data.dart';
+import '../../models/zone_data.dart';
 
 class MorningShiftScreen extends StatelessWidget {
   const MorningShiftScreen({super.key});

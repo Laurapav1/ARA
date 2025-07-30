@@ -1,9 +1,9 @@
 // File: lib/screens/animal_detail.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/offline_banner.dart';
-import '../models/animal.dart';
-import '../services/mock_database.dart';
+import '../../widgets/offline_banner.dart';
+import '../../models/animal.dart';
+import '../../services/mock_database.dart';
 
 class AnimalDetailScreen extends StatelessWidget {
   final Animal animal;
