@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/winrarr/ARA/internal/auth"
@@ -21,6 +22,8 @@ func (api *API) Signup(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	req.Email = strings.ToLower(req.Email)
 
 	hash, err := auth.HashPassword(req.Password)
 	if err != nil {
