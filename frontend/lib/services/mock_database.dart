@@ -1,5 +1,6 @@
 // File: lib/services/mock_database.dart
 import 'package:flutter/foundation.dart';
+import 'package:frontend/models/handling_flag.dart';
 import '../models/animal.dart';
 import '../models/volunteer_request.dart';
 
@@ -23,6 +24,7 @@ class MockDatabase extends ChangeNotifier {
       description: 'Loves belly rubs, high energy.',
       history: 'Found stray near park. Vaccinated 2025-06-10.',
       trainingVideos: ['https://youtube.com/watch?v=abc123'],
+      flags: const {}, // none
     ),
     Animal(
       id: 'a2',
@@ -32,6 +34,7 @@ class MockDatabase extends ChangeNotifier {
       isDangerous: true,
       description: 'Very quiet, scared of loud noises.',
       history: 'Surrendered by owner. Medical check pending.',
+      flags: const {HandlingFlag.doubleLeash, HandlingFlag.muzzle},
     ),
     Animal(
       id: 'a3',

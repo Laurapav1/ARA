@@ -1,13 +1,16 @@
 // File: lib/models/animal.dart
+import 'handling_flag.dart';
+
 class Animal {
   final String id;
   final String name;
-  final String species;       // 'dog' or 'cat'
+  final String species; // 'dog' or 'cat'
   final String personality;
   final bool isDangerous;
   final String description;
   final String history;
   final List<String> trainingVideos;
+  final Set<HandlingFlag> flags;
 
   Animal({
     required this.id,
@@ -18,6 +21,7 @@ class Animal {
     this.description = '',
     this.history = '',
     this.trainingVideos = const [],
+    this.flags = const {},
   });
 
   Animal copyWith({
@@ -26,6 +30,7 @@ class Animal {
     String? description,
     String? history,
     List<String>? trainingVideos,
+    Set<HandlingFlag>? flags,
   }) {
     return Animal(
       id: id,
@@ -36,6 +41,7 @@ class Animal {
       description: description ?? this.description,
       history: history ?? this.history,
       trainingVideos: trainingVideos ?? this.trainingVideos,
+      flags: flags ?? this.flags,
     );
   }
 }

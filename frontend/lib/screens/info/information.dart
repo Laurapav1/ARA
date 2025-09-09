@@ -80,55 +80,116 @@ class InformationScreen extends StatelessWidget {
     );
   }
 
-  static void _showZoneGuide(BuildContext context, String zone) {
+  static Future<void> _showZoneGuide(BuildContext context, String zone) async {
     final tasks = _zoneGuides[zone] ?? const <String>[];
-    showModalBottomSheet(
+    await showDialog(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return SafeArea(
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 560,
+            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
+          ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Guide • $zone',
-                    style: Theme.of(ctx).textTheme.titleLarge),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('Guide • $zone',
+                          style: Theme.of(ctx).textTheme.titleLarge),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
-                ...tasks.map((t) => ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.task_alt),
-                      title: Text(t),
-                    )),
+                Expanded(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: tasks
+                        .map((t) => ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.task_alt),
+                              title: Text(t),
+                            ))
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Close'),
+                  ),
+                ),
               ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  static void _showChecklist(
-      BuildContext context, String title, List<String> items) {
-    showModalBottomSheet(
+  static Future<void> _showChecklist(
+      BuildContext context, String title, List<String> items) async {
+    await showDialog(
       context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              Text(title, style: Theme.of(ctx).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              ...items.map((t) => ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.check_circle_outline),
-                    title: Text(t),
-                  )),
-            ],
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 560,
+            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(title,
+                          style: Theme.of(ctx).textTheme.titleLarge),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: items
+                        .map((t) => ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.check_circle_outline),
+                              title: Text(t),
+                            ))
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -237,6 +298,7 @@ class _MapCard extends StatelessWidget {
                 _LegendItem(icon: Icons.park, label: 'Parks'),
                 _LegendItem(icon: Icons.warning, label: 'Quarantine'),
                 _LegendItem(icon: Icons.water_drop, label: 'Water point'),
+                _LegendItem(icon: Icons.map, label: 'Zone'),
               ],
             ),
           )
