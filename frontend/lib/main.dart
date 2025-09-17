@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'services/mock_database.dart';
 
-import 'screens/volunteers.dart';
-import 'screens/shifts.dart';
-import 'screens/animal_profile.dart';
-import 'screens/information.dart';
-import 'screens/account.dart';
+import 'screens/account/volunteers.dart';
+import 'screens/shifts/shifts.dart';
+import 'screens/info/information.dart';
+import 'screens/account/account.dart';
+import 'screens/animals/animal_home.dart';
 
 void main() {
   runApp(
@@ -52,7 +52,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     // Build screen list dynamically
     final screens = <Widget>[
       ShiftsScreen(),
-      AnimalProfileListScreen(),
+      AnimalHomeScreen(),
       const InformationScreen(),
       if (!isStaff) const AccountScreen(), // volunteers
       if (isStaff) const VolunteerRequestsScreen(), // staff

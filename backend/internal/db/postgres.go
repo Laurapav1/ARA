@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-    "github.com/winrarr/ARA/internal/config"
+	"github.com/winrarr/ARA/internal/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

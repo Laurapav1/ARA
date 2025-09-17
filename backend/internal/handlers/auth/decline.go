@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import (
 	"fmt"
@@ -6,31 +6,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/winrarr/ARA/internal/models"
-	"gorm.io/gorm"
 )
 
 // DeclineVolunteer marks a volunteer’s status as "declined".
-func DeclineVolunteer(db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id := c.Param("id")
+func (api *API) DeclineVolunteer(c *gin.Context) {
+	id := c.Param("id")
 
-		// Update status to "declined"
-		result := db.
-			Model(&models.User{}).
-			Where("id = ? AND role = ?", id, "volunteer").
-			Update("status", "declined")
+	// Update status to "declined"
+	result := api.DB.
+		Model(&models.User{}).
+		Where("id = ? AND role = ?", id, "volunteer").
+		Update("status", "declined")
 
-		if result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn’t decline volunteer"})
-			return
-		}
-		if result.RowsAffected == 0 {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": fmt.Sprintf("no volunteer found with id %s", id),
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"message": "volunteer declined"})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn’t decline volunteer"})
+		return
 	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": fmt.Sprintf("no volunteer found with id %s", id),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "volunteer declined"})
 }
