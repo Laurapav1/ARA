@@ -1,0 +1,6 @@
+@Ara.Api_HostAddress = http://localhost:5081
+
+GET {{Ara.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
