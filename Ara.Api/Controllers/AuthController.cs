@@ -1,6 +1,9 @@
+using Ara.Api.Auth;
+using Ara.Api.Data;
 using Ara.Api.Dtos;
-using Ara.Domain.Entities;
-using ARA.Infrastructure;
+using Ara.Api.Enums;
+using Ara.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +14,7 @@ namespace Ara.Api.Controllers;
 public class AuthController(ARADbContext db) : ControllerBase
 {
     [HttpPost("SignUp")]
+    [AllowAnonymous]
     public async Task<IActionResult> SignUp([FromBody] SignupRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
@@ -26,6 +30,9 @@ public class AuthController(ARADbContext db) : ControllerBase
             LastName = request.LastName.Trim(),
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Role = Role.Volunteer,
+            Status = VolunteerStatus.Pending,
+            CreatedAt = DateTime.UtcNow
         };
 
         db.Users.Add(user);
@@ -38,7 +45,11 @@ public class AuthController(ARADbContext db) : ControllerBase
     }
 
     [HttpPost("Login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    [AllowAnonymous]
+    public async Task<IActionResult> Login(
+        [FromBody] LoginRequest request,
+        [FromServices] ITokenService tokens
+    )
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
@@ -48,20 +59,34 @@ public class AuthController(ARADbContext db) : ControllerBase
             return Unauthorized(new { error = "Invalid email or password" });
         }
 
+        // Volunteers must be approved to log in
         if (user.Role == Role.Volunteer && user.Status != VolunteerStatus.Approved)
         {
             return StatusCode(403, new { error = "Account not approved" });
         }
 
+        // Issue token with role claim (Staff or Volunteer)
+        var token = tokens.CreateToken(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            user.Role.ToString()
+        );
+
         return Ok(
             new
             {
-                id = user.Id,
-                firstName = user.FirstName,
-                lastName = user.LastName,
-                email = user.Email,
-                role = user.Role,
-                status = user.Status
+                token,
+                user = new
+                {
+                    id = user.Id,
+                    firstName = user.FirstName,
+                    lastName = user.LastName,
+                    email = user.Email,
+                    role = user.Role,
+                    status = user.Status
+                }
             }
         );
     }

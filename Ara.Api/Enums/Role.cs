@@ -1,5 +1,7 @@
+namespace Ara.Api.Enums;
+
 public enum Role
 {
-    Staff,
-    Volunteer
+    Volunteer,
+    Staff
 }

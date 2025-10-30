@@ -25,8 +25,9 @@ services:
     environment:
       ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__Postgres: "Host=db;Port=5432;Database=ara_db;Username=ara_user;Password=supersecret"
-      Jwt__Issuer: "ara-backend"
-      Jwt__Key: "your-super-long-secret-here"
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__Key: ${JWT_KEY}
     ports:
       - "8080:8080"
 

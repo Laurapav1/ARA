@@ -1,4 +1,5 @@
-using ARA.Infrastructure;
+using Ara.Api.Data;
+using Ara.Api.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,11 +8,11 @@ namespace Ara.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Policy = "StaffOnly")]
 public class VolunteersController(ARADbContext db) : ControllerBase
 {
     // Get /api/volunteers/pending
     [HttpGet("pending")]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> GetPendingVolunteers()
     {
         var pendingVolunteers = await db
@@ -30,6 +31,7 @@ public class VolunteersController(ARADbContext db) : ControllerBase
     }
 
     [HttpPut("{id:Guid}/approve")]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> ApproveVolunteer(Guid id)
     {
         var rows = await db
@@ -41,7 +43,9 @@ public class VolunteersController(ARADbContext db) : ControllerBase
         return Ok(new { message = "Volunteer approved" });
     }
 
+    // PUT /api/volunteers/{id}/decline
     [HttpPut("{id:Guid}/decline")]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> DeclineVolunteer(Guid id)
     {
         var rows = await db
