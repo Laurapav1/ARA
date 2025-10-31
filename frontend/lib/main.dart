@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'services/mock_database.dart';
-
 import 'screens/account/volunteers.dart';
 import 'screens/shifts/shifts.dart';
 import 'screens/info/information.dart';
@@ -12,7 +10,7 @@ import 'screens/animals/animal_home.dart';
 void main() {
   runApp(
     ChangeNotifierProvider(
-      create: (_) => MockDatabase()..isStaff = false, // toggle true for staff
+      create: (_) => MockDatabase()..isStaff = false,
       child: const AnimalRescueApp(),
     ),
   );
@@ -25,11 +23,170 @@ class AnimalRescueApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ARA Prototype',
-      theme: ThemeData.from(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2D9596), // Teal from ARA branding
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          // Optional: remove M3 tint if you want flat white cards:
+          surfaceTintColor: Colors.transparent,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 0,
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF2D9596), width: 2),
+          ),
+        ),
       ),
-      home: const MainScaffold(),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _controller.forward();
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const MainScaffold(),
+            transitionsBuilder: (_, anim, __, child) {
+              return FadeTransition(opacity: anim, child: child);
+            },
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF2D9596),
+              const Color(0xFF265073),
+            ],
+          ),
+        ),
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.pets,
+                      size: 80,
+                      color: Color(0xFF2D9596),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Animal Rescue Algarve',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Volunteer Portal',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 16,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -49,52 +206,63 @@ class _MainScaffoldState extends State<MainScaffold> {
     final db = context.watch<MockDatabase>();
     final isStaff = db.isStaff;
 
-    // Build screen list dynamically
     final screens = <Widget>[
-      ShiftsScreen(),
-      AnimalHomeScreen(),
+      const ShiftsScreen(),
+      const AnimalHomeScreen(),
       const InformationScreen(),
-      if (!isStaff) const AccountScreen(), // volunteers
-      if (isStaff) const VolunteerRequestsScreen(), // staff
+      if (!isStaff) const AccountScreen(),
+      if (isStaff) const VolunteerRequestsScreen(),
     ];
 
-    // Build nav destinations dynamically
     final destinations = <NavigationDestination>[
-      const NavigationDestination(icon: Icon(Icons.schedule), label: 'Shifts'),
-      const NavigationDestination(icon: Icon(Icons.pets), label: 'Animals'),
       const NavigationDestination(
-          icon: Icon(Icons.info_outline), label: 'Info'),
+        icon: Icon(Icons.schedule_outlined),
+        selectedIcon: Icon(Icons.schedule),
+        label: 'Shifts',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.pets_outlined),
+        selectedIcon: Icon(Icons.pets),
+        label: 'Animals',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.info_outline),
+        selectedIcon: Icon(Icons.info),
+        label: 'Info',
+      ),
       if (!isStaff)
-        const NavigationDestination(icon: Icon(Icons.person), label: 'Account'),
+        const NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Account',
+        ),
       if (isStaff)
         NavigationDestination(
-          icon: Stack(
-            children: [
-              const Icon(Icons.person_add_alt_1_outlined),
-              if (db.pendingRequests.isNotEmpty)
-                Positioned(
-                  right: 0,
-                  child: CircleAvatar(
-                    radius: 6,
-                    backgroundColor: Colors.red,
-                    child: Text(
-                      '${db.pendingRequests.length}',
-                      style: TextStyle(fontSize: 8, color: Colors.white),
-                    ),
-                  ),
-                ),
-            ],
+          icon: Badge(
+            isLabelVisible: db.pendingRequests.isNotEmpty,
+            label: Text('${db.pendingRequests.length}'),
+            child: const Icon(Icons.person_add_alt_1_outlined),
+          ),
+          selectedIcon: Badge(
+            isLabelVisible: db.pendingRequests.isNotEmpty,
+            label: Text('${db.pendingRequests.length}'),
+            child: const Icon(Icons.person_add_alt_1),
           ),
           label: 'Requests',
         ),
     ];
 
     return Scaffold(
-      body: screens[_currentIndex],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: screens[_currentIndex],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
         destinations: destinations,
+        elevation: 8,
+        height: 70,
       ),
     );
   }
