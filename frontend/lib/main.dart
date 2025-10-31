@@ -27,10 +27,13 @@ class AnimalRescueApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFF3A93B), // ARA's golden brand color
+          seedColor: const Color(0xFFF3A93B), // ARA brand
           brightness: Brightness.light,
         ),
+        // App background stays white-ish
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+
+        // Cards / inputs
         cardTheme: CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -45,6 +48,8 @@ class AnimalRescueApp extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             elevation: 0,
+            backgroundColor: const Color(0xFFF3A93B),
+            foregroundColor: Colors.white,
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -58,10 +63,24 @@ class AnimalRescueApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey.shade200),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFF3A93B), width: 2),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: Color(0xFFF3A93B), width: 2),
           ),
+        ),
+
+        // >>> The important part: darker NavigationBar with proper contrast
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: const Color(0xFFF3A93B), // darker warm bar
+          surfaceTintColor: Colors.transparent, // stop M3 wash-out
+          iconTheme: const WidgetStatePropertyAll(
+            IconThemeData(color: Colors.white),
+          ),
+          labelTextStyle: const WidgetStatePropertyAll(
+            TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          elevation: 8,
+          height: 70,
         ),
       ),
       home: const SplashScreen(),

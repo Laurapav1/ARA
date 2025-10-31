@@ -1,12 +1,8 @@
-// File: lib/screens/animals/animal_home.dart
 import 'package:flutter/material.dart';
 import '../../widgets/offline_banner.dart';
 import 'dogs_screen.dart';
 import 'cats_screen.dart';
-
-class ARAColors {
-  static const Color brand = Color(0xFFF3A93B);
-}
+import '../../theme/ara_theme.dart';
 
 class AnimalHomeScreen extends StatelessWidget {
   const AnimalHomeScreen({super.key});
@@ -14,119 +10,79 @@ class AnimalHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0x14F3A93B), // subtle brand orange tint
-              Color(0xFFF8F9FA),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const OfflineBanner(),
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Row(
+      // pull background from theme
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: ARAColors.brand,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child:
+                        const Icon(Icons.pets, color: Colors.white, size: 32),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Meet Our Animals',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      Text(
+                        'Find your furry friend',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: ARAColors.brand,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.pets,
-                        color: Colors.white,
-                        size: 32,
+                    const Spacer(),
+                    _AnimalCategoryCard(
+                      title: 'Dogs',
+                      description: 'Meet our canine companions',
+                      count: '12 dogs',
+                      icon: Icons.pets,
+                      gradient: ARAColors.dogGradient, // blue family
+                      image: '🐕',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const DogsScreen()),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Meet Our Animals',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF265073),
-                          ),
-                        ),
-                        Text(
-                          'Find your furry friend',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 20),
+                    _AnimalCategoryCard(
+                      title: 'Cats',
+                      description: 'Explore our feline friends',
+                      count: '8 cats',
+                      icon: Icons.pets,
+                      gradient: ARAColors.catGradient, // pink/magenta family
+                      image: '🐈',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CatsScreen()),
+                      ),
                     ),
+                    const Spacer(flex: 2),
                   ],
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    children: [
-                      const Spacer(),
-                      _AnimalCategoryCard(
-                        title: 'Dogs',
-                        description: 'Meet our canine companions',
-                        count: '12 dogs',
-                        icon: Icons.pets,
-                        // BLUE gradient (kept from your earlier version)
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF42A5F5),
-                            Color(0xFF1976D2),
-                          ],
-                        ),
-                        image: '🐕',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const DogsScreen(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _AnimalCategoryCard(
-                        title: 'Cats',
-                        description: 'Explore our feline friends',
-                        count: '8 cats',
-                        icon: Icons.pets,
-                        // ROSE/PINK gradient (distinct from dogs)
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFEC407A),
-                            Color(0xFFC2185B),
-                          ],
-                        ),
-                        image: '🐈',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CatsScreen(),
-                          ),
-                        ),
-                      ),
-                      const Spacer(flex: 2),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -155,8 +111,8 @@ class _AnimalCategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(28),
+      elevation: 6,
+      borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
       child: Ink(
         height: 200,
@@ -165,20 +121,14 @@ class _AnimalCategoryCard extends StatelessWidget {
           onTap: onTap,
           child: Stack(
             children: [
-              // Background pattern
               Positioned(
                 right: -30,
                 top: -30,
                 child: Opacity(
                   opacity: 0.15,
-                  child: Icon(
-                    icon,
-                    size: 180,
-                    color: Colors.white,
-                  ),
+                  child: Icon(icon, size: 180, color: Colors.white),
                 ),
               ),
-              // Content
               Padding(
                 padding: const EdgeInsets.all(28.0),
                 child: Row(
@@ -227,14 +177,10 @@ class _AnimalCategoryCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 20),
-                    Text(
-                      image,
-                      style: const TextStyle(fontSize: 80),
-                    ),
+                    Text(image, style: const TextStyle(fontSize: 80)),
                   ],
                 ),
               ),
-              // Arrow indicator
               Positioned(
                 right: 20,
                 bottom: 20,
@@ -244,11 +190,7 @@ class _AnimalCategoryCard extends StatelessWidget {
                     color: Colors.white.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.arrow_forward,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  child: const Icon(Icons.arrow_forward, color: Colors.white),
                 ),
               ),
             ],

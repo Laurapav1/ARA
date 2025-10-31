@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/offline_banner.dart';
 import 'morning_shift.dart';
 import 'evening_shift.dart';
-
-class ARAColors {
-  static const Color brand = Color(0xFFF3A93B);
-  static const Color brandDark = Color(0xFFD08112);
-}
+import '../../theme/ara_theme.dart';
 
 class ShiftsScreen extends StatefulWidget {
   const ShiftsScreen({super.key});
@@ -42,107 +38,83 @@ class _ShiftsScreenState extends State<ShiftsScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Background softly tinted by brand
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              ARAColors.brand.withOpacity(0.10), // soft brand tint
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const OfflineBanner(),
-              Padding(
-                padding: const EdgeInsets.all(24.0),
+      backgroundColor: ARAColors.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FadeTransition(
+                    opacity: _animation,
+                    child: Text(
+                      'Choose Your Shift',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  FadeTransition(
+                    opacity: _animation,
+                    child: Text(
+                      'Select when you\'d like to volunteer',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    FadeTransition(
-                      opacity: _animation,
-                      child: const Text(
-                        'Choose Your Shift',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF265073),
+                    SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(-1, 0),
+                        end: Offset.zero,
+                      ).animate(_animation),
+                      child: _ShiftCard(
+                        title: 'Morning Shift',
+                        subtitle: '8:00 AM - 12:00 PM',
+                        icon: Icons.wb_sunny,
+                        gradient: ARAColors.morningGradient,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MorningShiftScreen(),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    FadeTransition(
-                      opacity: _animation,
-                      child: Text(
-                        'Select when you\'d like to volunteer',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
+                    const SizedBox(height: 24),
+                    SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(1, 0),
+                        end: Offset.zero,
+                      ).animate(_animation),
+                      child: _ShiftCard(
+                        title: 'Evening Shift',
+                        subtitle: '5:00 PM - 7:00 PM',
+                        icon: Icons.nightlight_round,
+                        gradient: ARAColors.eveningGradient,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EveningShiftScreen(),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Morning — brand orange
-                      SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(-1, 0),
-                          end: Offset.zero,
-                        ).animate(_animation),
-                        child: _ShiftCard(
-                          title: 'Morning Shift',
-                          subtitle: '8:00 AM - 12:00 PM',
-                          icon: Icons.wb_sunny,
-                          gradient: const LinearGradient(
-                            colors: [
-                              ARAColors.brand, // #F3A93B
-                              ARAColors.brandDark, // deeper orange
-                            ],
-                          ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MorningShiftScreen(),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      // Evening — keep contrasting indigo
-                      SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(1, 0),
-                          end: Offset.zero,
-                        ).animate(_animation),
-                        child: const _ShiftCard(
-                          title: 'Evening Shift',
-                          subtitle: '5:00 PM - 7:00 PM',
-                          icon: Icons.nightlight_round,
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF5C6BC0), Color(0xFF3949AB)],
-                          ),
-                          onTap:
-                              null, // replaced below to keep const constructor
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -154,7 +126,7 @@ class _ShiftCard extends StatefulWidget {
   final String subtitle;
   final IconData icon;
   final Gradient gradient;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   const _ShiftCard({
     required this.title,
@@ -180,12 +152,9 @@ class _ShiftCardState extends State<_ShiftCard> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: (widget.gradient is LinearGradient
-                    ? (widget.gradient as LinearGradient).colors.first
-                    : Colors.black)
-                .withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -197,7 +166,7 @@ class _ShiftCardState extends State<_ShiftCard> {
             child: Icon(
               widget.icon,
               size: 150,
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.15),
             ),
           ),
           Padding(
@@ -206,11 +175,7 @@ class _ShiftCardState extends State<_ShiftCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(
-                  widget.icon,
-                  color: Colors.white,
-                  size: 48,
-                ),
+                Icon(widget.icon, color: Colors.white, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   widget.title,
@@ -240,10 +205,7 @@ class _ShiftCardState extends State<_ShiftCard> {
                 color: Colors.white.withOpacity(0.3),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.arrow_forward,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.arrow_forward, color: Colors.white),
             ),
           ),
         ],
@@ -254,26 +216,13 @@ class _ShiftCardState extends State<_ShiftCard> {
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
         setState(() => _isPressed = false);
-        widget.onTap?.call();
+        widget.onTap();
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
-        child: widget.onTap == null
-            ? InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const EveningShiftScreen(),
-                    ),
-                  );
-                },
-                child: card,
-              )
-            : card,
+        transform: Matrix4.identity()..scale(_isPressed ? 0.96 : 1.0),
+        child: card,
       ),
     );
   }
