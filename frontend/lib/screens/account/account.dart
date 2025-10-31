@@ -278,7 +278,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             child: const Row(
                               children: [
                                 Icon(Icons.info_outline,
-                                    color: ARAColors.brandDeep),
+                                    color: ARAColors.brand),
                                 SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
