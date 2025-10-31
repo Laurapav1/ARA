@@ -1,40 +1,10 @@
-// File: lib/screens/animals/animal_home.dart
 import 'package:flutter/material.dart';
 import '../../widgets/offline_banner.dart';
 import 'dogs_screen.dart';
 import 'cats_screen.dart';
 
-class AnimalHomeScreen extends StatefulWidget {
+class AnimalHomeScreen extends StatelessWidget {
   const AnimalHomeScreen({super.key});
-
-  @override
-  State<AnimalHomeScreen> createState() => _AnimalHomeScreenState();
-}
-
-class _AnimalHomeScreenState extends State<AnimalHomeScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,48 +26,40 @@ class _AnimalHomeScreenState extends State<AnimalHomeScreen>
               const OfflineBanner(),
               Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    FadeTransition(
-                      opacity: _animation,
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2D9596),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.pets,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Meet Our Animals',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF265073),
-                                ),
-                              ),
-                              Text(
-                                'Find your furry friend',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2D9596),
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      child: const Icon(
+                        Icons.pets,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Meet Our Animals',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF265073),
+                          ),
+                        ),
+                        Text(
+                          'Find your furry friend',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -108,64 +70,46 @@ class _AnimalHomeScreenState extends State<AnimalHomeScreen>
                   child: Column(
                     children: [
                       const Spacer(),
-                      ScaleTransition(
-                        scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                          CurvedAnimation(
-                            parent: _controller,
-                            curve: const Interval(0.2, 0.8,
-                                curve: Curves.elasticOut),
-                          ),
+                      _AnimalCategoryCard(
+                        title: 'Dogs',
+                        description: 'Meet our canine companions',
+                        count: '12 dogs',
+                        icon: Icons.pets,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF42A5F5),
+                            Color(0xFF1976D2),
+                          ],
                         ),
-                        child: _AnimalCategoryCard(
-                          title: 'Dogs',
-                          description: 'Meet our canine companions',
-                          count: '12 dogs',
-                          icon: Icons.pets,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF42A5F5),
-                              Color(0xFF1976D2),
-                            ],
-                          ),
-                          image: '🐕',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const DogsScreen(),
-                            ),
+                        image: '🐕',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DogsScreen(),
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
-                      ScaleTransition(
-                        scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                          CurvedAnimation(
-                            parent: _controller,
-                            curve: const Interval(0.4, 1.0,
-                                curve: Curves.elasticOut),
-                          ),
+                      _AnimalCategoryCard(
+                        title: 'Cats',
+                        description: 'Explore our feline friends',
+                        count: '8 cats',
+                        icon: Icons.pets,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFEC407A),
+                            Color(0xFFC2185B),
+                          ],
                         ),
-                        child: _AnimalCategoryCard(
-                          title: 'Cats',
-                          description: 'Explore our feline friends',
-                          count: '8 cats',
-                          icon: Icons.pets,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFFEC407A),
-                              Color(0xFFC2185B),
-                            ],
-                          ),
-                          image: '🐈',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CatsScreen(),
-                            ),
+                        image: '🐈',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CatsScreen(),
                           ),
                         ),
                       ),
@@ -182,7 +126,7 @@ class _AnimalHomeScreenState extends State<AnimalHomeScreen>
   }
 }
 
-class _AnimalCategoryCard extends StatefulWidget {
+class _AnimalCategoryCard extends StatelessWidget {
   final String title;
   final String description;
   final String count;
@@ -202,37 +146,18 @@ class _AnimalCategoryCard extends StatefulWidget {
   });
 
   @override
-  State<_AnimalCategoryCard> createState() => _AnimalCategoryCardState();
-}
-
-class _AnimalCategoryCardState extends State<_AnimalCategoryCard> {
-  bool _isPressed = false;
-
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        transform: Matrix4.identity()..scale(_isPressed ? 0.97 : 1.0),
-        child: Container(
-          height: 200,
-          decoration: BoxDecoration(
-            gradient: widget.gradient,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: widget.gradient.colors.first.withOpacity(0.4),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
+    return Material(
+      elevation: 8,
+      borderRadius: BorderRadius.circular(28),
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        height: 200,
+        decoration: BoxDecoration(
+          gradient: gradient,
+        ),
+        child: InkWell(
+          onTap: onTap,
           child: Stack(
             children: [
               // Background pattern
@@ -242,7 +167,7 @@ class _AnimalCategoryCardState extends State<_AnimalCategoryCard> {
                 child: Opacity(
                   opacity: 0.15,
                   child: Icon(
-                    widget.icon,
+                    icon,
                     size: 180,
                     color: Colors.white,
                   ),
@@ -268,7 +193,7 @@ class _AnimalCategoryCardState extends State<_AnimalCategoryCard> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              widget.count,
+                              count,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -278,7 +203,7 @@ class _AnimalCategoryCardState extends State<_AnimalCategoryCard> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            widget.title,
+                            title,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 36,
@@ -287,7 +212,7 @@ class _AnimalCategoryCardState extends State<_AnimalCategoryCard> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            widget.description,
+                            description,
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.95),
                               fontSize: 16,
@@ -298,7 +223,7 @@ class _AnimalCategoryCardState extends State<_AnimalCategoryCard> {
                     ),
                     const SizedBox(width: 20),
                     Text(
-                      widget.image,
+                      image,
                       style: const TextStyle(fontSize: 80),
                     ),
                   ],
