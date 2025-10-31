@@ -1,18 +1,7 @@
 // File: lib/screens/info/information.dart
 import 'package:flutter/material.dart';
 import '../../widgets/offline_banner.dart';
-
-/// ARA brand palette (local helper; move to a shared file if you prefer)
-class ARAColors {
-  static const Color brand = Color(0xFFF3A93B); // ARA orange
-  static const Color brandDark = Color(0xFFD08112); // deeper orange
-  static const Color dogLight = Color(0xFFFFD54F); // golden yellow
-  static const Color dogDark = Color(0xFFF57F17); // amber
-  static const Color catLight = Color(0xFFFF8A65); // peach/coral
-  static const Color catDark = Color(0xFFD84315); // deep coral
-
-  static const Color headerText = Color(0xFF265073); // deep blue for headings
-}
+import '../../theme/ara_theme.dart';
 
 class InformationScreen extends StatelessWidget {
   const InformationScreen({super.key});
@@ -62,8 +51,7 @@ class InformationScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemBuilder: (_, i) => ListTile(
                       dense: true,
-                      leading: const Icon(Icons.task_alt,
-                          color: ARAColors.headerText),
+                      leading: const Icon(Icons.task_alt, color: ARAColors.ink),
                       title: Text(tasks[i]),
                     ),
                     separatorBuilder: (_, __) => const Divider(height: 1),
@@ -109,11 +97,11 @@ class InformationScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: ARAColors.headerText.withOpacity(.12),
+                        color: ARAColors.ink.withOpacity(.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.checklist_rtl,
-                          color: ARAColors.headerText),
+                      child:
+                          const Icon(Icons.checklist_rtl, color: ARAColors.ink),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -158,167 +146,149 @@ class InformationScreen extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          // Subtle brand orange background with fade to white
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              ARAColors.brand.withOpacity(0.08),
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const OfflineBanner(),
-              // Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: ARAColors.headerText,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child:
-                          const Icon(Icons.info, color: Colors.white, size: 28),
+      // background comes from ARATheme.light.scaffoldBackgroundColor
+      body: SafeArea(
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: ARAColors.ink,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Information Hub',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: ARAColors.headerText,
-                            ),
-                          ),
-                          Text(
-                            'Maps • Guides • Safety • Contacts',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Content
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                  children: [
-                    _SectionHeader(
-                      title: 'Shelter Map',
-                      trailing: Text('Pinch to zoom',
-                          style: Theme.of(context).textTheme.labelSmall),
-                    ),
-                    const SizedBox(height: 12),
-                    _MapCard(
-                      onZoneTap: (z) => _showZoneGuide(context, z),
-                    ),
-                    const SizedBox(height: 24),
-                    const _SectionHeader(title: 'Zones'),
-                    const SizedBox(height: 12),
-                    _ZoneChips(
-                      zones: _zoneGuides.keys.toList(),
-                      onTap: (z) => _showZoneGuide(context, z),
-                    ),
-                    const SizedBox(height: 28),
-                    const _SectionHeader(title: 'Quick Actions'),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
+                    child:
+                        const Icon(Icons.info, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Yellow (distinct from orange)
-                        _QuickActionCard(
-                          gradient: const LinearGradient(
-                            colors: [ARAColors.dogLight, ARAColors.dogDark],
-                          ),
-                          icon: Icons.checklist_rtl,
-                          title: 'First-day checklist',
-                          subtitle: 'Start here on day one',
-                          onTap: () => _showChecklist(
-                            context,
-                            'First-day checklist',
-                            _firstDayChecklist,
+                        Text(
+                          'Information Hub',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: ARAColors.ink,
                           ),
                         ),
-                        // Brand orange
-                        _QuickActionCard(
-                          gradient: const LinearGradient(
-                            colors: [ARAColors.brand, ARAColors.brandDark],
-                          ),
-                          icon: Icons.done_all,
-                          title: 'End-of-shift',
-                          subtitle: 'Make sure nothing is missed',
-                          onTap: () => _showChecklist(
-                            context,
-                            'End-of-shift checklist',
-                            _endOfShiftChecklist,
-                          ),
-                        ),
-                        // Coral (third distinct)
-                        _QuickActionCard(
-                          gradient: const LinearGradient(
-                            colors: [ARAColors.catLight, ARAColors.catDark],
-                          ),
-                          icon: Icons.report_gmailerrorred,
-                          title: 'Incident steps',
-                          subtitle: 'What to do immediately',
-                          onTap: () => _showChecklist(
-                            context,
-                            'Incident procedure',
-                            _incidentSteps,
-                          ),
+                        Text(
+                          'Maps • Guides • Safety • Contacts',
+                          style: TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 28),
-                    const _SectionHeader(title: 'Safety Flags'),
-                    const SizedBox(height: 12),
-                    const _SafetyFlags(),
-                    const SizedBox(height: 28),
-                    const _SectionHeader(title: 'Tips & How-tos'),
-                    const SizedBox(height: 12),
-                    const _TipsAccordion(),
-                    const SizedBox(height: 28),
-                    const _SectionHeader(title: 'Contacts'),
-                    const SizedBox(height: 12),
-                    const _ContactsList(),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Text(
-                        'Last updated just now',
-                        style: TextStyle(
-                          color: scheme.outline,
-                          fontSize: 12,
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                children: [
+                  _SectionHeader(
+                    title: 'Shelter Map',
+                    trailing: Text('Pinch to zoom',
+                        style: Theme.of(context).textTheme.labelSmall),
+                  ),
+                  const SizedBox(height: 12),
+                  _MapCard(onZoneTap: (z) => _showZoneGuide(context, z)),
+                  const SizedBox(height: 24),
+                  const _SectionHeader(title: 'Zones'),
+                  const SizedBox(height: 12),
+                  _ZoneChips(
+                    zones: _zoneGuides.keys.toList(),
+                    onTap: (z) => _showZoneGuide(context, z),
+                  ),
+                  const SizedBox(height: 28),
+                  const _SectionHeader(title: 'Quick Actions'),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      // Dog (blue gradient)
+                      _QuickActionCard(
+                        gradient: ARAColors.dogGradient,
+                        icon: Icons.checklist_rtl,
+                        title: 'First-day checklist',
+                        subtitle: 'Start here on day one',
+                        onTap: () => _showChecklist(
+                          context,
+                          'First-day checklist',
+                          _firstDayChecklist,
                         ),
                       ),
+                      // Brand orange
+                      _QuickActionCard(
+                        gradient: const LinearGradient(
+                          colors: [ARAColors.brand, ARAColors.brandDark],
+                        ),
+                        icon: Icons.done_all,
+                        title: 'End-of-shift',
+                        subtitle: 'Make sure nothing is missed',
+                        onTap: () => _showChecklist(
+                          context,
+                          'End-of-shift checklist',
+                          _endOfShiftChecklist,
+                        ),
+                      ),
+                      // Cat (coral/pink gradient)
+                      _QuickActionCard(
+                        gradient: ARAColors.catGradient,
+                        icon: Icons.report_gmailerrorred,
+                        title: 'Incident steps',
+                        subtitle: 'What to do immediately',
+                        onTap: () => _showChecklist(
+                          context,
+                          'Incident procedure',
+                          _incidentSteps,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                  const _SectionHeader(title: 'Safety Flags'),
+                  const SizedBox(height: 12),
+                  const _SafetyFlags(),
+                  const SizedBox(height: 28),
+                  const _SectionHeader(title: 'Tips & How-tos'),
+                  const SizedBox(height: 12),
+                  const _TipsAccordion(),
+                  const SizedBox(height: 28),
+                  const _SectionHeader(title: 'Contacts'),
+                  const SizedBox(height: 12),
+                  const _ContactsList(),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      'Last updated just now',
+                      style: TextStyle(
+                        color: scheme.outline,
+                        fontSize: 12,
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/* ---------- Data (you can swap for your mock DB) ---------- */
+/* ---------- Data ---------- */
 
 const Map<String, List<String>> _zoneGuides = {
   'Zone A': [
@@ -382,7 +352,7 @@ class _SectionHeader extends StatelessWidget {
             title,
             style: text?.copyWith(
               fontWeight: FontWeight.w800,
-              color: ARAColors.headerText,
+              color: ARAColors.ink,
             ),
           ),
         ),
@@ -403,7 +373,6 @@ class _MapCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
-          // Use brand orange for the map card too, to tie with background
           colors: [ARAColors.brand, ARAColors.brandDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -420,21 +389,13 @@ class _MapCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
-            // Map placeholder (swap with Image.asset if you add a real map)
             Positioned.fill(
               child: Container(
                 color: Colors.white.withOpacity(0.08),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'Shelter map (pinch to zoom)',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                child: const Center(
+                  child: Text(
+                    'Shelter map (pinch to zoom)',
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ),
@@ -447,7 +408,6 @@ class _MapCard extends StatelessWidget {
                 child: Container(color: Colors.transparent),
               ),
             ),
-            // Quick zone pills overlay
             Align(
               alignment: Alignment.bottomLeft,
               child: Padding(
@@ -491,8 +451,10 @@ class _ZoneChips extends StatelessWidget {
               side: BorderSide(color: ARAColors.brand.withOpacity(.35)),
               avatar:
                   const Icon(Icons.map, size: 18, color: ARAColors.brandDark),
-              label:
-                  Text(z, style: const TextStyle(color: ARAColors.headerText)),
+              label: Text(
+                z,
+                style: const TextStyle(color: ARAColors.ink),
+              ),
               onPressed: () => onTap(z),
             ),
           )
@@ -502,7 +464,7 @@ class _ZoneChips extends StatelessWidget {
 }
 
 class _QuickActionCard extends StatelessWidget {
-  final LinearGradient gradient;
+  final Gradient gradient;
   final IconData icon;
   final String title;
   final String subtitle;
@@ -525,9 +487,7 @@ class _QuickActionCard extends StatelessWidget {
       child: Ink(
         width: 320,
         height: 120,
-        decoration: BoxDecoration(
-          gradient: gradient,
-        ),
+        decoration: BoxDecoration(gradient: gradient),
         child: InkWell(
           onTap: onTap,
           child: Stack(
@@ -692,7 +652,7 @@ class _TipsTile extends StatelessWidget {
         title: Text(
           title,
           style: const TextStyle(
-            color: ARAColors.headerText,
+            color: ARAColors.ink,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -741,7 +701,7 @@ class _ContactTile extends StatelessWidget {
         title: Text(
           name,
           style: const TextStyle(
-            color: ARAColors.headerText,
+            color: ARAColors.ink,
             fontWeight: FontWeight.w700,
           ),
         ),

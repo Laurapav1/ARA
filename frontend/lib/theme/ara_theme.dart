@@ -10,6 +10,8 @@ class ARAColors {
   static const Color ink = Color(0xFF1E2A36);
   static const Color subInk = Color(0xFF5C6B7A);
 
+  static const Color brandDeep = Color(0xFFC5710A);
+
   // Backgrounds
   static const Color bg = Color(0xFFF9FAFB);
   static const Color cardBg = Colors.white;
@@ -50,7 +52,7 @@ class ARATheme {
       cardColor: ARAColors.cardBg,
 
       // Cards / surfaces look consistent by default
-     
+
       textTheme: Typography.blackMountainView.copyWith(
         headlineMedium: const TextStyle(
           color: ARAColors.ink,
