@@ -27,7 +27,7 @@ class AnimalRescueApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2D9596), // Teal from ARA branding
+          seedColor: const Color(0xFFF3A93B), // ARA's golden brand color
           brightness: Brightness.light,
         ),
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
@@ -36,7 +36,6 @@ class AnimalRescueApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          // Optional: remove M3 tint if you want flat white cards:
           surfaceTintColor: Colors.transparent,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -61,7 +60,7 @@ class AnimalRescueApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF2D9596), width: 2),
+            borderSide: const BorderSide(color: Color(0xFFF3A93B), width: 2),
           ),
         ),
       ),
@@ -130,8 +129,8 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF2D9596),
-              const Color(0xFF265073),
+              const Color(0xFFF3A93B), // ARA golden
+              const Color(0xFFE8952A), // Slightly darker golden
             ],
           ),
         ),
@@ -143,11 +142,12 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // ARA Logo
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.2),
@@ -156,10 +156,18 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.pets,
-                      size: 80,
-                      color: Color(0xFF2D9596),
+                    child: Image.network(
+                      'https://animalrescuealgarve.com/wp-content/uploads/2025/05/ARA-Website-logo-new.png',
+                      width: 120,
+                      height: 120,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback to paw icon if logo fails to load
+                        return const Icon(
+                          Icons.pets,
+                          size: 80,
+                          color: Color(0xFFF3A93B),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 32),

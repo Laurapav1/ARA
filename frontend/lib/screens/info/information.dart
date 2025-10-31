@@ -1,36 +1,21 @@
+// File: lib/screens/info/information.dart
 import 'package:flutter/material.dart';
 import '../../widgets/offline_banner.dart';
 
-class InformationScreen extends StatefulWidget {
-  const InformationScreen({super.key});
+/// ARA brand palette (local helper; move to a shared file if you prefer)
+class ARAColors {
+  static const Color brand = Color(0xFFF3A93B); // ARA orange
+  static const Color brandDark = Color(0xFFD08112); // deeper orange
+  static const Color dogLight = Color(0xFFFFD54F); // golden yellow
+  static const Color dogDark = Color(0xFFF57F17); // amber
+  static const Color catLight = Color(0xFFFF8A65); // peach/coral
+  static const Color catDark = Color(0xFFD84315); // deep coral
 
-  @override
-  State<InformationScreen> createState() => _InformationScreenState();
+  static const Color headerText = Color(0xFF265073); // deep blue for headings
 }
 
-class _InformationScreenState extends State<InformationScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fade;
-  late Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
-    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
-    _slide = Tween<Offset>(begin: const Offset(0, .04), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class InformationScreen extends StatelessWidget {
+  const InformationScreen({super.key});
 
   Future<void> _showZoneGuide(BuildContext context, String zone) async {
     final tasks = _zoneGuides[zone] ?? const <String>[];
@@ -55,10 +40,10 @@ class _InformationScreenState extends State<InformationScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2D9596).withOpacity(.12),
+                        color: ARAColors.brand.withOpacity(.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.map, color: Color(0xFF2D9596)),
+                      child: const Icon(Icons.map, color: ARAColors.brandDark),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -77,8 +62,8 @@ class _InformationScreenState extends State<InformationScreen>
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemBuilder: (_, i) => ListTile(
                       dense: true,
-                      leading:
-                          const Icon(Icons.task_alt, color: Color(0xFF265073)),
+                      leading: const Icon(Icons.task_alt,
+                          color: ARAColors.headerText),
                       title: Text(tasks[i]),
                     ),
                     separatorBuilder: (_, __) => const Divider(height: 1),
@@ -99,7 +84,10 @@ class _InformationScreenState extends State<InformationScreen>
   }
 
   Future<void> _showChecklist(
-      BuildContext context, String title, List<String> items) async {
+    BuildContext context,
+    String title,
+    List<String> items,
+  ) async {
     await showDialog(
       context: context,
       barrierDismissible: true,
@@ -121,11 +109,11 @@ class _InformationScreenState extends State<InformationScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF265073).withOpacity(.12),
+                        color: ARAColors.headerText.withOpacity(.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.checklist_rtl,
-                          color: Color(0xFF265073)),
+                          color: ARAColors.headerText),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -145,7 +133,7 @@ class _InformationScreenState extends State<InformationScreen>
                     itemBuilder: (_, i) => ListTile(
                       dense: true,
                       leading: const Icon(Icons.check_circle_outline,
-                          color: Color(0xFF2D9596)),
+                          color: ARAColors.brandDark),
                       title: Text(items[i]),
                     ),
                     separatorBuilder: (_, __) => const Divider(height: 1),
@@ -172,11 +160,12 @@ class _InformationScreenState extends State<InformationScreen>
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
+          // Subtle brand orange background with fade to white
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF2D9596).withOpacity(0.08),
+              ARAColors.brand.withOpacity(0.08),
               Colors.white,
             ],
           ),
@@ -185,134 +174,140 @@ class _InformationScreenState extends State<InformationScreen>
           child: Column(
             children: [
               const OfflineBanner(),
-              // Hero header
+              // Header
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-                child: FadeTransition(
-                  opacity: _fade,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF265073),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.info,
-                            color: Colors.white, size: 28),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: ARAColors.headerText,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Information Hub',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF265073),
-                              ),
+                      child:
+                          const Icon(Icons.info, color: Colors.white, size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Information Hub',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: ARAColors.headerText,
                             ),
-                            Text(
-                              'Maps • Guides • Safety • Contacts',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
+                          ),
+                          Text(
+                            'Maps • Guides • Safety • Contacts',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
 
               // Content
               Expanded(
-                child: SlideTransition(
-                  position: _slide,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                    children: [
-                      _SectionHeader(
-                        title: 'Shelter Map',
-                        trailing: Text('Pinch to zoom',
-                            style: Theme.of(context).textTheme.labelSmall),
-                      ),
-                      const SizedBox(height: 12),
-                      _MapCard(
-                        onZoneTap: (z) => _showZoneGuide(context, z),
-                      ),
-                      const SizedBox(height: 24),
-                      const _SectionHeader(title: 'Zones'),
-                      const SizedBox(height: 12),
-                      _ZoneChips(
-                        zones: _zoneGuides.keys.toList(),
-                        onTap: (z) => _showZoneGuide(context, z),
-                      ),
-                      const SizedBox(height: 28),
-                      const _SectionHeader(title: 'Quick Actions'),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          _QuickActionCard(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
-                            ),
-                            icon: Icons.checklist_rtl,
-                            title: 'First-day checklist',
-                            subtitle: 'Start here on day one',
-                            onTap: () => _showChecklist(context,
-                                'First-day checklist', _firstDayChecklist),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  children: [
+                    _SectionHeader(
+                      title: 'Shelter Map',
+                      trailing: Text('Pinch to zoom',
+                          style: Theme.of(context).textTheme.labelSmall),
+                    ),
+                    const SizedBox(height: 12),
+                    _MapCard(
+                      onZoneTap: (z) => _showZoneGuide(context, z),
+                    ),
+                    const SizedBox(height: 24),
+                    const _SectionHeader(title: 'Zones'),
+                    const SizedBox(height: 12),
+                    _ZoneChips(
+                      zones: _zoneGuides.keys.toList(),
+                      onTap: (z) => _showZoneGuide(context, z),
+                    ),
+                    const SizedBox(height: 28),
+                    const _SectionHeader(title: 'Quick Actions'),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        // Yellow (distinct from orange)
+                        _QuickActionCard(
+                          gradient: const LinearGradient(
+                            colors: [ARAColors.dogLight, ARAColors.dogDark],
                           ),
-                          _QuickActionCard(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFFA726), Color(0xFFFB8C00)],
-                            ),
-                            icon: Icons.done_all,
-                            title: 'End-of-shift',
-                            subtitle: 'Make sure nothing is missed',
-                            onTap: () => _showChecklist(context,
-                                'End-of-shift checklist', _endOfShiftChecklist),
-                          ),
-                          _QuickActionCard(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFEC407A), Color(0xFFC2185B)],
-                            ),
-                            icon: Icons.report_gmailerrorred,
-                            title: 'Incident steps',
-                            subtitle: 'What to do immediately',
-                            onTap: () => _showChecklist(
-                                context, 'Incident procedure', _incidentSteps),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-                      const _SectionHeader(title: 'Safety Flags'),
-                      const SizedBox(height: 12),
-                      const _SafetyFlags(),
-                      const SizedBox(height: 28),
-                      const _SectionHeader(title: 'Tips & How-tos'),
-                      const SizedBox(height: 12),
-                      const _TipsAccordion(),
-                      const SizedBox(height: 28),
-                      const _SectionHeader(title: 'Contacts'),
-                      const SizedBox(height: 12),
-                      const _ContactsList(),
-                      const SizedBox(height: 8),
-                      Center(
-                        child: Text(
-                          'Last updated just now',
-                          style: TextStyle(
-                            color: scheme.outline,
-                            fontSize: 12,
+                          icon: Icons.checklist_rtl,
+                          title: 'First-day checklist',
+                          subtitle: 'Start here on day one',
+                          onTap: () => _showChecklist(
+                            context,
+                            'First-day checklist',
+                            _firstDayChecklist,
                           ),
                         ),
+                        // Brand orange
+                        _QuickActionCard(
+                          gradient: const LinearGradient(
+                            colors: [ARAColors.brand, ARAColors.brandDark],
+                          ),
+                          icon: Icons.done_all,
+                          title: 'End-of-shift',
+                          subtitle: 'Make sure nothing is missed',
+                          onTap: () => _showChecklist(
+                            context,
+                            'End-of-shift checklist',
+                            _endOfShiftChecklist,
+                          ),
+                        ),
+                        // Coral (third distinct)
+                        _QuickActionCard(
+                          gradient: const LinearGradient(
+                            colors: [ARAColors.catLight, ARAColors.catDark],
+                          ),
+                          icon: Icons.report_gmailerrorred,
+                          title: 'Incident steps',
+                          subtitle: 'What to do immediately',
+                          onTap: () => _showChecklist(
+                            context,
+                            'Incident procedure',
+                            _incidentSteps,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    const _SectionHeader(title: 'Safety Flags'),
+                    const SizedBox(height: 12),
+                    const _SafetyFlags(),
+                    const SizedBox(height: 28),
+                    const _SectionHeader(title: 'Tips & How-tos'),
+                    const SizedBox(height: 12),
+                    const _TipsAccordion(),
+                    const SizedBox(height: 28),
+                    const _SectionHeader(title: 'Contacts'),
+                    const SizedBox(height: 12),
+                    const _ContactsList(),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'Last updated just now',
+                        style: TextStyle(
+                          color: scheme.outline,
+                          fontSize: 12,
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -387,7 +382,7 @@ class _SectionHeader extends StatelessWidget {
             title,
             style: text?.copyWith(
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF265073),
+              color: ARAColors.headerText,
             ),
           ),
         ),
@@ -408,13 +403,14 @@ class _MapCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
-          colors: [Color(0xFF2D9596), Color(0xFF265073)],
+          // Use brand orange for the map card too, to tie with background
+          colors: [ARAColors.brand, ARAColors.brandDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2D9596).withOpacity(0.25),
+            color: ARAColors.brand.withOpacity(0.25),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -490,16 +486,14 @@ class _ZoneChips extends StatelessWidget {
       runSpacing: 10,
       children: zones
           .map(
-            (z) => Chip(
-              backgroundColor: const Color(0xFF2D9596).withOpacity(.08),
-              side: BorderSide(color: const Color(0xFF2D9596).withOpacity(.35)),
-              avatar: const Icon(Icons.map, size: 18, color: Color(0xFF2D9596)),
-              label: Text(z, style: const TextStyle(color: Color(0xFF265073))),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              onDeleted: null,
-              // Use GestureDetector to make the Chip tappable like ActionChip
+            (z) => ActionChip(
+              backgroundColor: ARAColors.brand.withOpacity(.10),
+              side: BorderSide(color: ARAColors.brand.withOpacity(.35)),
+              avatar:
+                  const Icon(Icons.map, size: 18, color: ARAColors.brandDark),
+              label:
+                  Text(z, style: const TextStyle(color: ARAColors.headerText)),
+              onPressed: () => onTap(z),
             ),
           )
           .toList(),
@@ -507,7 +501,7 @@ class _ZoneChips extends StatelessWidget {
   }
 }
 
-class _QuickActionCard extends StatefulWidget {
+class _QuickActionCard extends StatelessWidget {
   final LinearGradient gradient;
   final IconData icon;
   final String title;
@@ -523,86 +517,71 @@ class _QuickActionCard extends StatefulWidget {
   });
 
   @override
-  State<_QuickActionCard> createState() => _QuickActionCardState();
-}
-
-class _QuickActionCardState extends State<_QuickActionCard> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        transform: Matrix4.identity()..scale(_pressed ? 0.98 : 1),
+    return Material(
+      elevation: 8,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
         width: 320,
         height: 120,
         decoration: BoxDecoration(
-          gradient: widget.gradient,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: widget.gradient.colors.first.withOpacity(0.28),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          gradient: gradient,
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -10,
-              top: -10,
-              child: Icon(
-                widget.icon,
-                size: 120,
-                color: Colors.white.withOpacity(.18),
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            children: [
+              Positioned(
+                right: -10,
+                top: -10,
+                child: Icon(
+                  icon,
+                  size: 120,
+                  color: Colors.white.withOpacity(.18),
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(18.0),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(.28),
-                      borderRadius: BorderRadius.circular(12),
+              Padding(
+                padding: const EdgeInsets.all(18.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(.28),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: Colors.white),
                     ),
-                    child: Icon(widget.icon, color: Colors.white),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(widget.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
-                            )),
-                        const SizedBox(height: 4),
-                        Text(widget.subtitle,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                              )),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: Colors.white.withOpacity(.92),
-                            )),
-                      ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.arrow_forward, color: Colors.white),
-                ],
+                    const Icon(Icons.arrow_forward, color: Colors.white),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -710,16 +689,18 @@ class _TipsTile extends StatelessWidget {
     return Card(
       elevation: 0,
       child: ExpansionTile(
-        title: Text(title,
-            style: const TextStyle(
-              color: Color(0xFF265073),
-              fontWeight: FontWeight.w700,
-            )),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: ARAColors.headerText,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         children: bullets
             .map((b) => ListTile(
                   dense: true,
                   leading:
-                      const Icon(Icons.arrow_right, color: Color(0xFF2D9596)),
+                      const Icon(Icons.arrow_right, color: ARAColors.brandDark),
                   title: Text(b),
                 ))
             .toList(),
@@ -754,14 +735,16 @@ class _ContactTile extends StatelessWidget {
       elevation: 0,
       child: ListTile(
         leading: const CircleAvatar(
-          backgroundColor: Color(0xFF2D9596),
+          backgroundColor: ARAColors.brand,
           child: Icon(Icons.phone, color: Colors.white),
         ),
-        title: Text(name,
-            style: const TextStyle(
-              color: Color(0xFF265073),
-              fontWeight: FontWeight.w700,
-            )),
+        title: Text(
+          name,
+          style: const TextStyle(
+            color: ARAColors.headerText,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         subtitle: Text(phone),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => ScaffoldMessenger.of(context).showSnackBar(

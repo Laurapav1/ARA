@@ -1,7 +1,12 @@
+// File: lib/screens/animals/animal_home.dart
 import 'package:flutter/material.dart';
 import '../../widgets/offline_banner.dart';
 import 'dogs_screen.dart';
 import 'cats_screen.dart';
+
+class ARAColors {
+  static const Color brand = Color(0xFFF3A93B);
+}
 
 class AnimalHomeScreen extends StatelessWidget {
   const AnimalHomeScreen({super.key});
@@ -10,13 +15,13 @@ class AnimalHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF2D9596).withOpacity(0.05),
-              const Color(0xFFF8F9FA),
+              Color(0x14F3A93B), // subtle brand orange tint
+              Color(0xFFF8F9FA),
             ],
           ),
         ),
@@ -31,7 +36,7 @@ class AnimalHomeScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2D9596),
+                        color: ARAColors.brand,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -75,6 +80,7 @@ class AnimalHomeScreen extends StatelessWidget {
                         description: 'Meet our canine companions',
                         count: '12 dogs',
                         icon: Icons.pets,
+                        // BLUE gradient (kept from your earlier version)
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -97,6 +103,7 @@ class AnimalHomeScreen extends StatelessWidget {
                         description: 'Explore our feline friends',
                         count: '8 cats',
                         icon: Icons.pets,
+                        // ROSE/PINK gradient (distinct from dogs)
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -153,9 +160,7 @@ class _AnimalCategoryCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Ink(
         height: 200,
-        decoration: BoxDecoration(
-          gradient: gradient,
-        ),
+        decoration: BoxDecoration(gradient: gradient),
         child: InkWell(
           onTap: onTap,
           child: Stack(

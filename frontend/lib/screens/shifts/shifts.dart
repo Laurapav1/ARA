@@ -1,8 +1,12 @@
-// File: lib/screens/shifts/shifts.dart
 import 'package:flutter/material.dart';
 import '../../widgets/offline_banner.dart';
 import 'morning_shift.dart';
 import 'evening_shift.dart';
+
+class ARAColors {
+  static const Color brand = Color(0xFFF3A93B);
+  static const Color brandDark = Color(0xFFD08112);
+}
 
 class ShiftsScreen extends StatefulWidget {
   const ShiftsScreen({super.key});
@@ -38,6 +42,7 @@ class _ShiftsScreenState extends State<ShiftsScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Background softly tinted by brand
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -45,7 +50,7 @@ class _ShiftsScreenState extends State<ShiftsScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF2D9596).withOpacity(0.1),
+              ARAColors.brand.withOpacity(0.10), // soft brand tint
               Colors.white,
             ],
           ),
@@ -90,6 +95,7 @@ class _ShiftsScreenState extends State<ShiftsScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Morning — brand orange
                       SlideTransition(
                         position: Tween<Offset>(
                           begin: const Offset(-1, 0),
@@ -100,7 +106,10 @@ class _ShiftsScreenState extends State<ShiftsScreen>
                           subtitle: '8:00 AM - 12:00 PM',
                           icon: Icons.wb_sunny,
                           gradient: const LinearGradient(
-                            colors: [Color(0xFFFFA726), Color(0xFFFB8C00)],
+                            colors: [
+                              ARAColors.brand, // #F3A93B
+                              ARAColors.brandDark, // deeper orange
+                            ],
                           ),
                           onTap: () => Navigator.push(
                             context,
@@ -111,24 +120,21 @@ class _ShiftsScreenState extends State<ShiftsScreen>
                         ),
                       ),
                       const SizedBox(height: 24),
+                      // Evening — keep contrasting indigo
                       SlideTransition(
                         position: Tween<Offset>(
                           begin: const Offset(1, 0),
                           end: Offset.zero,
                         ).animate(_animation),
-                        child: _ShiftCard(
+                        child: const _ShiftCard(
                           title: 'Evening Shift',
                           subtitle: '5:00 PM - 7:00 PM',
                           icon: Icons.nightlight_round,
-                          gradient: const LinearGradient(
+                          gradient: LinearGradient(
                             colors: [Color(0xFF5C6BC0), Color(0xFF3949AB)],
                           ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const EveningShiftScreen(),
-                            ),
-                          ),
+                          onTap:
+                              null, // replaced below to keep const constructor
                         ),
                       ),
                     ],
@@ -148,7 +154,7 @@ class _ShiftCard extends StatefulWidget {
   final String subtitle;
   final IconData icon;
   final Gradient gradient;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _ShiftCard({
     required this.title,
@@ -167,89 +173,107 @@ class _ShiftCardState extends State<_ShiftCard> {
 
   @override
   Widget build(BuildContext context) {
+    final card = Container(
+      height: 180,
+      decoration: BoxDecoration(
+        gradient: widget.gradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: (widget.gradient is LinearGradient
+                    ? (widget.gradient as LinearGradient).colors.first
+                    : Colors.black)
+                .withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              widget.icon,
+              size: 150,
+              color: Colors.white.withOpacity(0.2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  widget.icon,
+                  color: Colors.white,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  widget.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.arrow_forward,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
         setState(() => _isPressed = false);
-        widget.onTap();
+        widget.onTap?.call();
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         transform: Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
-        child: Container(
-          height: 180,
-          decoration: BoxDecoration(
-            gradient: widget.gradient,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: widget.gradient.colors.first.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -20,
-                top: -20,
-                child: Icon(
-                  widget.icon,
-                  size: 150,
-                  color: Colors.white.withOpacity(0.2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Icon(
-                      widget.icon,
-                      color: Colors.white,
-                      size: 48,
+        child: widget.onTap == null
+            ? InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EveningShiftScreen(),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      widget.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+                  );
+                },
+                child: card,
+              )
+            : card,
       ),
     );
   }

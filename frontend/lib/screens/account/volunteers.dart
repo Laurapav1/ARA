@@ -1,8 +1,13 @@
-// File: lib/screens/account/volunteers.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/mock_database.dart';
 import '../../widgets/offline_banner.dart';
+
+class ARAColors {
+  static const Color brand = Color(0xFFF3A93B);
+  static const Color brandDark = Color(0xFFD08112);
+  static const Color brandDeep = Color(0xFFC5710A);
+}
 
 class VolunteerRequestsScreen extends StatefulWidget {
   const VolunteerRequestsScreen({super.key});
@@ -12,26 +17,7 @@ class VolunteerRequestsScreen extends StatefulWidget {
       _VolunteerRequestsScreenState();
 }
 
-class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
   @override
   Widget build(BuildContext context) {
     final db = context.watch<MockDatabase>();
@@ -39,12 +25,12 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen>
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF2D9596).withOpacity(0.05),
+              Color(0x14F3A93B),
               Colors.white,
             ],
           ),
@@ -60,7 +46,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2D9596),
+                        color: ARAColors.brand,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -103,65 +89,33 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen>
                         itemCount: requests.length,
                         itemBuilder: (context, index) {
                           final request = requests[index];
-                          final delay = index * 0.1;
-
-                          return FadeTransition(
-                            opacity:
-                                Tween<double>(begin: 0.0, end: 1.0).animate(
-                              CurvedAnimation(
-                                parent: _controller,
-                                curve: Interval(
-                                  delay,
-                                  delay + 0.5,
-                                  curve: Curves.easeOut,
-                                ),
-                              ),
-                            ),
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0.3, 0),
-                                end: Offset.zero,
-                              ).animate(
-                                CurvedAnimation(
-                                  parent: _controller,
-                                  curve: Interval(
-                                    delay,
-                                    delay + 0.5,
-                                    curve: Curves.easeOut,
+                          return _VolunteerRequestCard(
+                            request: request,
+                            onAccept: () {
+                              db.acceptRequest(request.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text('${request.name} approved!'),
+                                    ],
+                                  ),
+                                  backgroundColor: const Color(0xFF66BB6A),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                              ),
-                              child: _VolunteerRequestCard(
-                                request: request,
-                                onAccept: () {
-                                  db.acceptRequest(request.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.check_circle,
-                                            color: Colors.white,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            '${request.name} approved!',
-                                          ),
-                                        ],
-                                      ),
-                                      backgroundColor: const Color(0xFF66BB6A),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                onDecline: () {
-                                  _showDeclineDialog(context, request.id, db);
-                                },
-                              ),
-                            ),
+                              );
+                            },
+                            onDecline: () {
+                              _showDeclineDialog(context, request.id, db);
+                            },
                           );
                         },
                       ),
@@ -221,7 +175,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen>
         ),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            Icon(Icons.warning_amber_rounded, color: ARAColors.brandDark),
             SizedBox(width: 12),
             Text('Decline Request'),
           ],
@@ -236,7 +190,8 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen>
           ),
           FilledButton(
             onPressed: () {
-              db.acceptRequest(id); // Using same method for demo
+              // NOTE: If you have db.declineRequest(id), use that instead.
+              db.acceptRequest(id); // demo placeholder
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -287,12 +242,12 @@ class _VolunteerRequestCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF2D9596).withOpacity(0.2),
+          color: ARAColors.brand.withOpacity(0.25),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2D9596).withOpacity(0.1),
+            color: ARAColors.brand.withOpacity(0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -308,12 +263,12 @@ class _VolunteerRequestCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2D9596).withOpacity(0.15),
+                    color: ARAColors.brand.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.person,
-                    color: Color(0xFF2D9596),
+                    color: ARAColors.brand,
                     size: 28,
                   ),
                 ),
@@ -344,18 +299,21 @@ class _VolunteerRequestCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+
+            // End-of-stay chip in orange family for consistency
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: const Color(0xFFFFF3E0),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFFE0B2)),
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.calendar_today,
                     size: 18,
-                    color: Colors.blue.shade700,
+                    color: ARAColors.brandDeep,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -372,22 +330,20 @@ class _VolunteerRequestCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           '${request.endOfStay.day}/${request.endOfStay.month}/${request.endOfStay.year}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade900,
+                            color: ARAColors.brandDeep,
                           ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade700,
+                      color: ARAColors.brandDark,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -402,6 +358,7 @@ class _VolunteerRequestCard extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 16),
             Row(
               children: [
