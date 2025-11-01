@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/common/card.dart';
 import '../../widgets/offline_banner.dart';
 import 'morning_shift.dart';
 import 'evening_shift.dart';
@@ -56,7 +57,7 @@ class _ShiftsScreenState extends State<ShiftsScreen>
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   FadeTransition(
                     opacity: _animation,
                     child: Text(
@@ -78,9 +79,9 @@ class _ShiftsScreenState extends State<ShiftsScreen>
                         begin: const Offset(-1, 0),
                         end: Offset.zero,
                       ).animate(_animation),
-                      child: _ShiftCard(
+                      child: AraCard(
                         title: 'Morning Shift',
-                        subtitle: '8:00 AM - 12:00 PM',
+                        description: '8:00 AM - 12:00 PM',
                         icon: Icons.wb_sunny,
                         gradient: ARAColors.morningGradient,
                         onTap: () => Navigator.push(
@@ -91,15 +92,15 @@ class _ShiftsScreenState extends State<ShiftsScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     SlideTransition(
                       position: Tween<Offset>(
                         begin: const Offset(1, 0),
                         end: Offset.zero,
                       ).animate(_animation),
-                      child: _ShiftCard(
+                      child: AraCard(
                         title: 'Evening Shift',
-                        subtitle: '5:00 PM - 7:00 PM',
+                        description: '5:00 PM - 7:00 PM',
                         icon: Icons.nightlight_round,
                         gradient: ARAColors.eveningGradient,
                         onTap: () => Navigator.push(
@@ -116,113 +117,6 @@ class _ShiftsScreenState extends State<ShiftsScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ShiftCard extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Gradient gradient;
-  final VoidCallback onTap;
-
-  const _ShiftCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.gradient,
-    required this.onTap,
-  });
-
-  @override
-  State<_ShiftCard> createState() => _ShiftCardState();
-}
-
-class _ShiftCardState extends State<_ShiftCard> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final card = Container(
-      height: 180,
-      decoration: BoxDecoration(
-        gradient: widget.gradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Icon(
-              widget.icon,
-              size: 150,
-              color: Colors.white.withOpacity(0.15),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Icon(widget.icon, color: Colors.white, size: 48),
-                const SizedBox(height: 16),
-                Text(
-                  widget.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.subtitle,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.arrow_forward, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()..scale(_isPressed ? 0.96 : 1.0),
-        child: card,
       ),
     );
   }
