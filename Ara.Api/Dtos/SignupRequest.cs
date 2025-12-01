@@ -15,4 +15,10 @@ public class SignupRequest
 
     [Required, MinLength(6)]
     public required string Password { get; set; }
+
+    [Required]
+    public DateOnly VolunteerFrom { get; set; }
+
+    [Required]
+    public DateOnly VolunteerTo { get; set; }
 }
