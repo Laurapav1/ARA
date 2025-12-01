@@ -56,7 +56,6 @@ class AraCard extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),

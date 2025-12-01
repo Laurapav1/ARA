@@ -29,7 +29,6 @@ class _AccountScreenState extends State<AccountScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
-        // Nudge the date picker to your brand color, but otherwise follow the app theme
         final scheme = Theme.of(context).colorScheme;
         return Theme(
           data: Theme.of(context).copyWith(

@@ -10,35 +10,11 @@ import '../../widgets/handling_flag_chips.dart';
 import '../../theme/ara_theme.dart';
 import 'animal_detail.dart';
 
-class DogsScreen extends StatefulWidget {
+class DogsScreen extends StatelessWidget {
   const DogsScreen({super.key});
 
-  @override
-  State<DogsScreen> createState() => _DogsScreenState();
-}
-
-class _DogsScreenState extends State<DogsScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  // Higher-contrast accents
   static const Color _friendlyColor = Color(0xFF43A047); // medium green
   static const Color _carefulColor = Color(0xFFFB8C00); // strong amber
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    )..forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   bool _requiresCaution(Animal a) => a.isDangerous || a.flags.isNotEmpty;
 
@@ -61,18 +37,18 @@ class _DogsScreenState extends State<DogsScreen>
                 children: [
                   _buildSection(
                     context,
-                    'Friendly & Social',
-                    friendly,
-                    Icons.favorite,
-                    _friendlyColor,
+                    title: 'Friendly & Social',
+                    list: friendly,
+                    icon: Icons.favorite,
+                    color: _friendlyColor,
                   ),
                   const SizedBox(height: 24),
                   _buildSection(
                     context,
-                    'Handle with Care',
-                    careful,
-                    Icons.warning_amber_rounded,
-                    _carefulColor,
+                    title: 'Handle with Care',
+                    list: careful,
+                    icon: Icons.warning_amber_rounded,
+                    color: _carefulColor,
                   ),
                 ],
               ),
@@ -94,15 +70,13 @@ class _DogsScreenState extends State<DogsScreen>
             style: IconButton.styleFrom(backgroundColor: Colors.white),
           ),
           const SizedBox(width: 12),
-          // Soft blue tile to hint "dogs" without heavy contrast
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: const Color(0xFF42A5F5).withOpacity(.12),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFF42A5F5).withOpacity(.30),
-              ),
+              border:
+                  Border.all(color: const Color(0xFF42A5F5).withOpacity(.30)),
             ),
             child: const Icon(Icons.pets, color: Color(0xFF1976D2), size: 22),
           ),
@@ -121,10 +95,7 @@ class _DogsScreenState extends State<DogsScreen>
                 ),
                 Text(
                   'Tap to view profile',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ],
             ),
@@ -135,77 +106,58 @@ class _DogsScreenState extends State<DogsScreen>
   }
 
   Widget _buildSection(
-    BuildContext context,
-    String title,
-    List<Animal> list,
-    IconData icon,
-    Color color,
-  ) {
+    BuildContext context, {
+    required String title,
+    required List<Animal> list,
+    required IconData icon,
+    required Color color,
+  }) {
     if (list.isEmpty) return const SizedBox.shrink();
 
-    return FadeTransition(
-      opacity: _controller,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Higher-contrast pill: stronger tint + visible border
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.22), // up from ~0.15
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.35)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: color.withOpacity(0.95),
-                  ),
-                ),
-              ],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section pill (static)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.22),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.35)),
           ),
-          const SizedBox(height: 12),
-          ...list.asMap().entries.map((entry) {
-            final index = entry.key;
-            final dog = entry.value;
-            final start = (index * 0.08).clamp(0.0, 0.9);
-            final end = (start + 0.5).clamp(0.0, 1.0);
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: color.withOpacity(0.95),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
 
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.3, 0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(
-                  parent: _controller,
-                  curve: Interval(start, end, curve: Curves.easeOut),
+        // Cards (static)
+        ...list.map((dog) => _DogCard(
+              dog: dog,
+              accentColor: color,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AnimalDetailScreen(animal: dog),
                 ),
               ),
-              child: _DogCard(
-                dog: dog,
-                accentColor: color,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AnimalDetailScreen(animal: dog),
-                  ),
-                ),
-                onFlagsPressed: dog.flags.isEmpty
-                    ? null
-                    : () => _showFlagsQuick(context, dog),
-              ),
-            );
-          }),
-        ],
-      ),
+              onFlagsPressed: dog.flags.isEmpty
+                  ? null
+                  : () => _showFlagsQuick(context, dog),
+            )),
+      ],
     );
   }
 
@@ -300,7 +252,7 @@ class _DogCardState extends State<_DogCard> {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = widget.accentColor.withOpacity(0.30); // stronger
+    final borderColor = widget.accentColor.withOpacity(0.30);
     final shadowColor = widget.accentColor.withOpacity(0.10);
 
     return GestureDetector(
@@ -330,20 +282,17 @@ class _DogCardState extends State<_DogCard> {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
+              // Keep Hero? It’s static unless you also use a Hero on detail.
               Hero(
                 tag: 'dog_${widget.dog.id}',
                 child: Container(
                   width: 70,
                   height: 70,
                   decoration: BoxDecoration(
-                    color: widget.accentColor.withOpacity(0.18), // up a touch
+                    color: widget.accentColor.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    Icons.pets,
-                    color: widget.accentColor,
-                    size: 36,
-                  ),
+                  child: Icon(Icons.pets, color: widget.accentColor, size: 36),
                 ),
               ),
               const SizedBox(width: 16),
@@ -363,7 +312,7 @@ class _DogCardState extends State<_DogCard> {
                     Text(
                       widget.dog.personality,
                       style: TextStyle(
-                        color: Colors.grey.shade700, // darker for readability
+                        color: Colors.grey.shade700,
                         fontSize: 14,
                       ),
                     ),
@@ -380,11 +329,8 @@ class _DogCardState extends State<_DogCard> {
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey.shade400,
-                size: 16,
-              ),
+              Icon(Icons.arrow_forward_ios,
+                  color: Colors.grey.shade400, size: 16),
             ],
           ),
         ),
@@ -409,18 +355,15 @@ class HandlingFlagIcons extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD), // higher-contrast info/amber bg
+        color: const Color(0xFFFFF3CD),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFFE69C)), // visible border
+        border: Border.all(color: const Color(0xFFFFE69C)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.warning_amber_rounded,
-            size: 16,
-            color: Color(0xFFB26A00), // readable on the bg
-          ),
+          const Icon(Icons.warning_amber_rounded,
+              size: 16, color: Color(0xFFB26A00)),
           const SizedBox(width: 4),
           for (final f in list.take(2))
             Padding(
@@ -444,10 +387,7 @@ class _CountPill extends StatelessWidget {
     return Text(
       '+',
       style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-        color: countColor,
-      ),
+          fontSize: 12, fontWeight: FontWeight.bold, color: countColor),
     );
   }
 }
