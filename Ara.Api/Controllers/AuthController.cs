@@ -32,7 +32,9 @@ public class AuthController(ARADbContext db) : ControllerBase
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Role.Volunteer,
             Status = VolunteerStatus.Pending,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            VolunteerFrom = request.VolunteerFrom,
+            VolunteerTo = request.VolunteerTo
         };
 
         db.Users.Add(user);
@@ -57,6 +59,20 @@ public class AuthController(ARADbContext db) : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
             return Unauthorized(new { error = "Invalid email or password" });
+        }
+
+        var shelterTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Lisbon");
+        var nowInShelter = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, shelterTimeZone);
+        var today = DateOnly.FromDateTime(nowInShelter);
+
+        if (user.VolunteerFrom != null && today < user.VolunteerFrom.Value)
+        {
+            return StatusCode(403, new { error = "Your volunteering period has not started yet." });
+        }
+
+        if (user.VolunteerTo != null && today > user.VolunteerTo.Value)
+        {
+            return StatusCode(403, new { error = "Your volunteering period has ended." });
         }
 
         // Volunteers must be approved to log in
@@ -85,7 +101,9 @@ public class AuthController(ARADbContext db) : ControllerBase
                     lastName = user.LastName,
                     email = user.Email,
                     role = user.Role,
-                    status = user.Status
+                    status = user.Status,
+                    volunteerFrom = user.VolunteerFrom,
+                    volunteerTo = user.VolunteerTo
                 }
             }
         );
