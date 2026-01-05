@@ -11,9 +11,14 @@ public interface ITokenService
     string CreateToken(Guid userId, string email, string firstName, string lastName, string role);
 }
 
-public class TokenService(IOptions<JwtOptions> opts) : ITokenService
+public sealed class TokenService : ITokenService
 {
-    private readonly JwtOptions _o = opts.Value;
+    private readonly JwtOptions _o;
+
+    public TokenService(IOptions<JwtOptions> opts)
+    {
+        _o = opts.Value ?? throw new ArgumentNullException(nameof(opts));
+    }
 
     public string CreateToken(
         Guid userId,
@@ -33,27 +38,39 @@ public class TokenService(IOptions<JwtOptions> opts) : ITokenService
         if (_o.AccessTokenMinutes <= 0)
             throw new InvalidOperationException("AccessTokenMinutes must be > 0.");
 
-        // iat (issued-at) must be int64 epoch seconds for best compatibility
-        var now = DateTime.UtcNow;
-        var epoch = new DateTimeOffset(now).ToUnixTimeSeconds().ToString();
+        if (userId == Guid.Empty)
+            throw new ArgumentException("userId must not be empty.", nameof(userId));
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("email must not be empty.", nameof(email));
+        if (string.IsNullOrWhiteSpace(role))
+            throw new ArgumentException("role must not be empty.", nameof(role));
 
-        var claims = new[]
+        // iat (issued-at) should be epoch seconds (int64) for best compatibility
+        var now = DateTime.UtcNow;
+        var epochSeconds = new DateTimeOffset(now).ToUnixTimeSeconds();
+
+        var safeFirst = firstName?.Trim() ?? string.Empty;
+        var safeLast = lastName?.Trim() ?? string.Empty;
+        var fullName = $"{safeFirst} {safeLast}".Trim();
+
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, email),
-            new Claim(JwtRegisteredClaimNames.Iat, epoch, ClaimValueTypes.Integer64),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            // Nice-to-have identity claims
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.GivenName, firstName ?? string.Empty),
-            new Claim(ClaimTypes.Surname, lastName ?? string.Empty),
-            new Claim(ClaimTypes.Name, $"{firstName} {lastName}".Trim()),
+            // Standard JWT claims
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(JwtRegisteredClaimNames.Email, email),
+            new(JwtRegisteredClaimNames.Iat, epochSeconds.ToString(), ClaimValueTypes.Integer64),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            // Useful identity claims for ASP.NET
+            new(ClaimTypes.NameIdentifier, userId.ToString()),
+            new(ClaimTypes.GivenName, safeFirst),
+            new(ClaimTypes.Surname, safeLast),
+            new(ClaimTypes.Name, fullName),
             // CRUCIAL: role for [Authorize(Roles="...")]
-            new Claim(ClaimTypes.Role, role) // e.g. "Staff" or "Volunteer"
+            new(ClaimTypes.Role, role) // e.g. "Staff" or "Volunteer"
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_o.Key));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_o.Key));
+        var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
         var jwt = new JwtSecurityToken(
             issuer: _o.Issuer,
