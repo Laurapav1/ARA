@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Ara.Api.Auth;
 using Ara.Api.Data;
 using Ara.Api.Dtos;
@@ -106,6 +108,35 @@ public class AuthController(ARADbContext db) : ControllerBase
                     volunteerTo = user.VolunteerTo
                 }
             }
+        );
+    }
+
+    [HttpGet("Me")]
+    [Authorize]
+    public async Task<ActionResult<MeResponse>> Me()
+    {
+        var userIdStr =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized(new { error = "Invalid token (no user id)." });
+
+        var u = await db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == userId);
+        if (u is null)
+            return Unauthorized(new { error = "User not found." });
+
+        return Ok(
+            new MeResponse(
+                u.Id,
+                u.FirstName,
+                u.LastName,
+                u.Email,
+                u.Role.ToString(),
+                u.Status.ToString(),
+                u.VolunteerFrom,
+                u.VolunteerTo
+            )
         );
     }
 }
