@@ -7,6 +7,11 @@ namespace Ara.Api.Data;
 public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<ShiftTemplate> ShiftTemplates => Set<ShiftTemplate>();
+    public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
+    public DbSet<ShiftInstance> ShiftInstances => Set<ShiftInstance>();
+    public DbSet<TaskInstance> TaskInstances => Set<TaskInstance>();
+    public DbSet<TaskAssignment> TaskAssignments => Set<TaskAssignment>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -36,6 +41,80 @@ public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(op
             e.Property(u => u.CreatedAt);
 
             e.Property(u => u.UpdatedAt).IsRequired(false);
+        });
+
+        b.Entity<ShiftTemplate>(e =>
+        {
+            e.HasKey(x => x.Id);
+
+            // If ShiftType/Season are enums, this stores them as strings (nice in Postgres)
+            e.Property(x => x.ShiftType).HasConversion<string>().IsRequired();
+            e.Property(x => x.Season).HasConversion<string>().IsRequired();
+
+            e.Property(x => x.StartTime).IsRequired();
+            e.Property(x => x.Title).HasMaxLength(200);
+
+            e.HasMany(x => x.Tasks)
+                .WithOne(x => x.ShiftTemplate)
+                .HasForeignKey(x => x.ShiftTemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Prevent duplicate templates (morning+winter twice, etc.)
+            e.HasIndex(x => new { x.ShiftType, x.Season }).IsUnique();
+        });
+
+        b.Entity<TaskTemplate>(e =>
+        {
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            e.Property(x => x.MaxVolunteers).IsRequired(false);
+        });
+
+        b.Entity<ShiftInstance>(e =>
+        {
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.Date).IsRequired();
+            e.Property(x => x.ShiftType).HasConversion<string>().IsRequired();
+            e.Property(x => x.Season).HasConversion<string>().IsRequired();
+            e.Property(x => x.StartTime).IsRequired();
+
+            // One morning + one evening per date
+            e.HasIndex(x => new { x.Date, x.ShiftType }).IsUnique();
+
+            e.HasMany(x => x.Tasks)
+                .WithOne(x => x.ShiftInstance)
+                .HasForeignKey(x => x.ShiftInstanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<TaskInstance>(e =>
+        {
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            e.Property(x => x.MaxVolunteers).IsRequired(false);
+
+            e.HasMany(x => x.Assignments)
+                .WithOne(x => x.TaskInstance)
+                .HasForeignKey(x => x.TaskInstanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<TaskAssignment>(e =>
+        {
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.CreatedAt).IsRequired();
+
+            // prevent joining same task twice (same day implied by TaskInstance)
+            e.HasIndex(x => new { x.TaskInstanceId, x.VolunteerId }).IsUnique();
+
+            e.HasOne(x => x.Volunteer)
+                .WithMany() // you can add navigation User.Assignments later if you want
+                .HasForeignKey(x => x.VolunteerId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
