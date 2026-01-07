@@ -49,19 +49,25 @@ public class ShiftsController(ARADbContext db) : ControllerBase
             loaded.StartTime.ToString("HH:mm"),
             loaded
                 .Tasks.OrderBy(t => t.Name)
-                .Select(t => new ShiftTaskDto(
-                    t.Id,
-                    t.Name,
-                    t.MaxVolunteers,
-                    t.Assignments.Count,
-                    t.Assignments.OrderBy(a => a.CreatedAt)
-                        .Select(a => new AssignedVolunteerDto(
-                            a.Volunteer.Id,
-                            a.Volunteer.FirstName,
-                            a.Volunteer.LastName
-                        ))
-                        .ToList()
-                ))
+                .Select(t =>
+                {
+                    var assignedCount = t.Assignments.Count;
+                    return new ShiftTaskDto(
+                        t.Id,
+                        t.Name,
+                        t.MaxVolunteers,
+                        t.RequiredVolunteers,
+                        assignedCount,
+                        GetTaskStatus(t, assignedCount),
+                        t.Assignments.OrderBy(a => a.CreatedAt)
+                            .Select(a => new AssignedVolunteerDto(
+                                a.Volunteer.Id,
+                                a.Volunteer.FirstName,
+                                a.Volunteer.LastName
+                            ))
+                            .ToList()
+                    );
+                })
                 .ToList()
         );
 
@@ -142,12 +148,102 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         return Ok(new { message = "Left task." });
     }
 
+    [HttpPost("{shiftId:Guid}/tasks/{taskId:Guid}/complete")]
+    public async Task<IActionResult> CompleteTask(Guid shiftId, Guid taskId)
+    {
+        var volunteerId = GetUserIdOrThrow();
+
+        var task = await db
+            .TaskInstances.Include(t => t.Assignments)
+            .SingleOrDefaultAsync(t => t.Id == taskId);
+
+        if (task is null)
+            return NotFound(new { error = "Task not found." });
+
+        if (task.ShiftInstanceId != shiftId)
+            return BadRequest(new { error = "Task does not belong to the shift." });
+
+        var user = await db.Users.SingleAsync(u => u.Id == volunteerId);
+        var isAssigned = task.Assignments.Any(a => a.VolunteerId == volunteerId);
+
+        if (user.Role != Role.Staff && !isAssigned)
+            return StatusCode(403, new { error = "You are not assigned to this task." });
+
+        if (task.CompletedAt is not null)
+            return Conflict(new { error = "Task already completed." });
+
+        if (task.Assignments.Count < task.RequiredVolunteers && user.Role != Role.Staff)
+            return Conflict(
+                new { error = "Not enough volunteers assigned to complete this task." }
+            );
+
+        task.CompletedAt = DateTime.UtcNow;
+        task.CompletedByUserId = volunteerId;
+
+        try
+        {
+            await db.SaveChangesAsync();
+            return Ok(new { message = "Task completed." });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // 🔥 Someone else completed it first
+            return Conflict(new { error = "Task was completed by someone else." });
+        }
+    }
+
+    [HttpPost("{shiftId:Guid}/tasks/{taskId:Guid}/reopen")]
+    public async Task<IActionResult> ReopenTask(Guid shiftId, Guid taskId)
+    {
+        var volunteerId = GetUserIdOrThrow();
+
+        var task = await db.TaskInstances.SingleOrDefaultAsync(t => t.Id == taskId);
+
+        if (task is null)
+            return NotFound(new { error = "Task not found." });
+
+        if (task.ShiftInstanceId != shiftId)
+            return BadRequest(new { error = "Task does not belong to the shift." });
+
+        var user = await db.Users.SingleAsync(u => u.Id == volunteerId);
+
+        if (task.CompletedAt is null)
+            return Conflict(new { error = "Task is already open." });
+
+        if (user.Role != Role.Staff && task.CompletedByUserId != volunteerId)
+            return StatusCode(403, new { error = "Only staff (or completer) can reopen." });
+
+        task.CompletedAt = null;
+        task.CompletedByUserId = null;
+
+        try
+        {
+            await db.SaveChangesAsync();
+            return Ok(new { message = "Task reopened." });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new { error = "Task was already reopened by someone else." });
+        }
+    }
+
     private Guid GetUserIdOrThrow()
     {
         var s = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(s, out var id))
             throw new UnauthorizedAccessException("Invalid token (no user id).");
         return id;
+    }
+
+    private static ShiftTaskStatus GetTaskStatus(TaskInstance task, int assignedCount)
+    {
+        if (task.CompletedAt is not null)
+            return ShiftTaskStatus.Done;
+
+        if (assignedCount < task.RequiredVolunteers)
+            return ShiftTaskStatus.Missing;
+
+        return ShiftTaskStatus.InProgress;
     }
 
     private async Task<ShiftInstance> GetOrCreateShiftInstance(DateOnly date, ShiftType type)
@@ -188,7 +284,8 @@ public class ShiftsController(ARADbContext db) : ControllerBase
                 {
                     TaskTemplateId = tt.Id,
                     Name = tt.Name,
-                    MaxVolunteers = tt.MaxVolunteers
+                    MaxVolunteers = tt.MaxVolunteers,
+                    RequiredVolunteers = tt.RequiredVolunteers
                 })
                 .ToList()
         };
