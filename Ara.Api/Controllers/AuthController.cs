@@ -15,7 +15,7 @@ namespace Ara.Api.Controllers;
 [ApiController]
 public class AuthController(ARADbContext db) : ControllerBase
 {
-    [HttpPost("SignUp")]
+    [HttpPost("signUp")]
     [AllowAnonymous]
     public async Task<IActionResult> SignUp([FromBody] SignupRequest request)
     {
@@ -48,7 +48,7 @@ public class AuthController(ARADbContext db) : ControllerBase
         );
     }
 
-    [HttpPost("Login")]
+    [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request,
@@ -111,7 +111,7 @@ public class AuthController(ARADbContext db) : ControllerBase
         );
     }
 
-    [HttpGet("Me")]
+    [HttpGet("me")]
     [Authorize]
     public async Task<ActionResult<MeResponse>> Me()
     {

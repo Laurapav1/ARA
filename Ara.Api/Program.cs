@@ -3,6 +3,7 @@ using System.Text;
 using Ara.Api.Auth;
 using Ara.Api.Controllers;
 using Ara.Api.Data;
+using Ara.Api.Infrastructure.Seeding;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +15,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "ARA API", Version = "v1" });
+
+    c.MapType<DateOnly>(() => new OpenApiSchema { Type = "string", Format = "date" });
+
+    c.MapType<TimeOnly>(() => new OpenApiSchema { Type = "string", Format = "time" });
 
     c.AddSecurityDefinition(
         "Bearer",
@@ -90,7 +95,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
-app.UseAuthentication(); // Must come before UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -100,6 +105,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ARADbContext>();
     db.Database.Migrate();
+    await ShiftTemplateSeeder.SeedAsync(db);
 
     const string adminEmail = "admin@ara.local";
     if (!await db.Users.AnyAsync(u => u.Email == adminEmail))
