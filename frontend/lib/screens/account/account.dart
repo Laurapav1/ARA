@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../services/mock_database.dart';
 import '../../widgets/offline_banner.dart';
 import '../../theme/ara_theme.dart';
 
@@ -13,7 +15,9 @@ class _AccountScreenState extends State<AccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  DateTime? _selectedDate;
+
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   @override
   void dispose() {
@@ -22,12 +26,19 @@ class _AccountScreenState extends State<AccountScreen> {
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final picked = await showDatePicker(
+  String _fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
+
+  Future<DateTime?> _pickDate({
+    required BuildContext context,
+    required DateTime initialDate,
+    required DateTime firstDate,
+    required DateTime lastDate,
+  }) async {
+    return showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 7)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         final scheme = Theme.of(context).colorScheme;
         return Theme(
@@ -44,87 +55,276 @@ class _AccountScreenState extends State<AccountScreen> {
         );
       },
     );
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
-    }
+  }
+
+  Future<void> _selectStartDate() async {
+    final now = DateTime.now();
+    final picked = await _pickDate(
+      context: context,
+      initialDate: _startDate ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _startDate = picked;
+
+      // If end date exists but is before new start date, clear end date.
+      if (_endDate != null && _endDate!.isBefore(picked)) {
+        _endDate = null;
+      }
+    });
+  }
+
+  Future<void> _selectEndDate() async {
+    final now = DateTime.now();
+
+    // If start isn't set, default start to "now" for constraints,
+    // but still require user to pick start for submit.
+    final start = _startDate ?? now;
+
+    final picked = await _pickDate(
+      context: context,
+      initialDate: _endDate ?? start,
+      firstDate: start, // ✅ cannot end before start
+      lastDate: now.add(const Duration(days: 365)),
+    );
+
+    if (picked == null) return;
+
+    setState(() => _endDate = picked);
+  }
+
+  bool get _datesValid {
+    if (_startDate == null || _endDate == null) return false;
+    return !_endDate!.isBefore(_startDate!);
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: ARAColors.brand,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   void _submitRequest() {
-    if (_formKey.currentState!.validate() && _selectedDate != null) {
-      showDialog(
-        context: context,
-        builder: (ctx) => Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF66BB6A).withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check_circle,
-                      color: Color(0xFF66BB6A), size: 64),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Request Submitted!',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: const Color(0xFF265073),
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'A staff member will review your request soon. You\'ll receive access once approved.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey.shade600,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _formKey.currentState!.reset();
-                    _nameController.clear();
-                    _lastNameController.clear();
-                    setState(() => _selectedDate = null);
-                  },
-                  child: const Text('Done'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    } else if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
+    final formOk = _formKey.currentState!.validate();
+
+    if (!formOk) return;
+
+    if (_startDate == null) {
+      _showSnack('Please select your start date');
+      return;
+    }
+    if (_endDate == null) {
+      _showSnack('Please select your end date');
+      return;
+    }
+    if (!_datesValid) {
+      _showSnack('End date must be the same as or after the start date');
+      return;
+    }
+
+    final db = context.read<MockDatabase>();
+    db.submitVolunteerRequest(
+      firstName: _nameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      startOfStay: _startDate!,
+      endOfStay: _endDate!,
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.white),
-              SizedBox(width: 12),
-              Expanded(child: Text('Please select your end of stay date')),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF66BB6A).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF66BB6A),
+                  size: 64,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Request Submitted',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: const Color(0xFF265073),
+                      fontWeight: FontWeight.bold,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Your account is pending approval. You will get access once a staff member approves your request.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 18),
+              // Optional: show selected period (small, nice feedback)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.calendar_today, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_fmt(_startDate!)} to ${_fmt(_endDate!)}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _formKey.currentState!.reset();
+                  _nameController.clear();
+                  _lastNameController.clear();
+                  setState(() {
+                    _startDate = null;
+                    _endDate = null;
+                  });
+                },
+                child: const Text('Done'),
+              ),
             ],
           ),
-          backgroundColor: ARAColors.brand,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-      );
-    }
+      ),
+    );
+  }
+
+  void _quickSignIn() {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Sign in'),
+        actionsAlignment: MainAxisAlignment.center,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context
+                  .read<MockDatabase>()
+                  .setVolunteerStatus(VolunteerStatus.approved);
+              _showSnack('Signed in. You now have access to shifts.');
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dateRow({
+    required String label,
+    required DateTime? value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final hasValue = value != null;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: hasValue ? ARAColors.brand : Colors.grey.shade200,
+            width: hasValue ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: hasValue ? ARAColors.brand : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                hasValue ? '$label: ${_fmt(value)}' : '$label: Select date',
+                style: TextStyle(
+                  color:
+                      hasValue ? const Color(0xFF265073) : Colors.grey.shade600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios,
+                size: 16, color: Colors.grey.shade400),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // The Scaffold already uses your white-ish bg via ARATheme.light.scaffoldBackgroundColor
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -146,7 +346,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 16,
                             offset: const Offset(0, 8),
                           ),
@@ -157,26 +357,31 @@ class _AccountScreenState extends State<AccountScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.20),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.volunteer_activism,
-                                color: Colors.white, size: 48),
+                            child: const Icon(
+                              Icons.volunteer_activism,
+                              color: Colors.white,
+                              size: 48,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           const Text(
                             'Join as Volunteer',
                             style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold),
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Help us make a difference',
                             style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 16),
+                              color: Colors.white.withValues(alpha: 0.90),
+                              fontSize: 16,
+                            ),
                           ),
                         ],
                       ),
@@ -184,7 +389,6 @@ class _AccountScreenState extends State<AccountScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Form (inherits InputDecorationTheme from ARATheme)
                     Form(
                       key: _formKey,
                       child: Column(
@@ -217,52 +421,22 @@ class _AccountScreenState extends State<AccountScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // End-of-stay picker
-                          InkWell(
-                            onTap: () => _selectDate(context),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _selectedDate == null
-                                      ? Colors.grey.shade200
-                                      : ARAColors.brand,
-                                  width: _selectedDate == null ? 1 : 2,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today,
-                                    color: _selectedDate == null
-                                        ? Colors.grey.shade600
-                                        : ARAColors.brand,
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Text(
-                                      _selectedDate == null
-                                          ? 'Select end of stay'
-                                          : 'End of stay: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                                      style: TextStyle(
-                                        color: _selectedDate == null
-                                            ? Colors.grey.shade600
-                                            : const Color(0xFF265073),
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                  Icon(Icons.arrow_forward_ios,
-                                      size: 16, color: Colors.grey.shade400),
-                                ],
-                              ),
-                            ),
+                          // ✅ Start / End pickers (matches your screenshot layout)
+                          _dateRow(
+                            label: 'Start',
+                            value: _startDate,
+                            icon: Icons.calendar_today,
+                            onTap: _selectStartDate,
+                          ),
+                          const SizedBox(height: 16),
+                          _dateRow(
+                            label: 'End',
+                            value: _endDate,
+                            icon: Icons.event_available,
+                            onTap: _selectEndDate,
                           ),
 
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 20),
 
                           // Info note (amber family)
                           Container(
@@ -283,7 +457,9 @@ class _AccountScreenState extends State<AccountScreen> {
                                   child: Text(
                                     'Your request will be reviewed by our staff team before you can access the volunteer portal.',
                                     style: TextStyle(
-                                        color: ARAColors.brand, fontSize: 13),
+                                      color: ARAColors.brand,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -297,8 +473,15 @@ class _AccountScreenState extends State<AccountScreen> {
                             child: const Text(
                               'Submit Request',
                               style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: _quickSignIn,
+                            child: const Text('Already approved? Sign in'),
                           ),
                         ],
                       ),
@@ -313,3 +496,4 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 }
+

@@ -2,26 +2,37 @@ import 'package:flutter/material.dart';
 
 /// Centralized theme & colors for the ARA app.
 class ARAColors {
+  // ─────────────────────────────────────────────
   // Brand
+  // ─────────────────────────────────────────────
   static const Color brand = Color(0xFFF3A93B);
   static const Color brandDark = Color(0xFFD08112);
+  static const Color brandDeep = Color(0xFFC5710A);
 
+  // ─────────────────────────────────────────────
   // Text
+  // ─────────────────────────────────────────────
   static const Color ink = Color(0xFF1E2A36);
   static const Color subInk = Color(0xFF5C6B7A);
 
-  static const Color brandDeep = Color(0xFFC5710A);
-
-  // Backgrounds
+  // ─────────────────────────────────────────────
+  // Backgrounds / Surfaces
+  // ─────────────────────────────────────────────
   static const Color bg = Color(0xFFF9FAFB);
   static const Color cardBg = Colors.white;
 
-  // Gradients
+  // ─────────────────────────────────────────────
+  // Gradients (large visual surfaces only)
+  // ─────────────────────────────────────────────
   static const Gradient morningGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [brand, brandDark],
   );
 
   static const Gradient eveningGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [Color(0xFF5C6BC0), Color(0xFF3949AB)],
   );
 
@@ -48,19 +59,49 @@ class ARATheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+
       scaffoldBackgroundColor: ARAColors.bg,
       cardColor: ARAColors.cardBg,
 
-      // Cards / surfaces look consistent by default
-
+      // ─────────────────────────────────────────────
+      // Typography
+      // ─────────────────────────────────────────────
       textTheme: Typography.blackMountainView.copyWith(
         headlineMedium: const TextStyle(
           color: ARAColors.ink,
           fontWeight: FontWeight.w700,
         ),
-        bodyMedium: const TextStyle(color: ARAColors.subInk),
+        bodyMedium: const TextStyle(
+          color: ARAColors.subInk,
+        ),
       ),
 
+      // ─────────────────────────────────────────────
+      // AppBar (neutral, no glare)
+      // ─────────────────────────────────────────────
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        foregroundColor: ARAColors.ink,
+        elevation: 0,
+        centerTitle: false,
+        surfaceTintColor: Colors.transparent,
+      ),
+
+      // ─────────────────────────────────────────────
+      // Cards
+      // ─────────────────────────────────────────────
+      cardTheme: CardThemeData(
+        color: ARAColors.cardBg,
+        elevation: 6,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+
+      // ─────────────────────────────────────────────
+      // Buttons
+      // ─────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: ARAColors.brand,
@@ -73,6 +114,9 @@ class ARATheme {
         ),
       ),
 
+      // ─────────────────────────────────────────────
+      // Inputs
+      // ─────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: ARAColors.cardBg,
@@ -86,17 +130,29 @@ class ARATheme {
         ),
       ),
 
-      navigationBarTheme: const NavigationBarThemeData(
-        backgroundColor: ARAColors.brand,
+      // ─────────────────────────────────────────────
+      // Bottom Navigation Bar
+      // (calm, iOS-like, no eye strain)
+      // ─────────────────────────────────────────────
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         height: 70,
-        elevation: 8,
-        iconTheme: WidgetStatePropertyAll(
-          IconThemeData(color: Colors.white),
-        ),
-        labelTextStyle: WidgetStatePropertyAll(
-          TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
+        elevation: 0,
+        indicatorColor: ARAColors.brand.withValues(alpha: 0.18),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? ARAColors.brandDeep : ARAColors.subInk,
+          );
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return TextStyle(
+            color: selected ? ARAColors.brandDeep : ARAColors.subInk,
+            fontWeight: FontWeight.w600,
+          );
+        }),
       ),
     );
   }

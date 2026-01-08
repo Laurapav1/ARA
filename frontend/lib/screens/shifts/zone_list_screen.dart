@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../widgets/offline_banner.dart';
 import '../../models/zone.dart';
+import '../../theme/ara_theme.dart';
 
 class ZoneListScreen extends StatefulWidget {
   final String shiftType;
@@ -13,7 +13,7 @@ class ZoneListScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ZoneListScreenState createState() => _ZoneListScreenState();
+  State<ZoneListScreen> createState() => _ZoneListScreenState();
 }
 
 class _ZoneListScreenState extends State<ZoneListScreen> {
@@ -27,38 +27,48 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     _signedUp = List<bool>.filled(_zones.length, false);
   }
 
+  Gradient _shiftGradient() {
+    return widget.shiftType == 'Morning'
+        ? ARAColors.morningGradient
+        : ARAColors.eveningGradient;
+  }
+
   // State colors:
   //  - Done: green
-  //  - In progress (someone on it): **yellow**
+  //  - In progress (someone on it): softer amber
   //  - Unassigned: red
   Color _cardColor(int index) {
     final zone = _zones[index];
     if (zone.progress >= 1.0) return const Color(0xFF2E7D32); // green 800
+
     final hasAnyone = zone.volunteers + (_signedUp[index] ? 1 : 0) > 0;
-    if (hasAnyone) return const Color(0xFFFFC107); // **Amber 500 (yellow)**
+    if (hasAnyone) return const Color(0xFFF2B84B); // ✅ softer amber
+
     return const Color(0xFFEF5350); // red 400
   }
 
   IconData _statusIcon(int index) {
     final zone = _zones[index];
     if (zone.progress >= 1.0) return Icons.check_circle;
+
     final hasAnyone = zone.volunteers + (_signedUp[index] ? 1 : 0) > 0;
     if (hasAnyone) return Icons.schedule;
+
     return Icons.warning_rounded;
   }
 
-  // Choose readable text color for each background
   _TextPalette _paletteFor(Color bg) {
-    if (bg.value == const Color(0xFFFFC107).value) {
-      // Yellow: use dark text for contrast
+    final brightness = ThemeData.estimateBrightnessForColor(bg);
+
+    if (brightness == Brightness.light) {
       return const _TextPalette(
-        primary: Color(0xFF2D2A00),
-        secondary: Color(0xFF4A4600),
-        overlay: Color(0x33000000), // dark translucent
-        onAccentIcon: Color(0xFF2D2A00),
+        primary: Color(0xFF1E2A36),
+        secondary: Color(0xFF324150),
+        overlay: Color(0x1A000000),
+        onAccentIcon: Color(0xFF1E2A36),
       );
     }
-    // Red/Green (darker): use white
+
     return const _TextPalette(
       primary: Colors.white,
       secondary: Color(0xFFEFF3F6),
@@ -71,23 +81,22 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const OfflineBanner(),
+        // ✅ OfflineBanner REMOVED from here (it stays in the parent screen)
+
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF2D9596), Color(0xFF2D9596)],
-            ),
+          decoration: BoxDecoration(
+            gradient: _shiftGradient(), // ✅ matches screen 1 vibe
           ),
-          child: const Row(
+          child: Row(
             children: [
-              _HeaderIcon(),
-              SizedBox(width: 16),
+              const _HeaderIcon(),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Zones & Tasks',
                       style: TextStyle(
                         color: Colors.white,
@@ -96,9 +105,11 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                       ),
                     ),
                     Text(
-                      'Tap to sign up • Long press for details',
+                      widget.shiftType == 'Morning'
+                          ? 'Tap to sign up • Long press for details'
+                          : 'Tap to sign up • Long press for details',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.white.withOpacity(0.95),
                         fontSize: 14,
                       ),
                     ),
@@ -108,6 +119,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
             ],
           ),
         ),
+
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -115,6 +127,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
             itemBuilder: (context, index) {
               final zone = _zones[index];
               final done = zone.progress >= 1.0;
+
               final bg = _cardColor(index);
               final pal = _paletteFor(bg);
 
@@ -220,30 +233,18 @@ class _ZoneCardState extends State<_ZoneCard> {
                         color: pal.overlay,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(widget.icon, color: pal.onAccentIcon, size: 28),
+                      child:
+                          Icon(widget.icon, color: pal.onAccentIcon, size: 28),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.zone.name,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: pal.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${widget.zone.tasks.length} tasks',
-                            style: TextStyle(
-                              color: pal.secondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        widget.zone.name,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: pal.primary,
+                        ),
                       ),
                     ),
                     _buildVolunteerIcons(),
@@ -271,14 +272,17 @@ class _ZoneCardState extends State<_ZoneCard> {
                     children: [
                       Divider(color: pal.primary.withOpacity(0.35)),
                       const SizedBox(height: 12),
+
+                      // ✅ show task count only in expanded section
                       Text(
-                        'Tasks:',
+                        'Tasks (${widget.zone.tasks.length})',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: pal.primary,
                         ),
                       ),
                       const SizedBox(height: 8),
+
                       ...widget.zone.tasks.map(
                         (task) => Padding(
                           padding: const EdgeInsets.only(bottom: 6),
@@ -297,13 +301,15 @@ class _ZoneCardState extends State<_ZoneCard> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: pal.overlay,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: pal.primary.withOpacity(0.25)),
+                          border:
+                              Border.all(color: pal.primary.withOpacity(0.25)),
                         ),
                         child: Row(
                           children: [
@@ -333,7 +339,6 @@ class _ZoneCardState extends State<_ZoneCard> {
   }
 
   Widget _buildVolunteerIcons() {
-    // Always white chip background so it’s readable on any card color
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -365,6 +370,7 @@ class _TextPalette {
   final Color secondary;
   final Color overlay;
   final Color onAccentIcon;
+
   const _TextPalette({
     required this.primary,
     required this.secondary,

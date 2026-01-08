@@ -4,14 +4,27 @@ import 'package:frontend/models/handling_flag.dart';
 import '../models/animal.dart';
 import '../models/volunteer_request.dart';
 
+enum VolunteerStatus { anonymous, pending, approved }
+
 class MockDatabase extends ChangeNotifier {
   bool isStaff = false;
   bool isOffline = true;
   int pendingChanges = 0;
+  VolunteerStatus volunteerStatus = VolunteerStatus.anonymous;
 
   final List<VolunteerRequest> _volRequests = [
-    VolunteerRequest(id: 'v1', name: 'Alice', endOfStay: DateTime(2025, 8, 1)),
-    VolunteerRequest(id: 'v2', name: 'Bob', endOfStay: DateTime(2025, 8, 5)),
+    VolunteerRequest(
+      id: 'v1',
+      name: 'Alice',
+      startOfStay: DateTime(2025, 7, 10),
+      endOfStay: DateTime(2025, 8, 1),
+    ),
+    VolunteerRequest(
+      id: 'v2',
+      name: 'Bob',
+      startOfStay: DateTime(2025, 7, 15),
+      endOfStay: DateTime(2025, 8, 5),
+    ),
   ];
 
   final List<Animal> _animals = [
@@ -58,10 +71,36 @@ class MockDatabase extends ChangeNotifier {
 
   List<VolunteerRequest> get pendingRequests => List.unmodifiable(_volRequests);
   List<Animal> get animals => List.unmodifiable(_animals);
+  bool get isApprovedVolunteer =>
+      volunteerStatus == VolunteerStatus.approved || isStaff;
+  bool get isPendingVolunteer => volunteerStatus == VolunteerStatus.pending;
 
   void acceptRequest(String id) {
     _volRequests.removeWhere((v) => v.id == id);
     pendingChanges++;
+    notifyListeners();
+  }
+
+  void submitVolunteerRequest({
+    required String firstName,
+    required String lastName,
+    required DateTime startOfStay,
+    required DateTime endOfStay,
+  }) {
+    final request = VolunteerRequest(
+      id: 'v${DateTime.now().millisecondsSinceEpoch}',
+      name: '$firstName $lastName',
+      startOfStay: startOfStay,
+      endOfStay: endOfStay,
+    );
+    _volRequests.add(request);
+    volunteerStatus = VolunteerStatus.pending;
+    pendingChanges++;
+    notifyListeners();
+  }
+
+  void setVolunteerStatus(VolunteerStatus status) {
+    volunteerStatus = status;
     notifyListeners();
   }
 

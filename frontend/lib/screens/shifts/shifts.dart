@@ -3,6 +3,7 @@ import 'package:frontend/screens/common/card.dart';
 import '../../widgets/offline_banner.dart';
 import 'morning_shift.dart';
 import 'evening_shift.dart';
+import '../../models/zone_data.dart';
 import '../../theme/ara_theme.dart';
 
 class ShiftsScreen extends StatelessWidget {
@@ -10,6 +11,8 @@ class ShiftsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final schedule = ZoneData.scheduleFor(DateTime.now());
+
     return Scaffold(
       backgroundColor: ARAColors.bg,
       body: SafeArea(
@@ -41,7 +44,7 @@ class ShiftsScreen extends StatelessWidget {
                   children: [
                     AraCard(
                       title: 'Morning Shift',
-                      description: '8:00 AM - 12:00 PM',
+                      description: '${schedule.label} - ${schedule.morning}',
                       icon: Icons.wb_sunny,
                       gradient: ARAColors.morningGradient,
                       onTap: () => Navigator.push(
@@ -54,7 +57,7 @@ class ShiftsScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     AraCard(
                       title: 'Evening Shift',
-                      description: '5:00 PM - 7:00 PM',
+                      description: '${schedule.label} - ${schedule.evening}',
                       icon: Icons.nightlight_round,
                       gradient: ARAColors.eveningGradient,
                       onTap: () => Navigator.push(

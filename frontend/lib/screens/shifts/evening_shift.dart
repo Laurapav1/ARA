@@ -17,7 +17,7 @@ class EveningShiftScreen extends StatelessWidget {
           Expanded(
             child: ZoneListScreen(
               shiftType: 'Evening',
-              zones: ZoneData.eveningZones,
+              zones: ZoneData.eveningZonesFor(DateTime.now()),
             ),
           ),
         ],

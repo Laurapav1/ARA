@@ -206,6 +206,8 @@ class _VolunteerRequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final daysUntilEnd = request.endOfStay.difference(DateTime.now()).inDays;
+    final stayStart = request.startOfStay;
+    final stayEnd = request.endOfStay;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -265,7 +267,7 @@ class _VolunteerRequestCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // End-of-stay chip
+            // Stay period chip
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -282,7 +284,7 @@ class _VolunteerRequestCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('End of stay',
+                        Text('Stay period',
                             style: Theme.of(context)
                                 .textTheme
                                 .labelSmall
@@ -291,7 +293,7 @@ class _VolunteerRequestCard extends StatelessWidget {
                                 )),
                         const SizedBox(height: 2),
                         Text(
-                          '${request.endOfStay.day}/${request.endOfStay.month}/${request.endOfStay.year}',
+                          '${stayStart.day}/${stayStart.month}/${stayStart.year} to ${stayEnd.day}/${stayEnd.month}/${stayEnd.year}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

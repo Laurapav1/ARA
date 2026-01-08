@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/mock_database.dart';
 import 'screens/account/volunteers.dart';
+import 'screens/account/pending_approval.dart';
+import 'screens/account/volunteer_status.dart';
 import 'screens/shifts/shifts.dart';
 import 'screens/info/information.dart';
 import 'screens/account/account.dart';
 import 'screens/animals/animal_home.dart';
+import 'screens/common/access_gate.dart';
 
 void main() {
   runApp(
@@ -232,12 +235,33 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     final db = context.watch<MockDatabase>();
     final isStaff = db.isStaff;
+    final isApproved = db.isApprovedVolunteer;
+    final isPending = db.isPendingVolunteer;
+
+    final shiftsScreen = AccessGate(
+      allowed: isApproved,
+      title: isPending ? 'Waiting for approval' : 'Volunteer access required',
+      message: isPending
+          ? 'Your request is pending review. You will get access once approved.'
+          : 'Sign in or submit a volunteer request to access shifts.',
+      ctaLabel: isPending ? 'Go to Info' : 'Apply or Sign In',
+      onCta: () => setState(() => _currentIndex = isPending ? 2 : 3),
+      child: const ShiftsScreen(),
+    );
+
+    const animalsScreen = AnimalHomeScreen();
+
+    final accountScreen = isPending
+        ? const PendingApprovalScreen()
+        : isApproved
+            ? const VolunteerStatusScreen()
+            : const AccountScreen();
 
     final screens = <Widget>[
-      const ShiftsScreen(),
-      const AnimalHomeScreen(),
+      shiftsScreen,
+      animalsScreen,
       const InformationScreen(),
-      if (!isStaff) const AccountScreen(),
+      if (!isStaff) accountScreen,
       if (isStaff) const VolunteerRequestsScreen(),
     ];
 
