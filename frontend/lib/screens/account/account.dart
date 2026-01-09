@@ -267,7 +267,7 @@ class _AccountScreenState extends State<AccountScreen> {
               context
                   .read<MockDatabase>()
                   .setVolunteerStatus(VolunteerStatus.approved);
-              _showSnack('Signed in. You now have access to shifts.');
+              _showSnack('Signed in. You can view shifts now.');
             },
             child: const Text('Confirm'),
           ),
