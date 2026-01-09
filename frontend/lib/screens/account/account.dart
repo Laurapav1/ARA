@@ -155,7 +155,7 @@ class _AccountScreenState extends State<AccountScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: const Color(0xFF66BB6A).withValues(alpha: 0.15),
                   shape: BoxShape.circle,
@@ -332,13 +332,13 @@ class _AccountScreenState extends State<AccountScreen> {
             const OfflineBanner(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(22),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Header card with your brand gradient
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [ARAColors.brand, ARAColors.brandDark],
@@ -355,7 +355,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       child: Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.20),
                               shape: BoxShape.circle,
@@ -363,15 +363,15 @@ class _AccountScreenState extends State<AccountScreen> {
                             child: const Icon(
                               Icons.volunteer_activism,
                               color: Colors.white,
-                              size: 48,
+                              size: 40,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
                           const Text(
                             'Join as Volunteer',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 28,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -387,103 +387,140 @@ class _AccountScreenState extends State<AccountScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
-
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'First Name',
-                              prefixIcon: Icon(Icons.person_outline),
-                              hintText: 'Enter your first name',
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? 'Please enter your first name'
-                                    : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _lastNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Last Name',
-                              prefixIcon: Icon(Icons.person_outline),
-                              hintText: 'Enter your last name',
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? 'Please enter your last name'
-                                    : null,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // ✅ Start / End pickers (matches your screenshot layout)
-                          _dateRow(
-                            label: 'Start',
-                            value: _startDate,
-                            icon: Icons.calendar_today,
-                            onTap: _selectStartDate,
-                          ),
-                          const SizedBox(height: 16),
-                          _dateRow(
-                            label: 'End',
-                            value: _endDate,
-                            icon: Icons.event_available,
-                            onTap: _selectEndDate,
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Info note (amber family)
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF3E0),
-                              borderRadius: BorderRadius.circular(12),
-                              border: const Border.fromBorderSide(
-                                BorderSide(color: Color(0xFFFFE0B2)),
-                              ),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.info_outline,
-                                    color: ARAColors.brand),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Your request will be reviewed by our staff team before you can access the volunteer portal.',
-                                    style: TextStyle(
-                                      color: ARAColors.brand,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          FilledButton(
-                            onPressed: _submitRequest,
-                            child: const Text(
-                              'Submit Request',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: _quickSignIn,
-                            child: const Text('Already approved? Sign in'),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 18,
+                            offset: const Offset(0, 10),
                           ),
                         ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Volunteer request',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFF1E2A36),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Tell us your stay dates so we can approve access.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.grey.shade600,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'First Name',
+                                prefixIcon: Icon(Icons.person_outline),
+                                hintText: 'Enter your first name',
+                              ),
+                              validator: (value) =>
+                                  (value == null || value.isEmpty)
+                                      ? 'Please enter your first name'
+                                      : null,
+                            ),
+                            const SizedBox(height: 14),
+                            TextFormField(
+                              controller: _lastNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Last Name',
+                                prefixIcon: Icon(Icons.person_outline),
+                                hintText: 'Enter your last name',
+                              ),
+                              validator: (value) =>
+                                  (value == null || value.isEmpty)
+                                      ? 'Please enter your last name'
+                                      : null,
+                            ),
+                            const SizedBox(height: 14),
+
+                            _dateRow(
+                              label: 'Start',
+                              value: _startDate,
+                              icon: Icons.calendar_today,
+                              onTap: _selectStartDate,
+                            ),
+                            const SizedBox(height: 14),
+                            _dateRow(
+                              label: 'End',
+                              value: _endDate,
+                              icon: Icons.event_available,
+                              onTap: _selectEndDate,
+                            ),
+                            const SizedBox(height: 16),
+
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF3E0),
+                                borderRadius: BorderRadius.circular(12),
+                                border: const Border.fromBorderSide(
+                                  BorderSide(color: Color(0xFFFFE0B2)),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.info_outline,
+                                      color: ARAColors.brand),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Your request will be reviewed by our staff team before you can access the volunteer portal.',
+                                      style: TextStyle(
+                                        color: ARAColors.brand,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+
+                            FilledButton(
+                              onPressed: _submitRequest,
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: const Text(
+                                'Submit Request',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            TextButton(
+                              onPressed: _quickSignIn,
+                              child: const Text('Already approved? Sign in'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
