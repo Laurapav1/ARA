@@ -15,6 +15,8 @@ class _AccountScreenState extends State<AccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   DateTime? _startDate;
   DateTime? _endDate;
@@ -23,6 +25,8 @@ class _AccountScreenState extends State<AccountScreen> {
   void dispose() {
     _nameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -290,11 +294,11 @@ class _AccountScreenState extends State<AccountScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: const Color(0xFFF1EEE7),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: hasValue ? ARAColors.brand : Colors.grey.shade200,
-            width: hasValue ? 2 : 1,
+            color: hasValue ? ARAColors.brandDark : Colors.transparent,
+            width: hasValue ? 1.5 : 1,
           ),
         ),
         child: Row(
@@ -326,6 +330,7 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F5F0),
       body: SafeArea(
         child: Column(
           children: [
@@ -338,11 +343,12 @@ class _AccountScreenState extends State<AccountScreen> {
                   children: [
                     // Header card with your brand gradient
                     Container(
-                      padding: const EdgeInsets.all(22),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [ARAColors.brand, ARAColors.brandDark],
-                        ),
+                        color: ARAColors.brand,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -355,7 +361,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       child: Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.20),
                               shape: BoxShape.circle,
@@ -363,15 +369,15 @@ class _AccountScreenState extends State<AccountScreen> {
                             child: const Icon(
                               Icons.volunteer_activism,
                               color: Colors.white,
-                              size: 40,
+                              size: 32,
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 10),
                           const Text(
                             'Join as Volunteer',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 24,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -380,7 +386,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             'Help us make a difference',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.90),
-                              fontSize: 16,
+                              fontSize: 14,
                             ),
                           ),
                         ],
@@ -453,6 +459,34 @@ class _AccountScreenState extends State<AccountScreen> {
                                       : null,
                             ),
                             const SizedBox(height: 14),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                prefixIcon: Icon(Icons.email_outlined),
+                                hintText: 'Enter your email',
+                              ),
+                              validator: (value) =>
+                                  (value == null || value.isEmpty)
+                                      ? 'Please enter your email'
+                                      : null,
+                            ),
+                            const SizedBox(height: 14),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Password',
+                                prefixIcon: Icon(Icons.lock_outline),
+                                hintText: 'Create a password',
+                              ),
+                              validator: (value) =>
+                                  (value == null || value.isEmpty)
+                                      ? 'Please enter a password'
+                                      : null,
+                            ),
+                            const SizedBox(height: 14),
 
                             _dateRow(
                               label: 'Start',
@@ -472,10 +506,10 @@ class _AccountScreenState extends State<AccountScreen> {
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF3E0),
+                                color: const Color(0xFFFFF5E8),
                                 borderRadius: BorderRadius.circular(12),
-                                border: const Border.fromBorderSide(
-                                  BorderSide(color: Color(0xFFFFE0B2)),
+                                border: Border.all(
+                                  color: ARAColors.brand.withValues(alpha: 0.4),
                                 ),
                               ),
                               child: const Row(
@@ -500,6 +534,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             FilledButton(
                               onPressed: _submitRequest,
                               style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFFE59A2A),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
@@ -514,7 +549,35 @@ class _AccountScreenState extends State<AccountScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 18),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Divider(
+                                    color: Colors.grey.shade300,
+                                    height: 1,
+                                  ),
+                                ),
+                                const Padding(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text(
+                                    'or',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Divider(
+                                    color: Colors.grey.shade300,
+                                    height: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
                             TextButton(
                               onPressed: _quickSignIn,
                               child: const Text('Already approved? Sign in'),
