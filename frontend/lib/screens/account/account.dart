@@ -280,7 +280,7 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  Widget _dateRow({
+  Widget _dateCard({
     required String label,
     required DateTime? value,
     required IconData icon,
@@ -290,37 +290,47 @@ class _AccountScreenState extends State<AccountScreen> {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: const Color(0xFFF1EEE7),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: hasValue ? ARAColors.brandDark : Colors.transparent,
             width: hasValue ? 1.5 : 1,
           ),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color: hasValue ? ARAColors.brand : Colors.grey.shade600,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                hasValue ? '$label: ${_fmt(value)}' : '$label: Select date',
-                style: TextStyle(
-                  color:
-                      hasValue ? const Color(0xFF265073) : Colors.grey.shade600,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: hasValue ? ARAColors.brandDark : Colors.grey.shade600,
                 ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              hasValue ? _fmt(value) : 'Select date',
+              style: TextStyle(
+                color: hasValue ? const Color(0xFF1E2A36) : Colors.grey.shade600,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            Icon(Icons.arrow_forward_ios,
-                size: 16, color: Colors.grey.shade400),
           ],
         ),
       ),
@@ -488,40 +498,48 @@ class _AccountScreenState extends State<AccountScreen> {
                             ),
                             const SizedBox(height: 14),
 
-                            _dateRow(
-                              label: 'Start',
-                              value: _startDate,
-                              icon: Icons.calendar_today,
-                              onTap: _selectStartDate,
-                            ),
-                            const SizedBox(height: 14),
-                            _dateRow(
-                              label: 'End',
-                              value: _endDate,
-                              icon: Icons.event_available,
-                              onTap: _selectEndDate,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _dateCard(
+                                    label: 'Start',
+                                    value: _startDate,
+                                    icon: Icons.calendar_today,
+                                    onTap: _selectStartDate,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _dateCard(
+                                    label: 'End',
+                                    value: _endDate,
+                                    icon: Icons.event_available,
+                                    onTap: _selectEndDate,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
 
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF5E8),
+                                color: const Color(0xFFF6F1E8),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: ARAColors.brand.withValues(alpha: 0.4),
+                                  color: Colors.grey.shade300,
                                 ),
                               ),
                               child: const Row(
                                 children: [
                                   Icon(Icons.info_outline,
-                                      color: ARAColors.brand),
+                                      color: Colors.black54),
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       'Your request will be reviewed by our staff team before you can access the volunteer portal.',
                                       style: TextStyle(
-                                        color: ARAColors.brand,
+                                        color: Colors.black54,
                                         fontSize: 13,
                                       ),
                                     ),
