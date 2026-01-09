@@ -23,7 +23,9 @@ public class VolunteersController(ARADbContext db) : ControllerBase
                 u.FirstName,
                 u.LastName,
                 u.Email,
-                u.CreatedAt
+                u.CreatedAt,
+                u.VolunteerFrom,
+                u.VolunteerTo
             })
             .ToListAsync();
 

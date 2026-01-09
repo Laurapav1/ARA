@@ -20,4 +20,10 @@ public class User
     public DateTime? UpdatedAt { get; set; }
     public DateOnly? VolunteerFrom { get; set; }
     public DateOnly? VolunteerTo { get; set; }
+
+    // Refresh token (single-device for now)
+    public string? RefreshTokenHash { get; set; }
+    public DateTime? RefreshTokenCreatedAt { get; set; }
+    public DateTime? RefreshTokenExpiresAt { get; set; }
+    public DateTime? RefreshTokenRevokedAt { get; set; }
 }

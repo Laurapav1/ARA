@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/zone.dart';
 import '../../theme/ara_theme.dart';
+import '../../services/auth_store.dart';
+import '../../services/shifts_service.dart';
+import '../../services/api_client.dart';
 
 class ZoneListScreen extends StatefulWidget {
   final String shiftType;
   final List<Zone> zones;
+  final String? shiftId;
+  final VoidCallback? onReload;
 
   const ZoneListScreen({
     Key? key,
     required this.shiftType,
     required this.zones,
+    this.shiftId,
+    this.onReload,
   }) : super(key: key);
 
   @override
@@ -19,12 +27,22 @@ class ZoneListScreen extends StatefulWidget {
 class _ZoneListScreenState extends State<ZoneListScreen> {
   late List<Zone> _zones;
   late List<bool> _signedUp;
+  final _service = ShiftsService();
 
   @override
   void initState() {
     super.initState();
     _zones = widget.zones.map((z) => z.copy()).toList();
     _signedUp = List<bool>.filled(_zones.length, false);
+  }
+
+  @override
+  void didUpdateWidget(covariant ZoneListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.zones != widget.zones) {
+      _zones = widget.zones.map((z) => z.copy()).toList();
+      _signedUp = List<bool>.filled(_zones.length, false);
+    }
   }
 
   Gradient _shiftGradient() {
@@ -42,7 +60,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     if (zone.progress >= 1.0) return const Color(0xFF2E7D32); // green 800
 
     final hasAnyone = zone.volunteers + (_signedUp[index] ? 1 : 0) > 0;
-    if (hasAnyone) return const Color(0xFFF2B84B); // ✅ softer amber
+    if (hasAnyone) return const Color(0xFFF2B84B); // softer amber
 
     return const Color(0xFFEF5350); // red 400
   }
@@ -55,6 +73,147 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     if (hasAnyone) return Icons.schedule;
 
     return Icons.warning_rounded;
+  }
+
+  bool _canJoin(AuthStore auth) {
+    if (auth.isStaff) return true;
+    if (!auth.isApproved) return false;
+    final me = auth.me;
+    if (me == null) return false;
+    final now = DateTime.now();
+    final from = me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
+    final to = me.volunteerTo != null ? DateTime.parse(me.volunteerTo!) : null;
+    if (from != null && now.isBefore(from)) return false;
+    if (to != null && now.isAfter(to)) return false;
+    return true;
+  }
+
+  String _joinBlockReason(AuthStore auth) {
+    if (auth.isStaff) return '';
+    if (!auth.isApproved) {
+      return 'Your account is not approved yet.';
+    }
+    final me = auth.me;
+    if (me == null) return 'Please sign in to join tasks.';
+    final now = DateTime.now();
+    final from = me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
+    final to = me.volunteerTo != null ? DateTime.parse(me.volunteerTo!) : null;
+    if (from != null && now.isBefore(from)) {
+      return 'Your volunteering period has not started yet.';
+    }
+    if (to != null && now.isAfter(to)) {
+      return 'Your volunteering period has ended.';
+    }
+    return 'You cannot join this task right now.';
+  }
+
+  void _showJoinBlocked(AuthStore auth) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cannot join task'),
+        content: Text(_joinBlockReason(auth)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _joinBackend(Zone zone, AuthStore auth) async {
+    final token = auth.accessToken ?? '';
+    if (widget.shiftId == null || zone.taskId == null) return;
+    try {
+      await _service.joinTask(
+        shiftId: widget.shiftId!,
+        taskId: zone.taskId!,
+        token: token,
+      );
+      widget.onReload?.call();
+    } on ApiException catch (e) {
+      _showJoinBlockedMessage(e.message);
+    }
+  }
+
+  Future<void> _leaveBackend(Zone zone, AuthStore auth) async {
+    final token = auth.accessToken ?? '';
+    if (widget.shiftId == null || zone.taskId == null) return;
+    try {
+      await _service.leaveTask(
+        shiftId: widget.shiftId!,
+        taskId: zone.taskId!,
+        token: token,
+      );
+      widget.onReload?.call();
+    } on ApiException catch (e) {
+      _showJoinBlockedMessage(e.message);
+    }
+  }
+
+  Future<void> _completeBackend(Zone zone, AuthStore auth) async {
+    final token = auth.accessToken ?? '';
+    if (widget.shiftId == null || zone.taskId == null) return;
+    try {
+      await _service.completeTask(
+        shiftId: widget.shiftId!,
+        taskId: zone.taskId!,
+        token: token,
+      );
+      widget.onReload?.call();
+    } on ApiException catch (e) {
+      _showJoinBlockedMessage(e.message);
+    }
+  }
+
+  Future<void> _reopenBackend(Zone zone, AuthStore auth) async {
+    final token = auth.accessToken ?? '';
+    if (widget.shiftId == null || zone.taskId == null) return;
+    try {
+      await _service.reopenTask(
+        shiftId: widget.shiftId!,
+        taskId: zone.taskId!,
+        token: token,
+      );
+      widget.onReload?.call();
+    } on ApiException catch (e) {
+      _showErrorDialog(
+        'Cannot mark done',
+        _friendlyCompleteError(e.message),
+      );
+    }
+  }
+
+  String _friendlyCompleteError(String message) {
+    final normalized = message.toLowerCase();
+    if (normalized.contains('not assigned')) {
+      return 'No one is assigned to this task yet, so it cannot be marked done.';
+    }
+    return message;
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showJoinBlockedMessage(String message) {
+    _showErrorDialog('Cannot join task', message);
   }
 
   _TextPalette _paletteFor(Color bg) {
@@ -79,14 +238,16 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthStore>();
+    final canJoin = _canJoin(auth);
+    final meId = auth.me?.id;
+
     return Column(
       children: [
-        // ✅ OfflineBanner REMOVED from here (it stays in the parent screen)
-
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: _shiftGradient(), // ✅ matches screen 1 vibe
+            gradient: _shiftGradient(),
           ),
           child: Row(
             children: [
@@ -105,9 +266,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                       ),
                     ),
                     Text(
-                      widget.shiftType == 'Morning'
-                          ? 'Tap to sign up • Long press for details'
-                          : 'Tap to sign up • Long press for details',
+                      'Tap a task to join',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.95),
                         fontSize: 14,
@@ -127,6 +286,8 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
             itemBuilder: (context, index) {
               final zone = _zones[index];
               final done = zone.progress >= 1.0;
+              final isAssigned = meId != null &&
+                  zone.assignedVolunteerIds.contains(meId);
 
               final bg = _cardColor(index);
               final pal = _paletteFor(bg);
@@ -138,17 +299,40 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                   bg: bg,
                   palette: pal,
                   icon: _statusIcon(index),
-                  isSignedUp: _signedUp[index],
                   isDone: done,
+                  isAssigned: isAssigned,
                   onTap: () {
-                    setState(() {
-                      _signedUp[index] = !_signedUp[index];
-                    });
+                    if (!canJoin) {
+                      _showJoinBlocked(auth);
+                      return;
+                    }
+                    if (zone.taskId != null && widget.shiftId != null) {
+                      if (isAssigned) {
+                        _leaveBackend(zone, auth);
+                      } else {
+                        _joinBackend(zone, auth);
+                      }
+                      return;
+                    }
+                    setState(() => _signedUp[index] = !_signedUp[index]);
                   },
                   onComplete: () {
-                    setState(() {
-                      _zones[index] = zone.copyWith(progress: 1.0);
-                    });
+                    if (!canJoin) {
+                      _showJoinBlocked(auth);
+                      return;
+                    }
+                    if (zone.taskId != null && widget.shiftId != null) {
+                      _completeBackend(zone, auth);
+                      return;
+                    }
+                    setState(() => _zones[index] = zone.copyWith(progress: 1.0));
+                  },
+                  onReopen: () {
+                    if (zone.taskId != null && widget.shiftId != null) {
+                      _reopenBackend(zone, auth);
+                      return;
+                    }
+                    setState(() => _zones[index] = zone.copyWith(progress: 0.0));
                   },
                 ),
               );
@@ -185,20 +369,22 @@ class _ZoneCard extends StatefulWidget {
   final Color bg;
   final _TextPalette palette;
   final IconData icon;
-  final bool isSignedUp;
   final bool isDone;
+  final bool isAssigned;
   final VoidCallback onTap;
   final VoidCallback onComplete;
+  final VoidCallback onReopen;
 
   const _ZoneCard({
     required this.zone,
     required this.bg,
     required this.palette,
     required this.icon,
-    required this.isSignedUp,
     required this.isDone,
+    required this.isAssigned,
     required this.onTap,
     required this.onComplete,
+    required this.onReopen,
   });
 
   @override
@@ -206,11 +392,10 @@ class _ZoneCard extends StatefulWidget {
 }
 
 class _ZoneCardState extends State<_ZoneCard> {
-  bool _isExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     final pal = widget.palette;
+    final taskCount = widget.zone.taskCount ?? widget.zone.tasks.length;
 
     return Material(
       borderRadius: BorderRadius.circular(20),
@@ -220,7 +405,6 @@ class _ZoneCardState extends State<_ZoneCard> {
         decoration: BoxDecoration(color: widget.bg),
         child: InkWell(
           onTap: widget.onTap,
-          onLongPress: () => setState(() => _isExpanded = !_isExpanded),
           child: Column(
             children: [
               Padding(
@@ -238,18 +422,31 @@ class _ZoneCardState extends State<_ZoneCard> {
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
-                        widget.zone.name,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: pal.primary,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.zone.name,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: pal.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${taskCount} task${taskCount == 1 ? '' : 's'}',
+                            style: TextStyle(
+                              color: pal.secondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     _buildVolunteerIcons(),
-                    if (!widget.isDone) ...[
-                      const SizedBox(width: 8),
+                    const SizedBox(width: 8),
+                    if (!widget.isDone)
                       IconButton(
                         icon: const Icon(Icons.check),
                         color: pal.primary,
@@ -257,80 +454,19 @@ class _ZoneCardState extends State<_ZoneCard> {
                         style: IconButton.styleFrom(
                           backgroundColor: pal.overlay,
                         ),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.replay),
+                        color: pal.primary,
+                        onPressed: widget.onReopen,
+                        style: IconButton.styleFrom(
+                          backgroundColor: pal.overlay,
+                        ),
                       ),
-                    ],
                   ],
                 ),
               ),
-              if (_isExpanded)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  decoration: BoxDecoration(color: pal.overlay),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Divider(color: pal.primary.withOpacity(0.35)),
-                      const SizedBox(height: 12),
-
-                      // ✅ show task count only in expanded section
-                      Text(
-                        'Tasks (${widget.zone.tasks.length})',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: pal.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      ...widget.zone.tasks.map(
-                        (task) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            children: [
-                              Icon(Icons.check_circle_outline,
-                                  size: 18, color: pal.primary),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  task,
-                                  style: TextStyle(color: pal.secondary),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: pal.overlay,
-                          borderRadius: BorderRadius.circular(8),
-                          border:
-                              Border.all(color: pal.primary.withOpacity(0.25)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.lightbulb_outline,
-                                color: pal.primary, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Tip: ${widget.zone.tip}',
-                                style: TextStyle(
-                                  color: pal.primary,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
         ),
@@ -339,25 +475,35 @@ class _ZoneCardState extends State<_ZoneCard> {
   }
 
   Widget _buildVolunteerIcons() {
+    final names = widget.zone.assignedVolunteerNames;
+    if (names.isEmpty && !widget.isAssigned) return const SizedBox.shrink();
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (var i = 0; i < widget.zone.volunteers; i++)
+        for (var i = 0; i < names.length; i++)
           Padding(
             padding: const EdgeInsets.only(right: 4),
-            child: const CircleAvatar(
-              radius: 14,
+            child: CircleAvatar(
+              radius: 12,
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 16, color: Colors.black87),
+              child: Text(
+                names[i].isNotEmpty ? names[i][0].toUpperCase() : '?',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
             ),
           ),
-        if (widget.isSignedUp)
+        if (widget.isAssigned && names.isEmpty)
           const Padding(
-            padding: EdgeInsets.only(right: 8),
+            padding: EdgeInsets.only(right: 4),
             child: CircleAvatar(
-              radius: 14,
+              radius: 12,
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 16, color: Colors.black87),
+              child: Icon(Icons.person, size: 14, color: Colors.black87),
             ),
           ),
       ],

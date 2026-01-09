@@ -9,6 +9,8 @@ namespace Ara.Api.Auth;
 public interface ITokenService
 {
     string CreateToken(Guid userId, string email, string firstName, string lastName, string role);
+    string CreateRefreshToken();
+    string HashRefreshToken(string refreshToken);
 }
 
 public sealed class TokenService : ITokenService
@@ -82,5 +84,23 @@ public sealed class TokenService : ITokenService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(jwt);
+    }
+
+    public string CreateRefreshToken()
+    {
+        var bytes = new byte[64];
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes);
+    }
+
+    public string HashRefreshToken(string refreshToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            throw new ArgumentException("refreshToken must not be empty.", nameof(refreshToken));
+
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(refreshToken));
+        return Convert.ToBase64String(hash);
     }
 }

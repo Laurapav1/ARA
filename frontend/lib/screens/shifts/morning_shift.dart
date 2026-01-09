@@ -1,27 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../widgets/offline_banner.dart';
-import 'zone_list_screen.dart';
-import '../../models/zone_data.dart';
+import 'shift_zone_screen.dart';
 
 class MorningShiftScreen extends StatelessWidget {
   const MorningShiftScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Morning Shift')),
-      body: Column(
-        children: [
-          // ✅ Keep banner only here (NOT inside ZoneListScreen)
-          const OfflineBanner(),
-          Expanded(
-            child: ZoneListScreen(
-              shiftType: 'Morning',
-              zones: ZoneData.morningZones,
-            ),
-          ),
-        ],
-      ),
+    return ShiftZoneScreen(
+      shiftType: 'Morning',
+      date: DateTime.now(),
     );
   }
 }

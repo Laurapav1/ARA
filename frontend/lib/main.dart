@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/mock_database.dart';
+import 'services/auth_store.dart';
 import 'screens/account/volunteers.dart';
 import 'screens/account/pending_approval.dart';
 import 'screens/account/volunteer_status.dart';
@@ -12,8 +13,11 @@ import 'screens/common/access_gate.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => MockDatabase()..isStaff = false,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MockDatabase()..isStaff = false),
+        ChangeNotifierProvider(create: (_) => AuthStore()),
+      ],
       child: const AnimalRescueApp(),
     ),
   );
@@ -236,10 +240,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final db = context.watch<MockDatabase>();
-    final isStaff = db.isStaff;
-    final isApproved = db.isApprovedVolunteer;
-    final isPending = db.isPendingVolunteer;
+    final auth = context.watch<AuthStore>();
+    final isStaff = auth.isStaff;
+    final isApproved = auth.isApproved;
+    final isPending = auth.isPending;
 
     final shiftsScreen = AccessGate(
       allowed: isApproved,
@@ -293,13 +297,17 @@ class _MainScaffoldState extends State<MainScaffold> {
       if (isStaff)
         NavigationDestination(
           icon: Badge(
-            isLabelVisible: db.pendingRequests.isNotEmpty,
-            label: Text('${db.pendingRequests.length}'),
+            isLabelVisible: context.watch<MockDatabase>().pendingRequests.isNotEmpty,
+            label: Text(
+              '${context.watch<MockDatabase>().pendingRequests.length}',
+            ),
             child: const Icon(Icons.person_add_alt_1_outlined),
           ),
           selectedIcon: Badge(
-            isLabelVisible: db.pendingRequests.isNotEmpty,
-            label: Text('${db.pendingRequests.length}'),
+            isLabelVisible: context.watch<MockDatabase>().pendingRequests.isNotEmpty,
+            label: Text(
+              '${context.watch<MockDatabase>().pendingRequests.length}',
+            ),
             child: const Icon(Icons.person_add_alt_1),
           ),
           label: 'Requests',

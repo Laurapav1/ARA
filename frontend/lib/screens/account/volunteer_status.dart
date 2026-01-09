@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../services/mock_database.dart';
+import '../../services/auth_store.dart';
 import '../../theme/ara_theme.dart';
 import '../../widgets/offline_banner.dart';
 
@@ -79,8 +79,10 @@ class VolunteerStatusScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final db = context.watch<MockDatabase>();
-    final profile = db.volunteerProfile;
+    final auth = context.watch<AuthStore>();
+    final me = auth.me;
+    final name = me?.fullName ?? 'Volunteer';
+    final email = me?.email ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
@@ -103,32 +105,22 @@ class VolunteerStatusScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 8),
-                      _ProfileCard(
-                        name: profile.fullName,
-                        email: profile.email,
-                      ),
+                      _ProfileCard(name: name, email: email),
                       const SizedBox(height: 24),
                       const _SectionLabel(title: 'Stay'),
                       const SizedBox(height: 12),
                       _InfoCard(
                         title: 'Current stay',
-                        value: profile.currentStayStart != null &&
-                                profile.currentStayEnd != null
-                            ? '${_fmt(profile.currentStayStart!)} to ${_fmt(profile.currentStayEnd!)}'
+                        value: me?.volunteerFrom != null &&
+                                me?.volunteerTo != null
+                            ? '${_fmt(DateTime.parse(me!.volunteerFrom!))} to ${_fmt(DateTime.parse(me.volunteerTo!))}'
                             : 'No current stay scheduled',
                         icon: Icons.event_available,
                       ),
                       const SizedBox(height: 12),
                       _InfoCard(
                         title: 'Previous stays',
-                        value: profile.pastStays.isEmpty
-                            ? 'No previous stays'
-                            : profile.pastStays
-                                .map(
-                                  (stay) =>
-                                      '${_fmt(stay.start)} to ${_fmt(stay.end)}',
-                                )
-                                .join('\n'),
+                        value: 'No previous stays',
                         icon: Icons.history,
                       ),
                       const SizedBox(height: 24),
@@ -145,8 +137,7 @@ class VolunteerStatusScreen extends StatelessWidget {
                         title: 'Log out',
                         subtitle: 'Sign out of this device',
                         icon: Icons.logout,
-                        onTap: () =>
-                            db.setVolunteerStatus(VolunteerStatus.anonymous),
+                        onTap: () => auth.logout(),
                         isDestructive: true,
                       ),
                     ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../services/mock_database.dart';
+import '../../services/auth_store.dart';
+import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
 import '../../theme/ara_theme.dart';
 
@@ -31,6 +32,8 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   String _fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
+  String _fmtIso(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<DateTime?> _pickDate({
     required BuildContext context,
@@ -123,7 +126,7 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  void _submitRequest() {
+  Future<void> _submitRequest() async {
     final formOk = _formKey.currentState!.validate();
 
     if (!formOk) return;
@@ -141,13 +144,30 @@ class _AccountScreenState extends State<AccountScreen> {
       return;
     }
 
-    final db = context.read<MockDatabase>();
-    db.submitVolunteerRequest(
-      firstName: _nameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      startOfStay: _startDate!,
-      endOfStay: _endDate!,
-    );
+    final auth = context.read<AuthStore>();
+    try {
+      await auth.signUp(
+        firstName: _nameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        volunteerFrom: _fmtIso(_startDate!),
+        volunteerTo: _fmtIso(_endDate!),
+      );
+    } on ApiException catch (e) {
+      if (e.errors != null && e.errors!.isNotEmpty) {
+        final firstError = e.errors!.values.first.isNotEmpty
+            ? e.errors!.values.first.first
+            : null;
+        _showSnack(firstError ?? e.message);
+      } else {
+        _showSnack(e.message);
+      }
+      return;
+    } catch (_) {
+      _showSnack('Signup failed. Please try again.');
+      return;
+    }
 
     showDialog(
       context: context,
@@ -268,10 +288,28 @@ class _AccountScreenState extends State<AccountScreen> {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              context
-                  .read<MockDatabase>()
-                  .setVolunteerStatus(VolunteerStatus.approved);
-              _showSnack('Signed in. You can view shifts now.');
+              final auth = context.read<AuthStore>();
+              auth
+                  .login(
+                    email: emailController.text.trim(),
+                    password: passwordController.text.trim(),
+                  )
+                  .then(
+                      (_) => _showSnack('Signed in. You can view shifts now.'))
+                  .catchError((error) {
+                if (error is ApiException) {
+                  if (error.errors != null && error.errors!.isNotEmpty) {
+                    final firstError = error.errors!.values.first.isNotEmpty
+                        ? error.errors!.values.first.first
+                        : null;
+                    _showSnack(firstError ?? error.message);
+                    return;
+                  }
+                  _showSnack(error.message);
+                  return;
+                }
+                _showSnack('Login failed. Please try again.');
+              });
             },
             child: const Text('Confirm'),
           ),
@@ -326,7 +364,8 @@ class _AccountScreenState extends State<AccountScreen> {
             Text(
               hasValue ? _fmt(value) : 'Select date',
               style: TextStyle(
-                color: hasValue ? const Color(0xFF1E2A36) : Colors.grey.shade600,
+                color:
+                    hasValue ? const Color(0xFF1E2A36) : Colors.grey.shade600,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -497,7 +536,6 @@ class _AccountScreenState extends State<AccountScreen> {
                                       : null,
                             ),
                             const SizedBox(height: 14),
-
                             Row(
                               children: [
                                 Expanded(
@@ -520,7 +558,6 @@ class _AccountScreenState extends State<AccountScreen> {
                               ],
                             ),
                             const SizedBox(height: 16),
-
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
@@ -548,7 +585,6 @@ class _AccountScreenState extends State<AccountScreen> {
                               ),
                             ),
                             const SizedBox(height: 18),
-
                             FilledButton(
                               onPressed: _submitRequest,
                               style: FilledButton.styleFrom(
@@ -577,8 +613,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                   ),
                                 ),
                                 const Padding(
-                                  padding:
-                                      EdgeInsets.symmetric(horizontal: 12),
+                                  padding: EdgeInsets.symmetric(horizontal: 12),
                                   child: Text(
                                     'or',
                                     style: TextStyle(
@@ -614,4 +649,3 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 }
-
