@@ -2,28 +2,16 @@ import 'package:flutter/material.dart';
 
 /// Centralized theme & colors for the ARA app.
 class ARAColors {
-  // ─────────────────────────────────────────────
-  // Brand
-  // ─────────────────────────────────────────────
   static const Color brand = Color(0xFFF3A93B);
   static const Color brandDark = Color(0xFFD08112);
   static const Color brandDeep = Color(0xFFC5710A);
 
-  // ─────────────────────────────────────────────
-  // Text
-  // ─────────────────────────────────────────────
   static const Color ink = Color(0xFF1E2A36);
   static const Color subInk = Color(0xFF5C6B7A);
 
-  // ─────────────────────────────────────────────
-  // Backgrounds / Surfaces
-  // ─────────────────────────────────────────────
   static const Color bg = Color(0xFFF9FAFB);
   static const Color cardBg = Colors.white;
 
-  // ─────────────────────────────────────────────
-  // Gradients (large visual surfaces only)
-  // ─────────────────────────────────────────────
   static const Gradient morningGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -59,13 +47,8 @@ class ARATheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-
       scaffoldBackgroundColor: ARAColors.bg,
       cardColor: ARAColors.cardBg,
-
-      // ─────────────────────────────────────────────
-      // Typography
-      // ─────────────────────────────────────────────
       textTheme: Typography.blackMountainView.copyWith(
         headlineMedium: const TextStyle(
           color: ARAColors.ink,
@@ -75,10 +58,6 @@ class ARATheme {
           color: ARAColors.subInk,
         ),
       ),
-
-      // ─────────────────────────────────────────────
-      // AppBar (neutral, no glare)
-      // ─────────────────────────────────────────────
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: ARAColors.ink,
@@ -86,10 +65,6 @@ class ARATheme {
         centerTitle: false,
         surfaceTintColor: Colors.transparent,
       ),
-
-      // ─────────────────────────────────────────────
-      // Cards
-      // ─────────────────────────────────────────────
       cardTheme: CardThemeData(
         color: ARAColors.cardBg,
         elevation: 6,
@@ -98,10 +73,6 @@ class ARATheme {
           borderRadius: BorderRadius.circular(20),
         ),
       ),
-
-      // ─────────────────────────────────────────────
-      // Buttons
-      // ─────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: ARAColors.brand,
@@ -113,10 +84,6 @@ class ARATheme {
           elevation: 0,
         ),
       ),
-
-      // ─────────────────────────────────────────────
-      // Inputs
-      // ─────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: ARAColors.cardBg,
@@ -129,11 +96,6 @@ class ARATheme {
           borderSide: BorderSide(color: ARAColors.brand, width: 2),
         ),
       ),
-
-      // ─────────────────────────────────────────────
-      // Bottom Navigation Bar
-      // (calm, iOS-like, no eye strain)
-      // ─────────────────────────────────────────────
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
