@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:frontend/models/handling_flag.dart';
 import '../models/animal.dart';
 import '../models/volunteer_request.dart';
+import '../models/volunteer_profile.dart';
 
 enum VolunteerStatus { anonymous, pending, approved }
 
@@ -69,8 +70,27 @@ class MockDatabase extends ChangeNotifier {
     ),
   ];
 
+  VolunteerProfile _volunteerProfile = VolunteerProfile(
+    id: 'vp1',
+    fullName: 'Laura Volunteer',
+    email: 'laura@example.com',
+    currentStayStart: DateTime(DateTime.now().year, 1, 1),
+    currentStayEnd: DateTime(DateTime.now().year, 1, 15),
+    pastStays: [
+      VolunteerStay(
+        start: DateTime(2024, 6, 1),
+        end: DateTime(2024, 6, 14),
+      ),
+      VolunteerStay(
+        start: DateTime(2023, 12, 1),
+        end: DateTime(2023, 12, 10),
+      ),
+    ],
+  );
+
   List<VolunteerRequest> get pendingRequests => List.unmodifiable(_volRequests);
   List<Animal> get animals => List.unmodifiable(_animals);
+  VolunteerProfile get volunteerProfile => _volunteerProfile;
   bool get isApprovedVolunteer =>
       volunteerStatus == VolunteerStatus.approved || isStaff;
   bool get isPendingVolunteer => volunteerStatus == VolunteerStatus.pending;
@@ -87,6 +107,9 @@ class MockDatabase extends ChangeNotifier {
     required DateTime startOfStay,
     required DateTime endOfStay,
   }) {
+    _volunteerProfile = _volunteerProfile.copyWith(
+      fullName: '$firstName $lastName',
+    );
     final request = VolunteerRequest(
       id: 'v${DateTime.now().millisecondsSinceEpoch}',
       name: '$firstName $lastName',

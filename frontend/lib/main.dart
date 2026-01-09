@@ -74,15 +74,18 @@ class AnimalRescueApp extends StatelessWidget {
 
         // >>> The important part: darker NavigationBar with proper contrast
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: const Color(0xFFF3A93B), // darker warm bar
+          backgroundColor: const Color(0xFFF3A93B), // warm bar
           surfaceTintColor: Colors.transparent, // stop M3 wash-out
+          indicatorColor:
+              const Color(0xFFFBE6C8).withValues(alpha: 0.45), // subtle glow
+          shadowColor: Colors.black.withValues(alpha: 0.18),
           iconTheme: const WidgetStatePropertyAll(
             IconThemeData(color: Colors.white),
           ),
           labelTextStyle: const WidgetStatePropertyAll(
             TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
-          elevation: 8,
+          elevation: 6,
           height: 70,
         ),
       ),
