@@ -11,6 +11,7 @@ class Zone {
   final String tip;
   final List<String> assignedVolunteerIds;
   final List<String> assignedVolunteerNames;
+  final List<ZoneTask> subtasks;
 
   const Zone({
     this.taskId,
@@ -24,6 +25,7 @@ class Zone {
     required this.tip,
     this.assignedVolunteerIds = const [],
     this.assignedVolunteerNames = const [],
+    this.subtasks = const [],
   });
 
   /// Create a new Zone from this one, with modified fields.
@@ -39,6 +41,7 @@ class Zone {
     String? tip,
     List<String>? assignedVolunteerIds,
     List<String>? assignedVolunteerNames,
+    List<ZoneTask>? subtasks,
   }) {
     return Zone(
       taskId: taskId ?? this.taskId,
@@ -54,9 +57,48 @@ class Zone {
           assignedVolunteerIds ?? this.assignedVolunteerIds,
       assignedVolunteerNames:
           assignedVolunteerNames ?? this.assignedVolunteerNames,
+      subtasks: subtasks ?? this.subtasks,
     );
   }
 
   /// Helper to make a fresh, mutable copy.
   Zone copy() => copyWith();
+}
+
+class ZoneTask {
+  final String? id;
+  final String name;
+  final double progress;
+  final int volunteers;
+  final List<String> assignedVolunteerIds;
+  final List<String> assignedVolunteerNames;
+
+  const ZoneTask({
+    this.id,
+    required this.name,
+    required this.progress,
+    required this.volunteers,
+    this.assignedVolunteerIds = const [],
+    this.assignedVolunteerNames = const [],
+  });
+
+  ZoneTask copyWith({
+    String? id,
+    String? name,
+    double? progress,
+    int? volunteers,
+    List<String>? assignedVolunteerIds,
+    List<String>? assignedVolunteerNames,
+  }) {
+    return ZoneTask(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      progress: progress ?? this.progress,
+      volunteers: volunteers ?? this.volunteers,
+      assignedVolunteerIds:
+          assignedVolunteerIds ?? this.assignedVolunteerIds,
+      assignedVolunteerNames:
+          assignedVolunteerNames ?? this.assignedVolunteerNames,
+    );
+  }
 }

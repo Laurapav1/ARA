@@ -53,34 +53,134 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   List<Zone> _toZones(ShiftView shift) {
-    return shift.tasks.map((task) {
-      final progress = task.status == 'Done'
-          ? 1.0
-          : task.status == 'InProgress'
-              ? 0.5
-              : 0.0;
-      final assignedNames = task.assignedVolunteers
-          .map((v) => '${v.firstName} ${v.lastName}'.trim())
-          .toList();
-      final assignedIds = task.assignedVolunteers.map((v) => v.id).toList();
-      final tip = task.maxVolunteers == null
-          ? 'Required volunteers: ${task.requiredVolunteers}'
-          : 'Required ${task.requiredVolunteers} / Max ${task.maxVolunteers}';
+    if (widget.shiftType == 'Evening') {
+      return _toGroupedEveningZones(shift.tasks);
+    }
+    return shift.tasks.map(_toSingleZone).toList();
+  }
 
-      return Zone(
-        taskId: task.id,
-        name: task.name,
-        category: task.category,
-        startTime: task.startTime,
-        progress: progress,
-        volunteers: task.assignedCount,
-        taskCount: 1,
-        tasks: assignedNames,
-        tip: tip,
-        assignedVolunteerIds: assignedIds,
-        assignedVolunteerNames: assignedNames,
+  Zone _toSingleZone(ShiftTask task) {
+    final progress = _progressFor(task.status);
+    final assignedNames = task.assignedVolunteers
+        .map((v) => '${v.firstName} ${v.lastName}'.trim())
+        .toList();
+    final assignedIds = task.assignedVolunteers.map((v) => v.id).toList();
+    final tip = task.maxVolunteers == null
+        ? 'Required volunteers: ${task.requiredVolunteers}'
+        : 'Required ${task.requiredVolunteers} / Max ${task.maxVolunteers}';
+
+    return Zone(
+      taskId: task.id,
+      name: task.name,
+      category: task.category,
+      startTime: task.startTime,
+      progress: progress,
+      volunteers: task.assignedCount,
+      taskCount: 1,
+      tasks: const [],
+      tip: tip,
+      assignedVolunteerIds: assignedIds,
+      assignedVolunteerNames: assignedNames,
+    );
+  }
+
+  List<Zone> _toGroupedEveningZones(List<ShiftTask> tasks) {
+    final grouped = <String, List<_GroupedTask>>{};
+    for (final task in tasks) {
+      final grouping = _groupingFor(task);
+      grouped.putIfAbsent(grouping.groupName, () => []).add(
+            _GroupedTask(task: task, subLabel: grouping.subLabel),
+          );
+    }
+
+    final zones = <Zone>[];
+    for (final entry in grouped.entries) {
+      final items = entry.value;
+      final hasSubtasks = items.any((i) => i.subLabel != null);
+      if (!hasSubtasks && items.length == 1) {
+        zones.add(_toSingleZone(items.first.task));
+        continue;
+      }
+
+      final subtasks = items
+          .map(
+            (i) => _toZoneTask(i.task, i.subLabel ?? i.task.name),
+          )
+          .toList();
+
+      final allDone = subtasks.every((t) => t.progress >= 1.0);
+      final totalVolunteers =
+          subtasks.fold<int>(0, (sum, t) => sum + t.volunteers);
+
+      zones.add(
+        Zone(
+          name: entry.key,
+          category: 'Parks',
+          progress: allDone ? 1.0 : 0.0,
+          volunteers: totalVolunteers,
+          taskCount: subtasks.length,
+          tasks: const [],
+          tip: 'Tap a task to join',
+          subtasks: subtasks,
+        ),
       );
-    }).toList();
+    }
+
+    return zones;
+  }
+
+  ZoneTask _toZoneTask(ShiftTask task, String name) {
+    final progress = _progressFor(task.status);
+    final assignedNames = task.assignedVolunteers
+        .map((v) => '${v.firstName} ${v.lastName}'.trim())
+        .toList();
+    final assignedIds = task.assignedVolunteers.map((v) => v.id).toList();
+
+    return ZoneTask(
+      id: task.id,
+      name: name,
+      progress: progress,
+      volunteers: task.assignedCount,
+      assignedVolunteerIds: assignedIds,
+      assignedVolunteerNames: assignedNames,
+    );
+  }
+
+  double _progressFor(String status) {
+    if (status == 'Done') return 1.0;
+    if (status == 'InProgress') return 0.5;
+    return 0.0;
+  }
+
+  _TaskGrouping _groupingFor(ShiftTask task) {
+    final category = task.category.trim();
+    if (category.isNotEmpty && category.toLowerCase() != 'general') {
+      return _TaskGrouping(task.name, category);
+    }
+
+    final separators = [' - ', ': '];
+    for (final sep in separators) {
+      final idx = task.name.indexOf(sep);
+      if (idx > 0) {
+        final group = task.name.substring(0, idx).trim();
+        final label = task.name.substring(idx + sep.length).trim();
+        if (_isParkSubtaskLabel(label)) {
+          return _TaskGrouping(group, label);
+        }
+        if (_isParkSubtaskLabel(group)) {
+          return _TaskGrouping(label, group);
+        }
+      }
+    }
+
+    return _TaskGrouping(task.name, null);
+  }
+
+  bool _isParkSubtaskLabel(String label) {
+    final lower = label.toLowerCase();
+    return lower.contains('water') ||
+        lower.contains('clean') ||
+        lower.contains('poo');
   }
 
   Future<void> _reload() async {
@@ -154,6 +254,20 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
       ),
     );
   }
+}
+
+class _GroupedTask {
+  final ShiftTask task;
+  final String? subLabel;
+
+  const _GroupedTask({required this.task, required this.subLabel});
+}
+
+class _TaskGrouping {
+  final String groupName;
+  final String? subLabel;
+
+  const _TaskGrouping(this.groupName, this.subLabel);
 }
 
 class _ErrorState extends StatelessWidget {

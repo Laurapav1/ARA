@@ -27,6 +27,7 @@ class ZoneListScreen extends StatefulWidget {
 class _ZoneListScreenState extends State<ZoneListScreen> {
   late List<Zone> _zones;
   late List<bool> _signedUp;
+  final Map<String, bool> _signedUpTasks = {};
   final _service = ShiftsService();
 
   @override
@@ -34,6 +35,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     super.initState();
     _zones = widget.zones.map((z) => z.copy()).toList();
     _signedUp = List<bool>.filled(_zones.length, false);
+    _signedUpTasks.clear();
   }
 
   @override
@@ -42,6 +44,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     if (oldWidget.zones != widget.zones) {
       _zones = widget.zones.map((z) => z.copy()).toList();
       _signedUp = List<bool>.filled(_zones.length, false);
+      _signedUpTasks.clear();
     }
   }
 
@@ -57,6 +60,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   //  - Unassigned: red
   Color _cardColor(int index) {
     final zone = _zones[index];
+    if (_isGrouped(zone)) return _groupCardColor(zone);
     if (zone.progress >= 1.0) return const Color(0xFF2E7D32); // green 800
 
     final hasAnyone = zone.volunteers + (_signedUp[index] ? 1 : 0) > 0;
@@ -67,12 +71,51 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
   IconData _statusIcon(int index) {
     final zone = _zones[index];
+    if (_isGrouped(zone)) return _groupStatusIcon(zone);
     if (zone.progress >= 1.0) return Icons.check_circle;
 
     final hasAnyone = zone.volunteers + (_signedUp[index] ? 1 : 0) > 0;
     if (hasAnyone) return Icons.schedule;
 
     return Icons.warning_rounded;
+  }
+
+  bool _isGrouped(Zone zone) => zone.subtasks.isNotEmpty;
+
+  Color _groupCardColor(Zone zone) {
+    final allDone = zone.subtasks.every((t) => t.progress >= 1.0);
+    if (allDone) return const Color(0xFF2E7D32); // green 800
+
+    final anyAssigned = zone.subtasks.any((t) => _hasAnyoneForTask(zone, t));
+    if (anyAssigned) return const Color(0xFFF2B84B); // softer amber
+
+    return const Color(0xFFEF5350); // red 400
+  }
+
+  IconData _groupStatusIcon(Zone zone) {
+    final allDone = zone.subtasks.every((t) => t.progress >= 1.0);
+    if (allDone) return Icons.check_circle;
+
+    final anyAssigned = zone.subtasks.any((t) => _hasAnyoneForTask(zone, t));
+    if (anyAssigned) return Icons.schedule;
+
+    return Icons.warning_rounded;
+  }
+
+  bool _hasAnyoneForTask(Zone zone, ZoneTask task) {
+    final signedUp = _isTaskSignedUp(zone, task);
+    return task.volunteers + (signedUp ? 1 : 0) > 0;
+  }
+
+  bool _isTaskSignedUp(Zone zone, ZoneTask task) {
+    final key = _taskKey(zone, task);
+    return _signedUpTasks[key] ?? false;
+  }
+
+  String _taskKey(Zone zone, ZoneTask task) {
+    final id = task.id;
+    if (id != null && id.isNotEmpty) return id;
+    return '${zone.name}::${task.name}';
   }
 
   bool _canJoin(AuthStore auth) {
@@ -176,6 +219,72 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       await _service.reopenTask(
         shiftId: widget.shiftId!,
         taskId: zone.taskId!,
+        token: token,
+      );
+      widget.onReload?.call();
+    } on ApiException catch (e) {
+      _showErrorDialog(
+        'Cannot mark done',
+        _friendlyCompleteError(e.message),
+      );
+    }
+  }
+
+  Future<void> _joinBackendTask(ZoneTask task, AuthStore auth) async {
+    final token = auth.accessToken ?? '';
+    if (widget.shiftId == null || task.id == null) return;
+    try {
+      await _service.joinTask(
+        shiftId: widget.shiftId!,
+        taskId: task.id!,
+        token: token,
+      );
+      widget.onReload?.call();
+    } on ApiException catch (e) {
+      _showJoinBlockedMessage(e.message);
+    }
+  }
+
+  Future<void> _leaveBackendTask(ZoneTask task, AuthStore auth) async {
+    final token = auth.accessToken ?? '';
+    if (widget.shiftId == null || task.id == null) return;
+    try {
+      await _service.leaveTask(
+        shiftId: widget.shiftId!,
+        taskId: task.id!,
+        token: token,
+      );
+      widget.onReload?.call();
+    } on ApiException catch (e) {
+      _showJoinBlockedMessage(e.message);
+    }
+  }
+
+  Future<void> _completeBackendTask(ZoneTask task, AuthStore auth) async {
+    final token = auth.accessToken ?? '';
+    if (widget.shiftId == null || task.id == null) return;
+    try {
+      await _service.completeTask(
+        shiftId: widget.shiftId!,
+        taskId: task.id!,
+        token: token,
+      );
+      widget.onReload?.call();
+    } on ApiException catch (e) {
+      _showErrorDialog(
+        'Cannot mark done',
+        _friendlyCompleteError(e.message),
+      );
+    }
+  }
+
+  Future<void> _reopenBackendTask(ZoneTask task, AuthStore auth) async {
+    final token = auth.accessToken ?? '';
+    if (widget.shiftId == null || task.id == null) return;
+    try {
+      await _service.reopenTask(
+        shiftId: widget.shiftId!,
+        taskId: task.id!,
         token: token,
       );
       widget.onReload?.call();
@@ -309,7 +418,8 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   }
 
   List<_ZoneSection> _sectionedIndices() {
-    if (widget.shiftType != 'Evening') {
+    if (widget.shiftType != 'Evening' ||
+        _zones.any((z) => z.subtasks.isNotEmpty)) {
       return [_ZoneSection('', List<int>.generate(_zones.length, (i) => i))];
     }
 
@@ -351,6 +461,9 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     String? meId,
   ) {
     final zone = _zones[index];
+    if (_isGrouped(zone)) {
+      return _buildGroupedZoneCard(zone, auth, canJoin, meId);
+    }
     final done = zone.progress >= 1.0;
     final isAssigned =
         meId != null && zone.assignedVolunteerIds.contains(meId);
@@ -398,6 +511,226 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
         }
         setState(() => _zones[index] = zone.copyWith(progress: 0.0));
       },
+    );
+  }
+
+  Widget _buildGroupedZoneCard(
+    Zone zone,
+    AuthStore auth,
+    bool canJoin,
+    String? meId,
+  ) {
+    final bg = _groupCardColor(zone);
+    final pal = _paletteFor(bg);
+
+    return Material(
+      borderRadius: BorderRadius.circular(20),
+      elevation: 6,
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: BoxDecoration(color: bg),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: pal.overlay,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _groupStatusIcon(zone),
+                      color: pal.onAccentIcon,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      zone.name,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: pal.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              for (final task in zone.subtasks)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: _buildGroupedTaskRow(
+                    zone,
+                    task,
+                    auth,
+                    canJoin,
+                    meId,
+                    pal,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupedTaskRow(
+    Zone zone,
+    ZoneTask task,
+    AuthStore auth,
+    bool canJoin,
+    String? meId,
+    _TextPalette pal,
+  ) {
+    final done = task.progress >= 1.0;
+    final isAssigned =
+        meId != null && task.assignedVolunteerIds.contains(meId);
+    final signedUp = _isTaskSignedUp(zone, task);
+
+    return Material(
+      color: pal.overlay,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () {
+          if (!canJoin) {
+            _showJoinBlocked(auth);
+            return;
+          }
+          if (task.id != null && widget.shiftId != null) {
+            if (isAssigned) {
+              _leaveBackendTask(task, auth);
+            } else {
+              _joinBackendTask(task, auth);
+            }
+            return;
+          }
+          final key = _taskKey(zone, task);
+          setState(() => _signedUpTasks[key] = !signedUp);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                _taskStatusIcon(task, zone),
+                color: pal.onAccentIcon,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  task.name,
+                  style: TextStyle(
+                    color: pal.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              _buildVolunteerIconsFor(
+                task.assignedVolunteerNames,
+                isAssigned,
+              ),
+              const SizedBox(width: 8),
+              if (!done)
+                IconButton(
+                  icon: const Icon(Icons.check),
+                  color: pal.primary,
+                  onPressed: () {
+                    if (!canJoin) {
+                      _showJoinBlocked(auth);
+                      return;
+                    }
+                    if (task.id != null && widget.shiftId != null) {
+                      _completeBackendTask(task, auth);
+                      return;
+                    }
+                    _updateSubtaskProgress(zone, task, 1.0);
+                  },
+                  style: IconButton.styleFrom(
+                    backgroundColor: pal.overlay,
+                  ),
+                )
+              else
+                IconButton(
+                  icon: const Icon(Icons.replay),
+                  color: pal.primary,
+                  onPressed: () {
+                    if (task.id != null && widget.shiftId != null) {
+                      _reopenBackendTask(task, auth);
+                      return;
+                    }
+                    _updateSubtaskProgress(zone, task, 0.0);
+                  },
+                  style: IconButton.styleFrom(
+                    backgroundColor: pal.overlay,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _taskStatusIcon(ZoneTask task, Zone zone) {
+    if (task.progress >= 1.0) return Icons.check_circle;
+    if (_hasAnyoneForTask(zone, task)) return Icons.schedule;
+    return Icons.warning_rounded;
+  }
+
+  void _updateSubtaskProgress(Zone zone, ZoneTask task, double progress) {
+    final zoneIndex = _zones.indexOf(zone);
+    if (zoneIndex == -1) return;
+    final current = _zones[zoneIndex];
+    final subtasks = List<ZoneTask>.from(current.subtasks);
+    final idx = subtasks.indexWhere(
+      (t) => _taskKey(zone, t) == _taskKey(zone, task),
+    );
+    if (idx == -1) return;
+    subtasks[idx] = subtasks[idx].copyWith(progress: progress);
+    setState(() => _zones[zoneIndex] = current.copyWith(subtasks: subtasks));
+  }
+
+  Widget _buildVolunteerIconsFor(List<String> names, bool isAssigned) {
+    if (names.isEmpty && !isAssigned) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < names.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: CircleAvatar(
+              radius: 12,
+              backgroundColor: Colors.white,
+              child: Text(
+                names[i].isNotEmpty ? names[i][0].toUpperCase() : '?',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ),
+        if (isAssigned && names.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(right: 4),
+            child: CircleAvatar(
+              radius: 12,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 14, color: Colors.black87),
+            ),
+          ),
+      ],
     );
   }
 }
