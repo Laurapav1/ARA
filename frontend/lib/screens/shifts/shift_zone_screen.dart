@@ -70,6 +70,8 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
       return Zone(
         taskId: task.id,
         name: task.name,
+        category: task.category,
+        startTime: task.startTime,
         progress: progress,
         volunteers: task.assignedCount,
         taskCount: 1,

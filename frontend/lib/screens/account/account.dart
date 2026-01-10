@@ -443,24 +443,11 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
 
                     const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 18,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                             Text(
                               'Volunteer request',
                               style: Theme.of(context)
@@ -581,9 +568,9 @@ class _AccountScreenState extends State<AccountScreen> {
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
+                        ],
+                      ),
+                    ),
                             const SizedBox(height: 18),
                             FilledButton(
                               onPressed: _submitRequest,
@@ -637,7 +624,6 @@ class _AccountScreenState extends State<AccountScreen> {
                             ),
                           ],
                         ),
-                      ),
                     ),
                   ],
                 ),

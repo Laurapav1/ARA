@@ -2,6 +2,8 @@
 class Zone {
   final String? taskId;
   final String name;
+  final String category;
+  final String? startTime;
   final double progress;
   final int volunteers;
   final int? taskCount;
@@ -13,6 +15,8 @@ class Zone {
   const Zone({
     this.taskId,
     required this.name,
+    this.category = 'General',
+    this.startTime,
     required this.progress,
     required this.volunteers,
     this.taskCount,
@@ -26,6 +30,8 @@ class Zone {
   Zone copyWith({
     String? taskId,
     String? name,
+    String? category,
+    String? startTime,
     double? progress,
     int? volunteers,
     int? taskCount,
@@ -37,6 +43,8 @@ class Zone {
     return Zone(
       taskId: taskId ?? this.taskId,
       name: name ?? this.name,
+      category: category ?? this.category,
+      startTime: startTime ?? this.startTime,
       progress: progress ?? this.progress,
       volunteers: volunteers ?? this.volunteers,
       taskCount: taskCount ?? this.taskCount,

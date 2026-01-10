@@ -21,6 +21,9 @@ class AssignedVolunteer {
 class ShiftTask {
   final String id;
   final String name;
+  final String category;
+  final String? startTime;
+  final bool isExtra;
   final int? maxVolunteers;
   final int requiredVolunteers;
   final int assignedCount;
@@ -30,6 +33,9 @@ class ShiftTask {
   ShiftTask({
     required this.id,
     required this.name,
+    required this.category,
+    required this.startTime,
+    required this.isExtra,
     required this.maxVolunteers,
     required this.requiredVolunteers,
     required this.assignedCount,
@@ -46,6 +52,9 @@ class ShiftTask {
     return ShiftTask(
       id: json['taskId'].toString(),
       name: json['name']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'General',
+      startTime: json['startTime']?.toString(),
+      isExtra: json['isExtra'] as bool? ?? false,
       maxVolunteers: json['maxVolunteers'] as int?,
       requiredVolunteers: json['requiredVolunteers'] as int? ?? 0,
       assignedCount: json['assignedCount'] as int? ?? 0,
