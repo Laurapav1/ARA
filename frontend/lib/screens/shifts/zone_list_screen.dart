@@ -61,12 +61,12 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   Color _cardColor(int index) {
     final zone = _zones[index];
     if (_isGrouped(zone)) return _groupCardColor(zone);
-    if (zone.progress >= 1.0) return const Color(0xFF2E7D32); // green 800
+    if (zone.progress >= 1.0) return const Color(0xFFB9E0B9); // darker green
 
     final hasAnyone = zone.volunteers + (_signedUp[index] ? 1 : 0) > 0;
-    if (hasAnyone) return const Color(0xFFF2B84B); // softer amber
+    if (hasAnyone) return const Color(0xFFEACD8C); // darker amber
 
-    return const Color(0xFFEF5350); // red 400
+    return const Color(0xFFE7AEB5); // darker red
   }
 
   IconData _statusIcon(int index) {
@@ -84,12 +84,12 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
   Color _groupCardColor(Zone zone) {
     final allDone = zone.subtasks.every((t) => t.progress >= 1.0);
-    if (allDone) return const Color(0xFF2E7D32); // green 800
+    if (allDone) return const Color(0xFFB9E0B9); // darker green
 
     final anyAssigned = zone.subtasks.any((t) => _hasAnyoneForTask(zone, t));
-    if (anyAssigned) return const Color(0xFFF2B84B); // softer amber
+    if (anyAssigned) return const Color(0xFFEACD8C); // darker amber
 
-    return const Color(0xFFEF5350); // red 400
+    return const Color(0xFFE7AEB5); // darker red
   }
 
   IconData _groupStatusIcon(Zone zone) {
