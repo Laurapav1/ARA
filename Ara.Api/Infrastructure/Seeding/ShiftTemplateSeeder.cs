@@ -9,6 +9,9 @@ public static class ShiftTemplateSeeder
 {
     public static async Task SeedAsync(ARADbContext db)
     {
+        // Normalize old data where RequiredVolunteers was defaulted to 0.
+        await EnsureRequiredVolunteersDefaultsAsync(db);
+
         if (await db.ShiftTemplates.AnyAsync())
             return;
 
@@ -69,6 +72,26 @@ public static class ShiftTemplateSeeder
 
         db.ShiftTemplates.AddRange(morningWinter, eveningWinter, morningSummer, eveningSummer);
         await db.SaveChangesAsync();
+    }
+
+    private static async Task EnsureRequiredVolunteersDefaultsAsync(ARADbContext db)
+    {
+        var templates = await db.TaskTemplates.Where(t => t.RequiredVolunteers == 0).ToListAsync();
+        foreach (var t in templates)
+        {
+            t.RequiredVolunteers = 1;
+        }
+
+        var instances = await db.TaskInstances.Where(t => t.RequiredVolunteers == 0).ToListAsync();
+        foreach (var t in instances)
+        {
+            t.RequiredVolunteers = 1;
+        }
+
+        if (templates.Count > 0 || instances.Count > 0)
+        {
+            await db.SaveChangesAsync();
+        }
     }
 
     private static ShiftTemplate CreateTemplate(
