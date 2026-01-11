@@ -27,16 +27,22 @@ public static class ShiftTemplateSeeder
         };
 
         // --- EVENING TASKS (parks + special) ---
-        var eveningTasks = new (string Name, int? Max)[]
+        var eveningParks = new[]
         {
-            ("Wooden house park", null),
-            ("Big park", null),
-            ("Between park", null),
-            // Special duties (MVP: shown always; later you can filter by weekday)
-            ("End of shift checks", 1),
-            ("Trash prep (Mon/Fri)", null),
-            ("Trash run helpers", 2),
+            "Wooden house park",
+            "Big park",
+            "Between park",
         };
+        var eveningTasks = BuildEveningTasks(
+            eveningParks,
+            new (string Name, int? Max)[]
+            {
+                // Special duties (MVP: shown always; later you can filter by weekday)
+                ("End of shift checks", 1),
+                ("Trash prep (Mon/Fri)", null),
+                ("Trash run helpers", 2),
+            }
+        );
 
         // Winter
         var morningWinter = CreateTemplate(
@@ -124,5 +130,21 @@ public static class ShiftTemplateSeeder
         }
 
         return t;
+    }
+
+    private static (string Name, int? Max)[] BuildEveningTasks(
+        IEnumerable<string> parks,
+        (string Name, int? Max)[] specials
+    )
+    {
+        var tasks = new List<(string Name, int? Max)>();
+        foreach (var park in parks)
+        {
+            tasks.Add(($"{park} - Water", null));
+            tasks.Add(($"{park} - Cleaning", null));
+        }
+
+        tasks.AddRange(specials);
+        return tasks.ToArray();
     }
 }

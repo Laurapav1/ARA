@@ -98,7 +98,12 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
       final items = entry.value;
       final hasSubtasks = items.any((i) => i.subLabel != null);
       if (!hasSubtasks && items.length == 1) {
-        zones.add(_toSingleZone(items.first.task));
+        final task = items.first.task;
+        if (_shouldSplitEveningTask(task)) {
+          zones.add(_toSplitEveningZone(task));
+          continue;
+        }
+        zones.add(_toSingleZone(task));
         continue;
       }
 
@@ -127,6 +132,54 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
     }
 
     return zones;
+  }
+
+  Zone _toSplitEveningZone(ShiftTask task) {
+    final progress = _progressFor(task.status);
+    final subtasks = [
+      ZoneTask(
+        id: null,
+        name: 'Water',
+        progress: progress,
+        volunteers: 0,
+      ),
+      ZoneTask(
+        id: null,
+        name: 'Cleaning',
+        progress: progress,
+        volunteers: 0,
+      ),
+    ];
+
+    return Zone(
+      name: task.name,
+      category: task.category.isEmpty ? 'Parks' : task.category,
+      progress: progress >= 1.0 ? 1.0 : 0.0,
+      volunteers: 0,
+      taskCount: subtasks.length,
+      tasks: const [],
+      tip: 'Tap a task to join',
+      subtasks: subtasks,
+    );
+  }
+
+  bool _shouldSplitEveningTask(ShiftTask task) {
+    final name = task.name.toLowerCase();
+    if (_isEveningSpecialTask(name)) return false;
+    final category = task.category.toLowerCase();
+    if (category == 'park' ||
+        category == 'parks' ||
+        category == 'zone' ||
+        category == 'zones') {
+      return true;
+    }
+    return name.contains('park') || name.contains('zone');
+  }
+
+  bool _isEveningSpecialTask(String nameLower) {
+    return nameLower.contains('trash') ||
+        nameLower.contains('check') ||
+        nameLower.contains('helper');
   }
 
   ZoneTask _toZoneTask(ShiftTask task, String name) {
