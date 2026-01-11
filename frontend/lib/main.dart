@@ -10,6 +10,7 @@ import 'screens/info/information.dart';
 import 'screens/account/account.dart';
 import 'screens/animals/animal_home.dart';
 import 'screens/common/access_gate.dart';
+import 'theme/ara_theme.dart';
 
 void main() {
   runApp(
@@ -31,68 +32,7 @@ class AnimalRescueApp extends StatelessWidget {
     return MaterialApp(
       title: 'ARA Prototype',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFF3A93B), // ARA brand
-          brightness: Brightness.light,
-        ),
-        // App background stays white-ish
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
-
-        // Cards / inputs
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          surfaceTintColor: Colors.transparent,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 0,
-            backgroundColor: const Color(0xFFF3A93B),
-            foregroundColor: Colors.white,
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade200),
-          ),
-          focusedBorder: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-            borderSide: BorderSide(color: Color(0xFFF3A93B), width: 2),
-          ),
-        ),
-
-        // >>> The important part: darker NavigationBar with proper contrast
-        navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: const Color(0xFFF3A93B), // warm bar
-          surfaceTintColor: Colors.transparent, // stop M3 wash-out
-          indicatorColor:
-              const Color(0xFFFBE6C8).withValues(alpha: 0.45), // subtle glow
-          shadowColor: Colors.black.withValues(alpha: 0.18),
-          iconTheme: const WidgetStatePropertyAll(
-            IconThemeData(color: Colors.white),
-          ),
-          labelTextStyle: const WidgetStatePropertyAll(
-            TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-          ),
-          elevation: 6,
-          height: 70,
-        ),
-      ),
+      theme: ARATheme.light,
       home: const SplashScreen(),
     );
   }

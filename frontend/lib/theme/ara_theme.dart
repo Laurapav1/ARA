@@ -100,18 +100,19 @@ class ARATheme {
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         height: 70,
-        elevation: 0,
-        indicatorColor: ARAColors.brand.withValues(alpha: 0.18),
+        elevation: 6,
+        shadowColor: Colors.black.withValues(alpha: 0.12),
+        indicatorColor: const Color(0xFFFBE6C8),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            color: selected ? ARAColors.brandDeep : ARAColors.subInk,
+            color: selected ? const Color.fromARGB(255, 244, 169, 58) : Colors.black,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
-            color: selected ? ARAColors.brandDeep : ARAColors.subInk,
+            color: selected ? ARAColors.brand : Colors.black,
             fontWeight: FontWeight.w600,
           );
         }),
