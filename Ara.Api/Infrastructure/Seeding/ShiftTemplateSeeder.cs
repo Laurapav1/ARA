@@ -60,8 +60,6 @@ public static class ShiftTemplateSeeder
             {
                 // Special duties (MVP: shown always; later you can filter by weekday)
                 ("End of shift checks", 1),
-                ("Trash prep (Mon/Fri)", null),
-                ("Trash run helpers", 2),
             }
         );
 

@@ -314,12 +314,18 @@ public class ShiftsController(ARADbContext db) : ControllerBase
             }
         }
 
-        if (baseNames.Count == 0)
+        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Trash prep (Mon/Fri)",
+            "Trash run helpers",
+        };
+
+        if (baseNames.Count == 0 && excluded.Count == 0)
         {
             return tasks;
         }
 
-        return tasks.Where(t => !baseNames.Contains(t.Name));
+        return tasks.Where(t => !baseNames.Contains(t.Name) && !excluded.Contains(t.Name));
     }
 
     private static bool TryGetSplitBaseName(string name, out string baseName)
