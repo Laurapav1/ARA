@@ -41,14 +41,16 @@ public class ShiftsController(ARADbContext db) : ControllerBase
             .ThenInclude(a => a.Volunteer)
             .SingleAsync();
 
+        var tasks = FilterEveningSplitTasks(loaded);
+
         var dto = new ShiftViewDto(
             loaded.Id,
             loaded.Date,
             loaded.ShiftType.ToString(),
             loaded.Season.ToString(),
             loaded.StartTime.ToString("HH:mm"),
-            loaded
-                .Tasks.OrderBy(t => t.Name)
+            tasks
+                .OrderBy(t => t.Name)
                 .Select(t =>
                 {
                     var assignedCount = t.Assignments.Count;
@@ -293,5 +295,51 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         db.ShiftInstances.Add(shift);
         await db.SaveChangesAsync();
         return shift;
+    }
+
+    private static IEnumerable<TaskInstance> FilterEveningSplitTasks(ShiftInstance shift)
+    {
+        var tasks = shift.Tasks.AsEnumerable();
+        if (shift.ShiftType != ShiftType.Evening)
+        {
+            return tasks;
+        }
+
+        var baseNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var task in tasks)
+        {
+            if (TryGetSplitBaseName(task.Name, out var baseName))
+            {
+                baseNames.Add(baseName);
+            }
+        }
+
+        if (baseNames.Count == 0)
+        {
+            return tasks;
+        }
+
+        return tasks.Where(t => !baseNames.Contains(t.Name));
+    }
+
+    private static bool TryGetSplitBaseName(string name, out string baseName)
+    {
+        baseName = string.Empty;
+        const string separator = " - ";
+        var idx = name.LastIndexOf(separator, StringComparison.Ordinal);
+        if (idx <= 0)
+        {
+            return false;
+        }
+
+        var label = name[(idx + separator.Length)..].Trim();
+        if (!label.Equals("Water", StringComparison.OrdinalIgnoreCase) &&
+            !label.Equals("Cleaning", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        baseName = name[..idx].Trim();
+        return baseName.Length > 0;
     }
 }
