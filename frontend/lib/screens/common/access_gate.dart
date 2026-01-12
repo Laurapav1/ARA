@@ -72,6 +72,7 @@ class AccessGate extends StatelessWidget {
                         onPressed: onCta,
                         style: FilledButton.styleFrom(
                           backgroundColor: ARAColors.brand,
+                          foregroundColor: ARAColors.ink,
                         ),
                         child: Text(ctaLabel),
                       ),

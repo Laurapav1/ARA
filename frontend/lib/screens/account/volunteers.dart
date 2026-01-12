@@ -396,6 +396,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
             },
             style: FilledButton.styleFrom(
               backgroundColor: ARAColors.danger,
+              foregroundColor: ARAColors.cardBg,
             ),
             child: const Text('Decline'),
           ),
@@ -518,6 +519,7 @@ class _VolunteerRequestCard extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       backgroundColor: ARAColors.success,
+                      foregroundColor: ARAColors.cardBg,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),

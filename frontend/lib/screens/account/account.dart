@@ -4,6 +4,7 @@ import '../../services/auth_store.dart';
 import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
 import '../../theme/ara_theme.dart';
+import 'login_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -181,24 +182,11 @@ class _AccountScreenState extends State<AccountScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: ARAColors.success.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: ARAColors.success,
-                  size: 64,
-                ),
-              ),
-              const SizedBox(height: 24),
               Text(
-                'Request Submitted',
+                'Request submitted',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: ARAColors.ink,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -206,31 +194,22 @@ class _AccountScreenState extends State<AccountScreen> {
               Text(
                 'Your account is pending approval. You will get access once a staff member approves your request.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ARAColors.subInk,
+                      color: ARAColors.inkSoft,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Divider(color: Theme.of(context).dividerColor),
+              const SizedBox(height: 10),
+              Text(
+                'Stay dates: ${_fmt(_startDate!)} – ${_fmt(_endDate!)}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: ARAColors.ink,
+                      fontWeight: FontWeight.w600,
                     ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 18),
-              // Optional: show selected period (small, nice feedback)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: ARAColors.ink.withValues(alpha: 0.04),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.calendar_today, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_fmt(_startDate!)} to ${_fmt(_endDate!)}',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
               FilledButton(
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -242,81 +221,15 @@ class _AccountScreenState extends State<AccountScreen> {
                     _endDate = null;
                   });
                 },
+                style: FilledButton.styleFrom(
+                  backgroundColor: ARAColors.brand,
+                  foregroundColor: ARAColors.ink,
+                ),
                 child: const Text('Done'),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _quickSignIn() {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Sign in'),
-        actionsAlignment: MainAxisAlignment.center,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              final auth = context.read<AuthStore>();
-              auth
-                  .login(
-                    email: emailController.text.trim(),
-                    password: passwordController.text.trim(),
-                  )
-                  .then(
-                      (_) => _showSnack('Signed in. You can view shifts now.'))
-                  .catchError((error) {
-                if (error is ApiException) {
-                  if (error.errors != null && error.errors!.isNotEmpty) {
-                    final firstError = error.errors!.values.first.isNotEmpty
-                        ? error.errors!.values.first.first
-                        : null;
-                    _showSnack(firstError ?? error.message);
-                    return;
-                  }
-                  _showSnack(error.message);
-                  return;
-                }
-                _showSnack('Login failed. Please try again.');
-              });
-            },
-            child: const Text('Confirm'),
-          ),
-        ],
       ),
     );
   }
@@ -388,246 +301,201 @@ class _AccountScreenState extends State<AccountScreen> {
             const OfflineBanner(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Header card with your brand gradient
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: ARAColors.brand,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: ARAColors.ink.withValues(alpha: 0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: ARAColors.cardBg.withValues(alpha: 0.20),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.volunteer_activism,
-                              color: ARAColors.cardBg,
-                              size: 32,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Join as Volunteer',
-                            style: TextStyle(
-                              color: ARAColors.cardBg,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Help us make a difference',
-                            style: TextStyle(
-                              color: ARAColors.cardBg.withValues(alpha: 0.90),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                            Text(
-                              'Volunteer request',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: ARAColors.ink,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Tell us your stay dates so we can approve access.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: ARAColors.subInk,
-                                  ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _nameController,
-                              decoration: const InputDecoration(
-                                labelText: 'First Name',
-                                prefixIcon: Icon(Icons.person_outline),
-                                hintText: 'Enter your first name',
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Volunteer access request',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                color: ARAColors.ink,
+                                fontWeight: FontWeight.w700,
                               ),
-                              validator: (value) =>
-                                  (value == null || value.isEmpty)
-                                      ? 'Please enter your first name'
-                                      : null,
-                            ),
-                            const SizedBox(height: 14),
-                            TextFormField(
-                              controller: _lastNameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Last Name',
-                                prefixIcon: Icon(Icons.person_outline),
-                                hintText: 'Enter your last name',
-                              ),
-                              validator: (value) =>
-                                  (value == null || value.isEmpty)
-                                      ? 'Please enter your last name'
-                                      : null,
-                            ),
-                            const SizedBox(height: 14),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: Icon(Icons.email_outlined),
-                                hintText: 'Enter your email',
-                              ),
-                              validator: (value) =>
-                                  (value == null || value.isEmpty)
-                                      ? 'Please enter your email'
-                                      : null,
-                            ),
-                            const SizedBox(height: 14),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Password',
-                                prefixIcon: Icon(Icons.lock_outline),
-                                hintText: 'Create a password',
-                              ),
-                              validator: (value) =>
-                                  (value == null || value.isEmpty)
-                                      ? 'Please enter a password'
-                                      : null,
-                            ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _dateCard(
-                                    label: 'Start',
-                                    value: _startDate,
-                                    icon: Icons.calendar_today,
-                                    onTap: _selectStartDate,
-                                  ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Share your details and stay dates so we can approve access.',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: ARAColors.subInk),
+                        ),
+                        const SizedBox(height: 20),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              TextFormField(
+                                controller: _nameController,
+                                decoration: const InputDecoration(
+                                  labelText: 'First Name',
+                                  prefixIcon: Icon(Icons.person_outline),
+                                  hintText: 'Enter your first name',
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _dateCard(
-                                    label: 'End',
-                                    value: _endDate,
-                                    icon: Icons.event_available,
-                                    onTap: _selectEndDate,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: ARAColors.surfaceWarmSoft,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
+                                validator: (value) =>
+                                    (value == null || value.isEmpty)
+                                        ? 'Please enter your first name'
+                                        : null,
                               ),
-                              child: const Row(
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _lastNameController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Last Name',
+                                  prefixIcon: Icon(Icons.person_outline),
+                                  hintText: 'Enter your last name',
+                                ),
+                                validator: (value) =>
+                                    (value == null || value.isEmpty)
+                                        ? 'Please enter your last name'
+                                        : null,
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: 'Email',
+                                  prefixIcon: Icon(Icons.email_outlined),
+                                  hintText: 'Enter your email',
+                                ),
+                                validator: (value) =>
+                                    (value == null || value.isEmpty)
+                                        ? 'Please enter your email'
+                                        : null,
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _passwordController,
+                                obscureText: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Password',
+                                  prefixIcon: Icon(Icons.lock_outline),
+                                  hintText: 'Create a password',
+                                ),
+                                validator: (value) =>
+                                    (value == null || value.isEmpty)
+                                        ? 'Please enter a password'
+                                        : null,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Stay dates',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      color: ARAColors.ink,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
                                 children: [
-                                  Icon(Icons.info_outline,
-                                      color: ARAColors.inkSoft),
-                                  SizedBox(width: 10),
                                   Expanded(
+                                    child: _dateCard(
+                                      label: 'Start',
+                                      value: _startDate,
+                                      icon: Icons.calendar_today,
+                                      onTap: _selectStartDate,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _dateCard(
+                                      label: 'End',
+                                      value: _endDate,
+                                      icon: Icons.event_available,
+                                      onTap: _selectEndDate,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              FilledButton(
+                                onPressed: _submitRequest,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: ARAColors.brand,
+                                  foregroundColor: ARAColors.ink,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Submit Request',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Divider(
+                                      color: Theme.of(context).dividerColor,
+                                      height: 1,
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 12),
                                     child: Text(
-                                      'Your request will be reviewed by our staff team before you can access the volunteer portal.',
+                                      'Already approved?',
                                       style: TextStyle(
-                                        color: ARAColors.inkSoft,
-                                        fontSize: 13,
+                                        color: ARAColors.subInk,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                        ],
-                      ),
-                    ),
-                            const SizedBox(height: 18),
-                            FilledButton(
-                              onPressed: _submitRequest,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: ARAColors.brand,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              child: const Text(
-                                'Submit Request',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Divider(
-                                    color: Theme.of(context).dividerColor,
-                                    height: 1,
-                                  ),
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 12),
-                                  child: Text(
-                                    'or',
-                                    style: TextStyle(
-                                      color: ARAColors.subInk,
-                                      fontWeight: FontWeight.w600,
+                                  Expanded(
+                                    child: Divider(
+                                      color: Theme.of(context).dividerColor,
+                                      height: 1,
                                     ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: Divider(
-                                    color: Theme.of(context).dividerColor,
-                                    height: 1,
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              OutlinedButton.icon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const LoginScreen(),
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            TextButton(
-                              onPressed: _quickSignIn,
-                              child: const Text('Already approved? Sign in'),
-                            ),
-                          ],
+                                icon: const Icon(Icons.lock_outline),
+                                label: const Text('Sign in'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: ARAColors.ink,
+                                  side: BorderSide(
+                                    color: Theme.of(context).dividerColor,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
