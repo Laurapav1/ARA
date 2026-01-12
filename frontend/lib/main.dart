@@ -267,12 +267,27 @@ class _MainScaffoldState extends State<MainScaffold> {
         duration: const Duration(milliseconds: 300),
         child: screens[_currentIndex],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: destinations,
-        elevation: 8,
-        height: 70,
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: const Border(
+            top: BorderSide(color: Color(0x1A000000), width: 1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          destinations: destinations,
+          elevation: 0,
+          height: 70,
+        ),
       ),
     );
   }
