@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/auth_store.dart';
 import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
+import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
 import 'login_screen.dart';
 
@@ -19,6 +20,10 @@ class _AccountScreenState extends State<AccountScreen> {
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _firstNameFocus = FocusNode();
+  final _lastNameFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
 
   DateTime? _startDate;
   DateTime? _endDate;
@@ -29,6 +34,10 @@ class _AccountScreenState extends State<AccountScreen> {
     _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _firstNameFocus.dispose();
+    _lastNameFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -290,20 +299,6 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  Widget _fieldCard({required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Theme.of(context).dividerColor,
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: child,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -346,13 +341,32 @@ class _AccountScreenState extends State<AccountScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _fieldCard(
+                              FormFieldCard(
+                                focusNode: _firstNameFocus,
                                 child: TextFormField(
                                   controller: _nameController,
+                                  focusNode: _firstNameFocus,
                                   decoration: const InputDecoration(
                                     labelText: 'First Name',
                                     prefixIcon: Icon(Icons.person_outline),
                                     hintText: 'Enter your first name',
+                                    filled: false,
+                                    fillColor: Colors.transparent,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    contentPadding:
+                                        EdgeInsets.fromLTRB(0, 18, 0, 14),
+                                    labelStyle: TextStyle(
+                                      color: ARAColors.subInk,
+                                    ),
+                                    floatingLabelStyle: TextStyle(
+                                      color: ARAColors.subInk,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(12)),
+                                      borderSide: BorderSide.none,
+                                    ),
                                   ),
                                   validator: (value) =>
                                       (value == null || value.isEmpty)
@@ -361,13 +375,32 @@ class _AccountScreenState extends State<AccountScreen> {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              _fieldCard(
+                              FormFieldCard(
+                                focusNode: _lastNameFocus,
                                 child: TextFormField(
                                   controller: _lastNameController,
+                                  focusNode: _lastNameFocus,
                                   decoration: const InputDecoration(
                                     labelText: 'Last Name',
                                     prefixIcon: Icon(Icons.person_outline),
                                     hintText: 'Enter your last name',
+                                    filled: false,
+                                    fillColor: Colors.transparent,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    contentPadding:
+                                        EdgeInsets.fromLTRB(0, 18, 0, 14),
+                                    labelStyle: TextStyle(
+                                      color: ARAColors.subInk,
+                                    ),
+                                    floatingLabelStyle: TextStyle(
+                                      color: ARAColors.subInk,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(12)),
+                                      borderSide: BorderSide.none,
+                                    ),
                                   ),
                                   validator: (value) =>
                                       (value == null || value.isEmpty)
@@ -376,14 +409,33 @@ class _AccountScreenState extends State<AccountScreen> {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              _fieldCard(
+                              FormFieldCard(
+                                focusNode: _emailFocus,
                                 child: TextFormField(
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
+                                  focusNode: _emailFocus,
                                   decoration: const InputDecoration(
                                     labelText: 'Email',
                                     prefixIcon: Icon(Icons.email_outlined),
                                     hintText: 'Enter your email',
+                                    filled: false,
+                                    fillColor: Colors.transparent,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    contentPadding:
+                                        EdgeInsets.fromLTRB(0, 18, 0, 14),
+                                    labelStyle: TextStyle(
+                                      color: ARAColors.subInk,
+                                    ),
+                                    floatingLabelStyle: TextStyle(
+                                      color: ARAColors.subInk,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(12)),
+                                      borderSide: BorderSide.none,
+                                    ),
                                   ),
                                   validator: (value) =>
                                       (value == null || value.isEmpty)
@@ -392,14 +444,33 @@ class _AccountScreenState extends State<AccountScreen> {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              _fieldCard(
+                              FormFieldCard(
+                                focusNode: _passwordFocus,
                                 child: TextFormField(
                                   controller: _passwordController,
                                   obscureText: true,
+                                  focusNode: _passwordFocus,
                                   decoration: const InputDecoration(
                                     labelText: 'Password',
                                     prefixIcon: Icon(Icons.lock_outline),
                                     hintText: 'Create a password',
+                                    filled: false,
+                                    fillColor: Colors.transparent,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    contentPadding:
+                                        EdgeInsets.fromLTRB(0, 18, 0, 14),
+                                    labelStyle: TextStyle(
+                                      color: ARAColors.subInk,
+                                    ),
+                                    floatingLabelStyle: TextStyle(
+                                      color: ARAColors.subInk,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(12)),
+                                      borderSide: BorderSide.none,
+                                    ),
                                   ),
                                   validator: (value) =>
                                       (value == null || value.isEmpty)

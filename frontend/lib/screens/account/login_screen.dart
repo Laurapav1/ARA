@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_store.dart';
 import '../../services/api_client.dart';
+import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,11 +16,15 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -111,30 +116,72 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email_outlined),
+                        FormFieldCard(
+                          focusNode: _emailFocus,
+                          child: TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            focusNode: _emailFocus,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              hintText: 'Enter your email',
+                              prefixIcon: Icon(Icons.email_outlined),
+                              filled: false,
+                              fillColor: Colors.transparent,
+                              floatingLabelBehavior:
+                                  FloatingLabelBehavior.auto,
+                              contentPadding: EdgeInsets.fromLTRB(0, 18, 0, 14),
+                              labelStyle: TextStyle(
+                                color: ARAColors.subInk,
+                              ),
+                              floatingLabelStyle: TextStyle(
+                                color: ARAColors.subInk,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(12)),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            validator: (value) =>
+                                (value == null || value.isEmpty)
+                                    ? 'Please enter your email'
+                                    : null,
                           ),
-                          validator: (value) =>
-                              (value == null || value.isEmpty)
-                                  ? 'Please enter your email'
-                                  : null,
                         ),
                         const SizedBox(height: 14),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline),
+                        FormFieldCard(
+                          focusNode: _passwordFocus,
+                          child: TextFormField(
+                            controller: _passwordController,
+                            obscureText: true,
+                            focusNode: _passwordFocus,
+                            decoration: const InputDecoration(
+                              labelText: 'Password',
+                              hintText: 'Enter your password',
+                              prefixIcon: Icon(Icons.lock_outline),
+                              filled: false,
+                              fillColor: Colors.transparent,
+                              floatingLabelBehavior:
+                                  FloatingLabelBehavior.auto,
+                              contentPadding: EdgeInsets.fromLTRB(0, 18, 0, 14),
+                              labelStyle: TextStyle(
+                                color: ARAColors.subInk,
+                              ),
+                              floatingLabelStyle: TextStyle(
+                                color: ARAColors.subInk,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(12)),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            validator: (value) =>
+                                (value == null || value.isEmpty)
+                                    ? 'Please enter your password'
+                                    : null,
                           ),
-                          validator: (value) =>
-                              (value == null || value.isEmpty)
-                                  ? 'Please enter your password'
-                                  : null,
                         ),
                         const SizedBox(height: 18),
                         FilledButton(
