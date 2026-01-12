@@ -153,13 +153,13 @@ class ARATheme {
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            color: selected ? const Color.fromARGB(255, 244, 169, 58) : Colors.black,
+            color: selected ? ARAColors.brandDark : Colors.black,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
-            color: selected ? ARAColors.brand : Colors.black,
+            color: selected ? ARAColors.brandDark : Colors.black,
             fontWeight: FontWeight.w600,
           );
         }),
