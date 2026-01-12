@@ -214,6 +214,10 @@ class _MainScaffoldState extends State<MainScaffold> {
       if (isStaff) const StaffAccountScreen(),
     ];
 
+    if (_currentIndex >= screens.length) {
+      _currentIndex = screens.length - 1;
+    }
+
     final destinations = <NavigationDestination>[
       const NavigationDestination(
         icon: Icon(Icons.schedule_outlined),
