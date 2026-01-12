@@ -11,7 +11,7 @@ class ARAColors {
   static const Color inkSoft = Color(0xFF324150);
   static const Color subInk = Color(0xFF5C6B7A);
 
-  static const Color bg = Color(0xFFF8F5F0);
+  static const Color bg = Color(0xFFF1EEE7);
   static const Color cardBg = Colors.white;
   static const Color surfaceWarm = Color(0xFFF8F5F0);
   static const Color surfaceWarmAlt = Color(0xFFF1EEE7);
