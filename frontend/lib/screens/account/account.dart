@@ -248,10 +248,11 @@ class _AccountScreenState extends State<AccountScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: ARAColors.surfaceWarmAlt,
+          color: ARAColors.cardBg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: hasValue ? ARAColors.brandDark : ARAColors.transparent,
+            color:
+                hasValue ? ARAColors.brandDark : Theme.of(context).dividerColor,
             width: hasValue ? 1.5 : 1,
           ),
         ),
@@ -279,15 +280,27 @@ class _AccountScreenState extends State<AccountScreen> {
             const SizedBox(height: 6),
             Text(
               hasValue ? _fmt(value) : 'Select date',
-              style: TextStyle(
-                color: hasValue ? ARAColors.ink : ARAColors.subInk,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: hasValue ? ARAColors.ink : ARAColors.subInk,
+                  ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _fieldCard({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Theme.of(context).dividerColor,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: child,
     );
   }
 
@@ -333,62 +346,70 @@ class _AccountScreenState extends State<AccountScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              TextFormField(
-                                controller: _nameController,
-                                decoration: const InputDecoration(
-                                  labelText: 'First Name',
-                                  prefixIcon: Icon(Icons.person_outline),
-                                  hintText: 'Enter your first name',
+                              _fieldCard(
+                                child: TextFormField(
+                                  controller: _nameController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'First Name',
+                                    prefixIcon: Icon(Icons.person_outline),
+                                    hintText: 'Enter your first name',
+                                  ),
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty)
+                                          ? 'Please enter your first name'
+                                          : null,
                                 ),
-                                validator: (value) =>
-                                    (value == null || value.isEmpty)
-                                        ? 'Please enter your first name'
-                                        : null,
                               ),
                               const SizedBox(height: 14),
-                              TextFormField(
-                                controller: _lastNameController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Last Name',
-                                  prefixIcon: Icon(Icons.person_outline),
-                                  hintText: 'Enter your last name',
+                              _fieldCard(
+                                child: TextFormField(
+                                  controller: _lastNameController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Last Name',
+                                    prefixIcon: Icon(Icons.person_outline),
+                                    hintText: 'Enter your last name',
+                                  ),
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty)
+                                          ? 'Please enter your last name'
+                                          : null,
                                 ),
-                                validator: (value) =>
-                                    (value == null || value.isEmpty)
-                                        ? 'Please enter your last name'
-                                        : null,
                               ),
                               const SizedBox(height: 14),
-                              TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                decoration: const InputDecoration(
-                                  labelText: 'Email',
-                                  prefixIcon: Icon(Icons.email_outlined),
-                                  hintText: 'Enter your email',
+                              _fieldCard(
+                                child: TextFormField(
+                                  controller: _emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Email',
+                                    prefixIcon: Icon(Icons.email_outlined),
+                                    hintText: 'Enter your email',
+                                  ),
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty)
+                                          ? 'Please enter your email'
+                                          : null,
                                 ),
-                                validator: (value) =>
-                                    (value == null || value.isEmpty)
-                                        ? 'Please enter your email'
-                                        : null,
                               ),
                               const SizedBox(height: 14),
-                              TextFormField(
-                                controller: _passwordController,
-                                obscureText: true,
-                                decoration: const InputDecoration(
-                                  labelText: 'Password',
-                                  prefixIcon: Icon(Icons.lock_outline),
-                                  hintText: 'Create a password',
+                              _fieldCard(
+                                child: TextFormField(
+                                  controller: _passwordController,
+                                  obscureText: true,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Password',
+                                    prefixIcon: Icon(Icons.lock_outline),
+                                    hintText: 'Create a password',
+                                  ),
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty)
+                                          ? 'Please enter a password'
+                                          : null,
                                 ),
-                                validator: (value) =>
-                                    (value == null || value.isEmpty)
-                                        ? 'Please enter a password'
-                                        : null,
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'You’ll use this password to sign in once your request is approved.',
+                                "You'll use this password to sign in once your request is approved.",
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall
