@@ -310,7 +310,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Volunteer access request',
+                          'Create account & request access',
                           style: Theme.of(context)
                               .textTheme
                               .headlineSmall
@@ -386,18 +386,43 @@ class _AccountScreenState extends State<AccountScreen> {
                                         ? 'Please enter a password'
                                         : null,
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 6),
                               Text(
-                                'Stay dates',
+                                'You’ll use this password to sign in once your request is approved.',
                                 style: Theme.of(context)
                                     .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      color: ARAColors.ink,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    .bodySmall
+                                    ?.copyWith(color: ARAColors.subInk),
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Divider(
+                                      color: Theme.of(context).dividerColor,
+                                      height: 1,
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 12),
+                                    child: Text(
+                                      'Stay dates',
+                                      style: TextStyle(
+                                        color: ARAColors.subInk,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Divider(
+                                      color: Theme.of(context).dividerColor,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
                               Row(
                                 children: [
                                   Expanded(
@@ -439,7 +464,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
                               Row(
                                 children: [
                                   Expanded(
@@ -452,7 +477,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                     padding:
                                         EdgeInsets.symmetric(horizontal: 12),
                                     child: Text(
-                                      'Already approved?',
+                                      'Already have access?',
                                       style: TextStyle(
                                         color: ARAColors.subInk,
                                         fontWeight: FontWeight.w600,
@@ -467,27 +492,19 @@ class _AccountScreenState extends State<AccountScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              OutlinedButton.icon(
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const LoginScreen(),
+                              const SizedBox(height: 10),
+                              Center(
+                                child: TextButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginScreen(),
+                                    ),
                                   ),
-                                ),
-                                icon: const Icon(Icons.lock_outline),
-                                label: const Text('Sign in'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: ARAColors.ink,
-                                  side: BorderSide(
-                                    color: Theme.of(context).dividerColor,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: ARAColors.brandDark,
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                  child: const Text('Sign in'),
                                 ),
                               ),
                             ],
