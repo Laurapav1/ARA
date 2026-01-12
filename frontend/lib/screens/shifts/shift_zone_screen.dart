@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/zone.dart';
@@ -29,11 +30,69 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   int _reloadKey = 0;
   ShiftView? _currentShift;
   bool _isRefreshing = false;
+  Timer? _midnightTimer;
 
   @override
   void initState() {
     super.initState();
     _future = _loadShift();
+    _scheduleMidnightRefresh();
+  }
+
+  void _scheduleMidnightRefresh() {
+    _midnightTimer?.cancel();
+    final nowUtc = DateTime.now().toUtc();
+    final lisbonNow = _toLisbon(nowUtc);
+    final nextLisbonMidnight =
+        DateTime(lisbonNow.year, lisbonNow.month, lisbonNow.day + 1);
+    final nextMidnightUtc = _lisbonToUtc(nextLisbonMidnight);
+    final delay = nextMidnightUtc.difference(nowUtc);
+    _midnightTimer = Timer(delay, () async {
+      if (!mounted) return;
+      await _reload();
+      if (mounted) {
+        _scheduleMidnightRefresh();
+      }
+    });
+  }
+
+  DateTime _toLisbon(DateTime utc) {
+    return utc.add(_lisbonOffsetFor(utc));
+  }
+
+  DateTime _lisbonToUtc(DateTime lisbonLocal) {
+    var utc = DateTime.utc(
+      lisbonLocal.year,
+      lisbonLocal.month,
+      lisbonLocal.day,
+      lisbonLocal.hour,
+      lisbonLocal.minute,
+      lisbonLocal.second,
+      lisbonLocal.millisecond,
+      lisbonLocal.microsecond,
+    );
+    var offset = _lisbonOffsetFor(utc);
+    utc = utc.subtract(offset);
+    final correctedOffset = _lisbonOffsetFor(utc);
+    if (correctedOffset != offset) {
+      utc = utc.add(offset).subtract(correctedOffset);
+    }
+    return utc;
+  }
+
+  Duration _lisbonOffsetFor(DateTime utc) {
+    final year = utc.year;
+    final dstStart = _lastSundayUtc(year, 3).add(const Duration(hours: 1));
+    final dstEnd = _lastSundayUtc(year, 10).add(const Duration(hours: 1));
+    final inDst = utc.isAtSameMomentAs(dstStart) ||
+        (utc.isAfter(dstStart) && utc.isBefore(dstEnd));
+    return inDst ? const Duration(hours: 1) : Duration.zero;
+  }
+
+  DateTime _lastSundayUtc(int year, int month) {
+    final lastDay = DateTime.utc(year, month + 1, 0);
+    final daysToSubtract = lastDay.weekday % 7;
+    return lastDay.subtract(Duration(days: daysToSubtract));
   }
 
   Future<ShiftView> _loadShift() async {
@@ -253,6 +312,12 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
         setState(() => _isRefreshing = false);
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _midnightTimer?.cancel();
+    super.dispose();
   }
 
   @override
