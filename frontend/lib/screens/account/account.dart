@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../services/auth_store.dart';
+import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
+import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
+import 'login_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -13,21 +18,36 @@ class _AccountScreenState extends State<AccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  DateTime? _selectedDate;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   @override
   void dispose() {
     _nameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final picked = await showDatePicker(
+  String _fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
+  String _fmtIso(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  Future<DateTime?> _pickDate({
+    required BuildContext context,
+    required DateTime initialDate,
+    required DateTime firstDate,
+    required DateTime lastDate,
+  }) async {
+    return showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 7)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         final scheme = Theme.of(context).colorScheme;
         return Theme(
@@ -44,266 +64,522 @@ class _AccountScreenState extends State<AccountScreen> {
         );
       },
     );
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
-    }
   }
 
-  void _submitRequest() {
-    if (_formKey.currentState!.validate() && _selectedDate != null) {
-      showDialog(
-        context: context,
-        builder: (ctx) => Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+  Future<void> _selectStartDate() async {
+    final now = DateTime.now();
+    final picked = await _pickDate(
+      context: context,
+      initialDate: _startDate ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _startDate = picked;
+
+      // If end date exists but is before new start date, clear end date.
+      if (_endDate != null && _endDate!.isBefore(picked)) {
+        _endDate = null;
+      }
+    });
+  }
+
+  Future<void> _selectEndDate() async {
+    final now = DateTime.now();
+
+    // If start isn't set, default start to "now" for constraints,
+    // but still require user to pick start for submit.
+    final start = _startDate ?? now;
+
+    final picked = await _pickDate(
+      context: context,
+      initialDate: _endDate ?? start,
+      firstDate: start, // ✅ cannot end before start
+      lastDate: now.add(const Duration(days: 365)),
+    );
+
+    if (picked == null) return;
+
+    setState(() => _endDate = picked);
+  }
+
+  bool get _datesValid {
+    if (_startDate == null || _endDate == null) return false;
+    return !_endDate!.isBefore(_startDate!);
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: ARAColors.brand,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Future<void> _submitRequest() async {
+    final formOk = _formKey.currentState!.validate();
+
+    if (!formOk) return;
+
+    if (_startDate == null) {
+      _showSnack('Please select your start date');
+      return;
+    }
+    if (_endDate == null) {
+      _showSnack('Please select your end date');
+      return;
+    }
+    if (!_datesValid) {
+      _showSnack('End date must be the same as or after the start date');
+      return;
+    }
+
+    final auth = context.read<AuthStore>();
+    try {
+      await auth.signUp(
+        firstName: _nameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        volunteerFrom: _fmtIso(_startDate!),
+        volunteerTo: _fmtIso(_endDate!),
+      );
+    } on ApiException catch (e) {
+      if (e.errors != null && e.errors!.isNotEmpty) {
+        final firstError = e.errors!.values.first.isNotEmpty
+            ? e.errors!.values.first.first
+            : null;
+        _showSnack(firstError ?? e.message);
+      } else {
+        _showSnack(e.message);
+      }
+      return;
+    } catch (_) {
+      _showSnack('Signup failed. Please try again.');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Request submitted',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: ARAColors.ink,
+                      fontWeight: FontWeight.w700,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Your account is pending approval. You will get access once a staff member approves your request.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: ARAColors.inkSoft,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Divider(color: Theme.of(context).dividerColor),
+              const SizedBox(height: 10),
+              Text(
+                'Stay dates: ${_fmt(_startDate!)} – ${_fmt(_endDate!)}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: ARAColors.ink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 18),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _formKey.currentState!.reset();
+                  _nameController.clear();
+                  _lastNameController.clear();
+                  setState(() {
+                    _startDate = null;
+                    _endDate = null;
+                  });
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: ARAColors.brand,
+                  foregroundColor: ARAColors.ink,
+                ),
+                child: const Text('Done'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dateCard({
+    required String label,
+    required DateTime? value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final hasValue = value != null;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: ARAColors.cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color:
+                hasValue ? ARAColors.brandDark : Theme.of(context).dividerColor,
+            width: hasValue ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF66BB6A).withOpacity(0.15),
-                    shape: BoxShape.circle,
+                Icon(
+                  icon,
+                  size: 18,
+                  color: hasValue ? ARAColors.brandDark : ARAColors.subInk,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: ARAColors.subInk,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
-                  child: const Icon(Icons.check_circle,
-                      color: Color(0xFF66BB6A), size: 64),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Request Submitted!',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: const Color(0xFF265073),
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'A staff member will review your request soon. You\'ll receive access once approved.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey.shade600,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _formKey.currentState!.reset();
-                    _nameController.clear();
-                    _lastNameController.clear();
-                    setState(() => _selectedDate = null);
-                  },
-                  child: const Text('Done'),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 6),
+            Text(
+              hasValue ? _fmt(value) : 'Select date',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: hasValue ? ARAColors.ink : ARAColors.subInk,
+                  ),
+            ),
+          ],
         ),
-      );
-    } else if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.white),
-              SizedBox(width: 12),
-              Expanded(child: Text('Please select your end of stay date')),
-            ],
-          ),
-          backgroundColor: ARAColors.brand,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // The Scaffold already uses your white-ish bg via ARATheme.light.scaffoldBackgroundColor
+    final dividerColor = Theme.of(context).dividerColor;
+    final fieldFill = Theme.of(context).cardColor;
+    final fieldBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(color: dividerColor),
+    );
+    final focusedBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: ARAColors.brand, width: 2),
+    );
+
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             const OfflineBanner(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Header card with your brand gradient
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [ARAColors.brand, ARAColors.brandDark],
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Create account & request access',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                color: ARAColors.ink,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.volunteer_activism,
-                                color: Colors.white, size: 48),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Join as Volunteer',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Help us make a difference',
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Form (inherits InputDecorationTheme from ARATheme)
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'First Name',
-                              prefixIcon: Icon(Icons.person_outline),
-                              hintText: 'Enter your first name',
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? 'Please enter your first name'
-                                    : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _lastNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Last Name',
-                              prefixIcon: Icon(Icons.person_outline),
-                              hintText: 'Enter your last name',
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? 'Please enter your last name'
-                                    : null,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // End-of-stay picker
-                          InkWell(
-                            onTap: () => _selectDate(context),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _selectedDate == null
-                                      ? Colors.grey.shade200
-                                      : ARAColors.brand,
-                                  width: _selectedDate == null ? 1 : 2,
+                        const SizedBox(height: 6),
+                        Text(
+                          'Share your details and stay dates so we can approve access.',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: ARAColors.subInk),
+                        ),
+                        const SizedBox(height: 20),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              FormFieldCard(
+                                child: TextFormField(
+                                  controller: _nameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'First Name',
+                                    prefixIcon: const Icon(Icons.person_outline),
+                                    hintText: 'Enter your first name',
+                                    filled: true,
+                                    fillColor: fieldFill,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    labelStyle: const TextStyle(
+                                      color: ARAColors.subInk,
+                                      fontSize: 14,
+                                    ),
+                                    floatingLabelStyle: const TextStyle(
+                                      color: ARAColors.subInk,
+                                      fontSize: 12,
+                                    ),
+                                    border: fieldBorder,
+                                    enabledBorder: fieldBorder,
+                                    focusedBorder: focusedBorder,
+                                  ),
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty)
+                                          ? 'Please enter your first name'
+                                          : null,
                                 ),
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today,
-                                    color: _selectedDate == null
-                                        ? Colors.grey.shade600
-                                        : ARAColors.brand,
+                              const SizedBox(height: 14),
+                              FormFieldCard(
+                                child: TextFormField(
+                                  controller: _lastNameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Last Name',
+                                    prefixIcon: const Icon(Icons.person_outline),
+                                    hintText: 'Enter your last name',
+                                    filled: true,
+                                    fillColor: fieldFill,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    labelStyle: const TextStyle(
+                                      color: ARAColors.subInk,
+                                      fontSize: 14,
+                                    ),
+                                    floatingLabelStyle: const TextStyle(
+                                      color: ARAColors.subInk,
+                                      fontSize: 12,
+                                    ),
+                                    border: fieldBorder,
+                                    enabledBorder: fieldBorder,
+                                    focusedBorder: focusedBorder,
                                   ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty)
+                                          ? 'Please enter your last name'
+                                          : null,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              FormFieldCard(
+                                child: TextFormField(
+                                  controller: _emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  decoration: InputDecoration(
+                                    labelText: 'Email',
+                                    prefixIcon: const Icon(Icons.email_outlined),
+                                    hintText: 'Enter your email',
+                                    filled: true,
+                                    fillColor: fieldFill,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    labelStyle: const TextStyle(
+                                      color: ARAColors.subInk,
+                                      fontSize: 14,
+                                    ),
+                                    floatingLabelStyle: const TextStyle(
+                                      color: ARAColors.subInk,
+                                      fontSize: 12,
+                                    ),
+                                    border: fieldBorder,
+                                    enabledBorder: fieldBorder,
+                                    focusedBorder: focusedBorder,
+                                  ),
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty)
+                                          ? 'Please enter your email'
+                                          : null,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              FormFieldCard(
+                                child: TextFormField(
+                                  controller: _passwordController,
+                                  obscureText: true,
+                                  decoration: InputDecoration(
+                                    labelText: 'Password',
+                                    prefixIcon: const Icon(Icons.lock_outline),
+                                    hintText: 'Create a password',
+                                    filled: true,
+                                    fillColor: fieldFill,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    labelStyle: const TextStyle(
+                                      color: ARAColors.subInk,
+                                      fontSize: 14,
+                                    ),
+                                    floatingLabelStyle: const TextStyle(
+                                      color: ARAColors.subInk,
+                                      fontSize: 12,
+                                    ),
+                                    border: fieldBorder,
+                                    enabledBorder: fieldBorder,
+                                    focusedBorder: focusedBorder,
+                                  ),
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty)
+                                          ? 'Please enter a password'
+                                          : null,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                "You'll use this password to sign in once your request is approved.",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: ARAColors.subInk),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 64,
+                                    height: 1,
+                                    color: Theme.of(context)
+                                        .dividerColor
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                  const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 12),
                                     child: Text(
-                                      _selectedDate == null
-                                          ? 'Select end of stay'
-                                          : 'End of stay: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                                      'Stay dates',
                                       style: TextStyle(
-                                        color: _selectedDate == null
-                                            ? Colors.grey.shade600
-                                            : const Color(0xFF265073),
-                                        fontSize: 16,
+                                        color: ARAColors.inkSoft,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                                  Icon(Icons.arrow_forward_ios,
-                                      size: 16, color: Colors.grey.shade400),
+                                  Container(
+                                    width: 64,
+                                    height: 1,
+                                    color: Theme.of(context)
+                                        .dividerColor
+                                        .withValues(alpha: 0.5),
+                                  ),
                                 ],
                               ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          // Info note (amber family)
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF3E0),
-                              borderRadius: BorderRadius.circular(12),
-                              border: const Border.fromBorderSide(
-                                BorderSide(color: Color(0xFFFFE0B2)),
-                              ),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.info_outline,
-                                    color: ARAColors.brand),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Your request will be reviewed by our staff team before you can access the volunteer portal.',
-                                    style: TextStyle(
-                                        color: ARAColors.brand, fontSize: 13),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _dateCard(
+                                      label: 'Start',
+                                      value: _startDate,
+                                      icon: Icons.calendar_today,
+                                      onTap: _selectStartDate,
+                                    ),
                                   ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _dateCard(
+                                      label: 'End',
+                                      value: _endDate,
+                                      icon: Icons.event_available,
+                                      onTap: _selectEndDate,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              FilledButton(
+                                onPressed: _submitRequest,
+                                child: const Text('Submit Request'),
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Divider(
+                                      color: Theme.of(context).dividerColor,
+                                      height: 1,
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 12),
+                                    child: Text(
+                                      'Already have access?',
+                                      style: TextStyle(
+                                        color: ARAColors.subInk,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Divider(
+                                      color: Theme.of(context).dividerColor,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Center(
+                                child: TextButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginScreen(),
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: ARAColors.brandDark,
+                                  ),
+                                  child: const Text('Sign in'),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-
-                          const SizedBox(height: 24),
-
-                          FilledButton(
-                            onPressed: _submitRequest,
-                            child: const Text(
-                              'Submit Request',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

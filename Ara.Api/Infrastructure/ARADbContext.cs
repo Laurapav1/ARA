@@ -41,6 +41,11 @@ public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(op
             e.Property(u => u.CreatedAt);
 
             e.Property(u => u.UpdatedAt).IsRequired(false);
+
+            e.Property(u => u.RefreshTokenHash).HasMaxLength(200);
+            e.Property(u => u.RefreshTokenCreatedAt).IsRequired(false);
+            e.Property(u => u.RefreshTokenExpiresAt).IsRequired(false);
+            e.Property(u => u.RefreshTokenRevokedAt).IsRequired(false);
         });
 
         b.Entity<ShiftTemplate>(e =>

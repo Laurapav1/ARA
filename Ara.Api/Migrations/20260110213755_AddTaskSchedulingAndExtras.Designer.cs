@@ -3,6 +3,7 @@ using System;
 using Ara.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ara.Api.Migrations
 {
     [DbContext(typeof(ARADbContext))]
-    partial class ARADbContextModelSnapshot : ModelSnapshot
+    [Migration("20260110213755_AddTaskSchedulingAndExtras")]
+    partial class AddTaskSchedulingAndExtras
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,11 +119,20 @@ namespace Ara.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("CompletedByUserId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("IsExtra")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<int?>("MaxVolunteers")
                         .HasColumnType("integer");
@@ -142,7 +154,10 @@ namespace Ara.Api.Migrations
                     b.Property<Guid>("ShiftInstanceId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("TaskTemplateId")
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<Guid?>("TaskTemplateId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -161,6 +176,13 @@ namespace Ara.Api.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("DaysOfWeekMask")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("MaxVolunteers")
                         .HasColumnType("integer");
@@ -295,8 +317,7 @@ namespace Ara.Api.Migrations
                     b.HasOne("Ara.Domain.Models.TaskTemplate", "TaskTemplate")
                         .WithMany()
                         .HasForeignKey("TaskTemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("CompletedByUser");
 

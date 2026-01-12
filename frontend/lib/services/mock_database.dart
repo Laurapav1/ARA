@@ -3,15 +3,29 @@ import 'package:flutter/foundation.dart';
 import 'package:frontend/models/handling_flag.dart';
 import '../models/animal.dart';
 import '../models/volunteer_request.dart';
+import '../models/volunteer_profile.dart';
+
+enum VolunteerStatus { anonymous, pending, approved }
 
 class MockDatabase extends ChangeNotifier {
   bool isStaff = false;
   bool isOffline = true;
   int pendingChanges = 0;
+  VolunteerStatus volunteerStatus = VolunteerStatus.anonymous;
 
   final List<VolunteerRequest> _volRequests = [
-    VolunteerRequest(id: 'v1', name: 'Alice', endOfStay: DateTime(2025, 8, 1)),
-    VolunteerRequest(id: 'v2', name: 'Bob', endOfStay: DateTime(2025, 8, 5)),
+    VolunteerRequest(
+      id: 'v1',
+      name: 'Alice',
+      startOfStay: DateTime(2025, 7, 10),
+      endOfStay: DateTime(2025, 8, 1),
+    ),
+    VolunteerRequest(
+      id: 'v2',
+      name: 'Bob',
+      startOfStay: DateTime(2025, 7, 15),
+      endOfStay: DateTime(2025, 8, 5),
+    ),
   ];
 
   final List<Animal> _animals = [
@@ -56,12 +70,60 @@ class MockDatabase extends ChangeNotifier {
     ),
   ];
 
+  VolunteerProfile _volunteerProfile = VolunteerProfile(
+    id: 'vp1',
+    fullName: 'Laura Volunteer',
+    email: 'laura@example.com',
+    currentStayStart: DateTime(DateTime.now().year, 1, 1),
+    currentStayEnd: DateTime(DateTime.now().year, 1, 15),
+    pastStays: [
+      VolunteerStay(
+        start: DateTime(2024, 6, 1),
+        end: DateTime(2024, 6, 14),
+      ),
+      VolunteerStay(
+        start: DateTime(2023, 12, 1),
+        end: DateTime(2023, 12, 10),
+      ),
+    ],
+  );
+
   List<VolunteerRequest> get pendingRequests => List.unmodifiable(_volRequests);
   List<Animal> get animals => List.unmodifiable(_animals);
+  VolunteerProfile get volunteerProfile => _volunteerProfile;
+  bool get isApprovedVolunteer =>
+      volunteerStatus == VolunteerStatus.approved || isStaff;
+  bool get isPendingVolunteer => volunteerStatus == VolunteerStatus.pending;
 
   void acceptRequest(String id) {
     _volRequests.removeWhere((v) => v.id == id);
     pendingChanges++;
+    notifyListeners();
+  }
+
+  void submitVolunteerRequest({
+    required String firstName,
+    required String lastName,
+    required DateTime startOfStay,
+    required DateTime endOfStay,
+  }) {
+    _volunteerProfile = _volunteerProfile.copyWith(
+      fullName: '$firstName $lastName',
+    );
+    final request = VolunteerRequest(
+      id: 'v${DateTime.now().millisecondsSinceEpoch}',
+      name: '$firstName $lastName',
+      startOfStay: startOfStay,
+      endOfStay: endOfStay,
+    );
+    _volRequests.add(request);
+    volunteerStatus = VolunteerStatus.pending;
+    pendingChanges++;
+    notifyListeners();
+  }
+
+  void setVolunteerStatus(VolunteerStatus status) {
+    volunteerStatus = status;
     notifyListeners();
   }
 
