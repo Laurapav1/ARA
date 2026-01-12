@@ -7,7 +7,26 @@ import '../../widgets/offline_banner.dart';
 class VolunteerStatusScreen extends StatelessWidget {
   const VolunteerStatusScreen({super.key});
 
-  String _fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
+  String _fmt(DateTime d) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${d.day} ${months[d.month - 1]} ${d.year}';
+  }
+
+  String _fmtRange(DateTime start, DateTime end) =>
+      '${_fmt(start)} – ${_fmt(end)}';
 
   void _showChangePasswordDialog(BuildContext context) {
     final currentController = TextEditingController();
@@ -107,7 +126,10 @@ class VolunteerStatusScreen extends StatelessWidget {
                         title: 'Current stay',
                         value: me?.volunteerFrom != null &&
                                 me?.volunteerTo != null
-                            ? '${_fmt(DateTime.parse(me!.volunteerFrom!))} to ${_fmt(DateTime.parse(me.volunteerTo!))}'
+                            ? _fmtRange(
+                                DateTime.parse(me!.volunteerFrom!),
+                                DateTime.parse(me.volunteerTo!),
+                              )
                             : 'No current stay scheduled',
                         icon: Icons.event_available,
                       ),
