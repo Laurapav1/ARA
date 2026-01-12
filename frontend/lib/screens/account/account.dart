@@ -396,12 +396,14 @@ class _AccountScreenState extends State<AccountScreen> {
                               ),
                               const SizedBox(height: 16),
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Expanded(
-                                    child: Divider(
-                                      color: Theme.of(context).dividerColor,
-                                      height: 1,
-                                    ),
+                                  Container(
+                                    width: 64,
+                                    height: 1,
+                                    color: Theme.of(context)
+                                        .dividerColor
+                                        .withValues(alpha: 0.5),
                                   ),
                                   const Padding(
                                     padding:
@@ -409,16 +411,17 @@ class _AccountScreenState extends State<AccountScreen> {
                                     child: Text(
                                       'Stay dates',
                                       style: TextStyle(
-                                        color: ARAColors.subInk,
-                                        fontWeight: FontWeight.w700,
+                                        color: ARAColors.inkSoft,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                                  Expanded(
-                                    child: Divider(
-                                      color: Theme.of(context).dividerColor,
-                                      height: 1,
-                                    ),
+                                  Container(
+                                    width: 64,
+                                    height: 1,
+                                    color: Theme.of(context)
+                                        .dividerColor
+                                        .withValues(alpha: 0.5),
                                   ),
                                 ],
                               ),
