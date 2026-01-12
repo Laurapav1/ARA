@@ -17,6 +17,9 @@ public class VolunteersController(ARADbContext db) : ControllerBase
     {
         var pendingVolunteers = await db
             .Users.Where(u => u.Role == Role.Volunteer && u.Status == VolunteerStatus.Pending)
+            .OrderBy(u => u.VolunteerFrom == null)
+            .ThenBy(u => u.VolunteerFrom)
+            .ThenBy(u => u.CreatedAt)
             .Select(u => new
             {
                 u.Id,

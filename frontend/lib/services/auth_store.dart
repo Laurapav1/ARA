@@ -18,10 +18,12 @@ class AuthStore extends ChangeNotifier {
   String? _refreshToken;
   MeResponse? _me;
   bool _loading = false;
+  int _pendingRequestsCount = 0;
 
   bool get isLoading => _loading;
   MeResponse? get me => _me;
   String? get accessToken => _accessToken;
+  int get pendingRequestsCount => _pendingRequestsCount;
 
   AuthStatus get status {
     if (_me == null) return AuthStatus.anonymous;
@@ -43,6 +45,7 @@ class AuthStore extends ChangeNotifier {
     if (_accessToken != null) {
       try {
         await fetchMe();
+        await refreshPendingRequestsCount();
       } catch (_) {}
     }
 
@@ -83,6 +86,7 @@ class AuthStore extends ChangeNotifier {
     _refreshToken = res['refreshToken']?.toString();
     _me = MeResponse.fromJson(res['user'] as Map<String, dynamic>);
     await _persistTokens();
+    await refreshPendingRequestsCount();
     notifyListeners();
   }
 
@@ -96,6 +100,7 @@ class AuthStore extends ChangeNotifier {
     _refreshToken = res['refreshToken']?.toString();
     _me = MeResponse.fromJson(res['user'] as Map<String, dynamic>);
     await _persistTokens();
+    await refreshPendingRequestsCount();
     notifyListeners();
   }
 
@@ -103,7 +108,32 @@ class AuthStore extends ChangeNotifier {
     if (_accessToken == null) return;
     final res = await _client.getJson('/api/auth/me', token: _accessToken);
     _me = MeResponse.fromJson(res);
+    await refreshPendingRequestsCount();
     notifyListeners();
+  }
+
+  void setPendingRequestsCount(int count) {
+    if (_pendingRequestsCount == count) return;
+    _pendingRequestsCount = count;
+    notifyListeners();
+  }
+
+  Future<void> refreshPendingRequestsCount() async {
+    if (_accessToken == null || !isStaff) {
+      if (_pendingRequestsCount != 0) {
+        _pendingRequestsCount = 0;
+        notifyListeners();
+      }
+      return;
+    }
+    try {
+      final res = await _client.getAny(
+        '/api/volunteers/pending',
+        token: _accessToken,
+      );
+      final list = res is List ? res : (res?['items'] as List<dynamic>? ?? []);
+      setPendingRequestsCount(list.length);
+    } catch (_) {}
   }
 
   Future<void> logout() async {
@@ -115,6 +145,7 @@ class AuthStore extends ChangeNotifier {
     _accessToken = null;
     _refreshToken = null;
     _me = null;
+    _pendingRequestsCount = 0;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('accessToken');
     await prefs.remove('refreshToken');

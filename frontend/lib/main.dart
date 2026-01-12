@@ -5,6 +5,7 @@ import 'services/auth_store.dart';
 import 'screens/account/volunteers.dart';
 import 'screens/account/pending_approval.dart';
 import 'screens/account/volunteer_status.dart';
+import 'screens/account/staff_account.dart';
 import 'screens/shifts/shifts.dart';
 import 'screens/info/information.dart';
 import 'screens/account/account.dart';
@@ -210,6 +211,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       const InformationScreen(),
       if (!isStaff) accountScreen,
       if (isStaff) const VolunteerRequestsScreen(),
+      if (isStaff) const StaffAccountScreen(),
     ];
 
     final destinations = <NavigationDestination>[
@@ -237,20 +239,22 @@ class _MainScaffoldState extends State<MainScaffold> {
       if (isStaff)
         NavigationDestination(
           icon: Badge(
-            isLabelVisible: context.watch<MockDatabase>().pendingRequests.isNotEmpty,
-            label: Text(
-              '${context.watch<MockDatabase>().pendingRequests.length}',
-            ),
+            isLabelVisible: auth.pendingRequestsCount > 0,
+            label: Text('${auth.pendingRequestsCount}'),
             child: const Icon(Icons.person_add_alt_1_outlined),
           ),
           selectedIcon: Badge(
-            isLabelVisible: context.watch<MockDatabase>().pendingRequests.isNotEmpty,
-            label: Text(
-              '${context.watch<MockDatabase>().pendingRequests.length}',
-            ),
+            isLabelVisible: auth.pendingRequestsCount > 0,
+            label: Text('${auth.pendingRequestsCount}'),
             child: const Icon(Icons.person_add_alt_1),
           ),
           label: 'Requests',
+        ),
+      if (isStaff)
+        const NavigationDestination(
+          icon: Icon(Icons.admin_panel_settings_outlined),
+          selectedIcon: Icon(Icons.admin_panel_settings),
+          label: 'Account',
         ),
     ];
 

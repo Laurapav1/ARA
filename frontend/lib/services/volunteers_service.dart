@@ -26,7 +26,7 @@ class PendingVolunteer {
   String get requestedAtLabel {
     try {
       final parsed = DateTime.parse(createdAt);
-      return DateFormat('d/M/yyyy').format(parsed);
+      return DateFormat('d MMM yyyy').format(parsed);
     } catch (_) {
       return createdAt;
     }
@@ -37,9 +37,9 @@ class PendingVolunteer {
     try {
       final start = DateTime.parse(volunteerFrom!);
       final end = DateTime.parse(volunteerTo!);
-      return '${DateFormat('d/M/yyyy').format(start)} to ${DateFormat('d/M/yyyy').format(end)}';
+      return '${DateFormat('d MMM yyyy').format(start)} – ${DateFormat('d MMM yyyy').format(end)}';
     } catch (_) {
-      return '$volunteerFrom to $volunteerTo';
+      return '$volunteerFrom – $volunteerTo';
     }
   }
 

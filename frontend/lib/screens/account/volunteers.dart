@@ -40,6 +40,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
         _loading = false;
         _error = null;
       });
+      auth.setPendingRequestsCount(_requests.length);
       return list;
     } on ApiException catch (e) {
       if (!mounted) return [];
@@ -47,6 +48,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
         _loading = false;
         _error = e.message;
       });
+      auth.setPendingRequestsCount(0);
       return [];
     } catch (_) {
       if (!mounted) return [];
@@ -54,6 +56,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
         _loading = false;
         _error = 'Could not load requests.';
       });
+      auth.setPendingRequestsCount(0);
       return [];
     }
   }
@@ -66,6 +69,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
       setState(() {
         _requests = _requests.where((r) => r.id != request.id).toList();
       });
+      auth.setPendingRequestsCount(_requests.length);
       _showSnack('${request.fullName} approved!', ARAColors.success);
     } on ApiException catch (e) {
       _showSnack(e.message, ARAColors.danger);
@@ -80,6 +84,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
       setState(() {
         _requests = _requests.where((r) => r.id != request.id).toList();
       });
+      auth.setPendingRequestsCount(_requests.length);
       _showSnack('Request declined', ARAColors.danger);
     } on ApiException catch (e) {
       _showSnack(e.message, ARAColors.danger);
@@ -106,184 +111,39 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
     );
   }
 
-  void _showChangePasswordDialog() {
-    final currentController = TextEditingController();
-    final newController = TextEditingController();
-    final confirmController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Change password'),
-        actionsAlignment: MainAxisAlignment.center,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: currentController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current password',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: newController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New password',
-                prefixIcon: Icon(Icons.lock_reset),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirm new password',
-                prefixIcon: Icon(Icons.check_circle_outline),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showSnack('Password updated', ARAColors.brand);
-            },
-            child: const Text('Update'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthStore>();
-    final me = auth.me;
-
     return Scaffold(
+      backgroundColor: ARAColors.surfaceCool,
       body: SafeArea(
         child: Column(
           children: [
             const OfflineBanner(),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: ARAColors.cardBg,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ARAColors.ink.withValues(alpha: 0.05),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Row(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: ARAColors.brand.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.admin_panel_settings,
-                          color: ARAColors.brandDark, size: 22),
+                    Text(
+                      'Volunteer requests',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: ARAColors.ink,
+                                fontWeight: FontWeight.w700,
+                              ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            me?.fullName ?? 'Staff',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: ARAColors.ink,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            me?.email ?? '',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: ARAColors.subInk),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Change password',
-                      onPressed: _showChangePasswordDialog,
-                      icon: const Icon(Icons.lock_reset),
-                      color: ARAColors.brandDark,
-                    ),
-                    IconButton(
-                      tooltip: 'Sign out',
-                      onPressed: auth.logout,
-                      icon: const Icon(Icons.logout),
-                      color: ARAColors.dangerMid,
+                    const SizedBox(height: 6),
+                    Text(
+                      _loading ? 'Loading...' : '${_requests.length} pending',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: ARAColors.subInk),
                     ),
                   ],
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: ARAColors.brand,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.person_add_alt_1,
-                        color: ARAColors.cardBg, size: 28),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Volunteer Requests',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(
-                                color: ARAColors.ink,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Text(
-                          _loading
-                              ? 'Loading...'
-                              : '${_requests.length} pending',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: ARAColors.subInk,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ),
             Expanded(
@@ -424,13 +284,12 @@ class _VolunteerRequestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
-        border:
-            Border.all(color: ARAColors.brand.withOpacity(0.25), width: 1.5),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
-            color: ARAColors.brand.withOpacity(0.12),
+            color: ARAColors.ink.withValues(alpha: 0.04),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -444,11 +303,11 @@ class _VolunteerRequestCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: ARAColors.brand.withOpacity(0.15),
+                    color: ARAColors.surfaceCoolSoft,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.person,
-                      color: ARAColors.brand, size: 28),
+                      color: ARAColors.brandDark, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -518,19 +377,14 @@ class _VolunteerRequestCard extends StatelessWidget {
                     onPressed: onAccept,
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: ARAColors.success,
-                      foregroundColor: ARAColors.cardBg,
+                      backgroundColor: ARAColors.brand,
+                      foregroundColor: ARAColors.ink,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.check_circle, size: 20),
-                        SizedBox(width: 8),
-                        Text('Accept',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ],
+                    child: const Text(
+                      'Accept',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -559,13 +413,12 @@ class _InfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: ARAColors.infoSurface,
+        color: ARAColors.surfaceCoolSoft,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ARAColors.infoBorder),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: ARAColors.brandDeep),
+          Icon(icon, size: 18, color: ARAColors.brandDark),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -583,7 +436,7 @@ class _InfoPill extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: ARAColors.brandDeep,
+                    color: ARAColors.ink,
                   ),
                 ),
               ],
