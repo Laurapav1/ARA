@@ -54,7 +54,7 @@ class AccessGate extends StatelessWidget {
                         title,
                         style:
                             Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: const Color(0xFF265073),
+                                  color: ARAColors.ink,
                                   fontWeight: FontWeight.bold,
                                 ),
                         textAlign: TextAlign.center,
@@ -63,7 +63,7 @@ class AccessGate extends StatelessWidget {
                       Text(
                         message,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade600,
+                              color: ARAColors.subInk,
                             ),
                         textAlign: TextAlign.center,
                       ),

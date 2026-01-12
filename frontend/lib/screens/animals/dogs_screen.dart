@@ -13,8 +13,8 @@ import 'animal_detail.dart';
 class DogsScreen extends StatelessWidget {
   const DogsScreen({super.key});
 
-  static const Color _friendlyColor = Color(0xFF43A047); // medium green
-  static const Color _carefulColor = Color(0xFFFB8C00); // strong amber
+  static const Color _friendlyColor = ARAColors.friendly; // medium green
+  static const Color _carefulColor = ARAColors.careful; // strong amber
 
   bool _requiresCaution(Animal a) => a.isDangerous || a.flags.isNotEmpty;
 
@@ -67,18 +67,19 @@ class DogsScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
-            style: IconButton.styleFrom(backgroundColor: Colors.white),
+            style: IconButton.styleFrom(backgroundColor: ARAColors.cardBg),
           ),
           const SizedBox(width: 12),
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF42A5F5).withOpacity(.12),
+              color: ARAColors.dogAccentLight.withOpacity(.12),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFF42A5F5).withOpacity(.30)),
+              border: Border.all(
+                color: ARAColors.dogAccentLight.withOpacity(.30),
+              ),
             ),
-            child: const Icon(Icons.pets, color: Color(0xFF1976D2), size: 22),
+            child: const Icon(Icons.pets, color: ARAColors.dogAccent, size: 22),
           ),
           const SizedBox(width: 12),
           const Expanded(
@@ -95,7 +96,7 @@ class DogsScreen extends StatelessWidget {
                 ),
                 Text(
                   'Tap to view profile',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: ARAColors.subInk),
                 ),
               ],
             ),
@@ -176,12 +177,12 @@ class DogsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade100,
+                      color: ARAColors.cautionSurface,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Icons.warning_amber_rounded,
-                      color: Colors.amber.shade700,
+                      color: ARAColors.cautionText,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -267,7 +268,7 @@ class _DogCardState extends State<_DogCard> {
         transform: Matrix4.identity()..scale(_isPressed ? 0.97 : 1.0),
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: ARAColors.cardBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderColor, width: 1.5),
           boxShadow: [
@@ -312,7 +313,7 @@ class _DogCardState extends State<_DogCard> {
                     Text(
                       widget.dog.personality,
                       style: TextStyle(
-                        color: Colors.grey.shade700,
+                        color: ARAColors.subInk,
                         fontSize: 14,
                       ),
                     ),
@@ -330,7 +331,7 @@ class _DogCardState extends State<_DogCard> {
                 ),
               ),
               Icon(Icons.arrow_forward_ios,
-                  color: Colors.grey.shade400, size: 16),
+                  color: ARAColors.subInk, size: 16),
             ],
           ),
         ),
@@ -355,15 +356,15 @@ class HandlingFlagIcons extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD),
+        color: ARAColors.cautionSurface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFFE69C)),
+        border: Border.all(color: ARAColors.cautionBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.warning_amber_rounded,
-              size: 16, color: Color(0xFFB26A00)),
+              size: 16, color: ARAColors.cautionText),
           const SizedBox(width: 4),
           for (final f in list.take(2))
             Padding(
@@ -371,7 +372,8 @@ class HandlingFlagIcons extends StatelessWidget {
               child: Icon(f.icon, size: size, color: f.color),
             ),
           if (list.length > 2) const SizedBox(width: 4),
-          if (list.length > 2) const _CountPill(countColor: Color(0xFFB26A00)),
+          if (list.length > 2)
+            const _CountPill(countColor: ARAColors.cautionText),
         ],
       ),
     );

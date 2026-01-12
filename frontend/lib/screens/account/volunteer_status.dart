@@ -85,16 +85,10 @@ class VolunteerStatusScreen extends StatelessWidget {
     final email = me?.email ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
+      backgroundColor: ARAColors.surfaceCool,
       body: SafeArea(
         child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFF8F5F0), Color(0xFFF2F5F7)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: ARAColors.softBackgroundGradient),
           child: Column(
             children: [
               const OfflineBanner(),
@@ -169,11 +163,11 @@ class _InfoCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ARAColors.cardBg,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: ARAColors.ink.withValues(alpha: 0.05),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -198,14 +192,14 @@ class _InfoCard extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.grey.shade600,
+                        color: ARAColors.subInk,
                       ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF1E2A36),
+                        color: ARAColors.ink,
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -232,11 +226,11 @@ class _ProfileCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ARAColors.cardBg,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: ARAColors.ink.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -247,10 +241,10 @@ class _ProfileCard extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
+              border: Border.all(color: ARAColors.cardBg, width: 3),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: ARAColors.ink.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -258,7 +252,7 @@ class _ProfileCard extends StatelessWidget {
             ),
             child: const CircleAvatar(
               radius: 36,
-              backgroundColor: Color(0xFFF0E6D6),
+              backgroundColor: ARAColors.surfaceWarmTint,
               child: Icon(Icons.person, color: ARAColors.brandDark, size: 36),
             ),
           ),
@@ -266,7 +260,7 @@ class _ProfileCard extends StatelessWidget {
           Text(
             name,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: const Color(0xFF1E2A36),
+                  color: ARAColors.ink,
                   fontWeight: FontWeight.w700,
                 ),
             textAlign: TextAlign.center,
@@ -275,7 +269,7 @@ class _ProfileCard extends StatelessWidget {
           Text(
             email,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.shade600,
+                  color: ARAColors.subInk,
                 ),
             textAlign: TextAlign.center,
           ),
@@ -318,10 +312,10 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isDestructive ? Colors.red : ARAColors.brandDark;
+    final accent = isDestructive ? ARAColors.danger : ARAColors.brandDark;
 
     return Material(
-      color: Colors.white,
+      color: ARAColors.cardBg,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -332,7 +326,7 @@ class _SettingsTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
+                color: ARAColors.ink.withValues(alpha: 0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 8),
               ),
@@ -356,7 +350,7 @@ class _SettingsTile extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: const Color(0xFF1E2A36),
+                            color: ARAColors.ink,
                             fontWeight: FontWeight.w700,
                           ),
                     ),
@@ -364,13 +358,13 @@ class _SettingsTile extends StatelessWidget {
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: ARAColors.subInk,
                           ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+              Icon(Icons.chevron_right, color: ARAColors.subInk),
             ],
           ),
         ),
@@ -389,7 +383,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       title.toUpperCase(),
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Colors.grey.shade600,
+            color: ARAColors.subInk,
             letterSpacing: 1.2,
             fontWeight: FontWeight.w600,
           ),

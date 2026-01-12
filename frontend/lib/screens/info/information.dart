@@ -1,4 +1,4 @@
-// File: lib/screens/info/information.dart
+﻿// File: lib/screens/info/information.dart
 import 'package:flutter/material.dart';
 import '../../widgets/offline_banner.dart';
 import '../../theme/ara_theme.dart';
@@ -36,7 +36,7 @@ class InformationScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text('Guide • $zone',
+                      child: Text('Guide â€¢ $zone',
                           style: Theme.of(ctx).textTheme.titleLarge),
                     ),
                     IconButton(
@@ -163,8 +163,8 @@ class InformationScreen extends StatelessWidget {
                       color: ARAColors.ink,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child:
-                        const Icon(Icons.info, color: Colors.white, size: 28),
+                    child: const Icon(Icons.info,
+                        color: ARAColors.cardBg, size: 28),
                   ),
                   const SizedBox(width: 16),
                   const Expanded(
@@ -180,8 +180,8 @@ class InformationScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Maps • Guides • Safety • Contacts',
-                          style: TextStyle(color: Colors.grey),
+                          'Maps â€¢ Guides â€¢ Safety â€¢ Contacts',
+                          style: TextStyle(color: ARAColors.subInk),
                         ),
                       ],
                     ),
@@ -292,14 +292,14 @@ class InformationScreen extends StatelessWidget {
 
 const Map<String, List<String>> _zoneGuides = {
   'Zone A': [
-    'Kennels 1–10: morning clean',
+    'Kennels 1â€“10: morning clean',
     'Refill water bowls',
     'Feed according to board',
     'Note any diarrhoea/cough',
-    'Walk dogs assigned to Zone A (15–20 min)',
+    'Walk dogs assigned to Zone A (15â€“20 min)',
   ],
   'Zone B': [
-    'Kennels 11–20: sweep & disinfect',
+    'Kennels 11â€“20: sweep & disinfect',
     'Park 1 rotation (max 2 dogs)',
     'Red tag dogs need muzzle',
     'Laundry drop-off by 11:00',
@@ -391,11 +391,11 @@ class _MapCard extends StatelessWidget {
           children: [
             Positioned.fill(
               child: Container(
-                color: Colors.white.withOpacity(0.08),
+                color: ARAColors.cardBg.withOpacity(0.08),
                 child: const Center(
                   child: Text(
                     'Shelter map (pinch to zoom)',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: ARAColors.cardBg),
                   ),
                 ),
               ),
@@ -405,7 +405,7 @@ class _MapCard extends StatelessWidget {
                 boundaryMargin: const EdgeInsets.all(24),
                 minScale: 1,
                 maxScale: 4,
-                child: Container(color: Colors.transparent),
+                child: Container(color: ARAColors.transparent),
               ),
             ),
             Align(
@@ -418,7 +418,7 @@ class _MapCard extends StatelessWidget {
                   children: [
                     for (final z in _zoneGuides.keys)
                       ActionChip(
-                        backgroundColor: Colors.white.withOpacity(.9),
+                        backgroundColor: ARAColors.cardBg.withOpacity(.9),
                         label: Text(z),
                         avatar: const Icon(Icons.place, size: 18),
                         onPressed: () => onZoneTap(z),
@@ -498,7 +498,7 @@ class _QuickActionCard extends StatelessWidget {
                 child: Icon(
                   icon,
                   size: 120,
-                  color: Colors.white.withOpacity(.18),
+                  color: ARAColors.cardBg.withOpacity(.18),
                 ),
               ),
               Padding(
@@ -508,10 +508,10 @@ class _QuickActionCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.28),
+                        color: ARAColors.cardBg.withOpacity(.28),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, color: Colors.white),
+                      child: Icon(icon, color: ARAColors.cardBg),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -521,7 +521,7 @@ class _QuickActionCard extends StatelessWidget {
                         children: [
                           Text(title,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: ARAColors.cardBg,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 18,
                               )),
@@ -530,13 +530,13 @@ class _QuickActionCard extends StatelessWidget {
                             subtitle,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(.92),
+                              color: ARAColors.cardBg.withOpacity(.92),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward, color: Colors.white),
+                    const Icon(Icons.arrow_forward, color: ARAColors.cardBg),
                   ],
                 ),
               ),
@@ -559,19 +559,19 @@ class _SafetyFlags extends StatelessWidget {
       children: const [
         _FlagPill(
             icon: Icons.mood_bad,
-            color: Colors.red,
-            text: 'Bite risk • Red tag'),
+            color: ARAColors.flagDanger,
+            text: 'Bite risk â€¢ Red tag'),
         _FlagPill(
             icon: Icons.heart_broken,
-            color: Colors.orange,
-            text: 'Fearful • Slow approach'),
+            color: ARAColors.flagCaution,
+            text: 'Fearful â€¢ Slow approach'),
         _FlagPill(
             icon: Icons.sick,
-            color: Colors.purple,
-            text: 'Quarantine • PPE required'),
+            color: ARAColors.flagQuarantine,
+            text: 'Quarantine â€¢ PPE required'),
         _FlagPill(
             icon: Icons.emoji_food_beverage,
-            color: Colors.blue,
+            color: ARAColors.flagInfo,
             text: 'Special diet'),
       ],
     );
@@ -696,7 +696,7 @@ class _ContactTile extends StatelessWidget {
       child: ListTile(
         leading: const CircleAvatar(
           backgroundColor: ARAColors.brand,
-          child: Icon(Icons.phone, color: Colors.white),
+          child: Icon(Icons.phone, color: ARAColors.cardBg),
         ),
         title: Text(
           name,
@@ -714,3 +714,4 @@ class _ContactTile extends StatelessWidget {
     );
   }
 }
+

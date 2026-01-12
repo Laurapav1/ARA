@@ -34,7 +34,7 @@ class PendingApprovalScreen extends StatelessWidget {
                     Text(
                       'Waiting for approval',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: const Color(0xFF265073),
+                            color: ARAColors.ink,
                             fontWeight: FontWeight.bold,
                           ),
                       textAlign: TextAlign.center,
@@ -43,7 +43,7 @@ class PendingApprovalScreen extends StatelessWidget {
                     Text(
                       'Your request has been submitted. A staff member will review it soon.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: ARAColors.subInk,
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -51,7 +51,7 @@ class PendingApprovalScreen extends StatelessWidget {
                     Text(
                       'You can still use the Info tab while you wait.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: ARAColors.subInk,
                           ),
                       textAlign: TextAlign.center,
                     ),

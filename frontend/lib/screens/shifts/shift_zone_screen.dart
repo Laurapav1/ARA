@@ -6,6 +6,7 @@ import '../../services/auth_store.dart';
 import '../../services/shifts_service.dart';
 import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
+import '../../theme/ara_theme.dart';
 import 'zone_list_screen.dart';
 
 class ShiftZoneScreen extends StatefulWidget {
@@ -333,17 +334,17 @@ class _ErrorState extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+            const Icon(Icons.error_outline, size: 64, color: ARAColors.subInk),
             const SizedBox(height: 12),
             Text(
               message,
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
-                  ?.copyWith(color: Colors.grey.shade700),
+                  ?.copyWith(color: ARAColors.subInk),
               textAlign: TextAlign.center,
             ),
           ],

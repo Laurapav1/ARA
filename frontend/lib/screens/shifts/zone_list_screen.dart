@@ -61,12 +61,12 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   Color _cardColor(int index) {
     final zone = _zones[index];
     if (_isGrouped(zone)) return _groupCardColor(zone);
-    if (zone.progress >= 1.0) return const Color(0xFFB9E0B9); // darker green
+    if (zone.progress >= 1.0) return ARAColors.successSoft; // darker green
 
     final hasAnyone = zone.volunteers + (_signedUp[index] ? 1 : 0) > 0;
-    if (hasAnyone) return const Color(0xFFEACD8C); // darker amber
+    if (hasAnyone) return ARAColors.warningSoft; // darker amber
 
-    return const Color(0xFFE7AEB5); // darker red
+    return ARAColors.dangerSoft; // darker red
   }
 
   IconData _statusIcon(int index) {
@@ -84,12 +84,12 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
   Color _groupCardColor(Zone zone) {
     final allDone = zone.subtasks.every((t) => t.progress >= 1.0);
-    if (allDone) return const Color(0xFFB9E0B9); // darker green
+    if (allDone) return ARAColors.successSoft; // darker green
 
     final anyAssigned = zone.subtasks.any((t) => _hasAnyoneForTask(zone, t));
-    if (anyAssigned) return const Color(0xFFEACD8C); // darker amber
+    if (anyAssigned) return ARAColors.warningSoft; // darker amber
 
-    return const Color(0xFFE7AEB5); // darker red
+    return ARAColors.dangerSoft; // darker red
   }
 
   IconData _groupStatusIcon(Zone zone) {
@@ -148,6 +148,20 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       return 'Your volunteering period has ended.';
     }
     return 'You cannot join this task right now.';
+  }
+
+  String? _joinCountdownMessage(AuthStore auth) {
+    if (auth.isStaff || !auth.isApproved) return null;
+    final me = auth.me;
+    if (me == null || me.volunteerFrom == null) return null;
+    final now = DateTime.now();
+    final from = DateTime.parse(me.volunteerFrom!);
+    if (!now.isBefore(from)) return null;
+
+    final hours = from.difference(now).inHours;
+    final days = (hours / 24).ceil().clamp(1, 365);
+    if (days == 1) return 'You can join tasks tomorrow.';
+    return 'You can join tasks in $days days.';
   }
 
   void _showJoinBlocked(AuthStore auth) {
@@ -330,18 +344,18 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
     if (brightness == Brightness.light) {
       return const _TextPalette(
-        primary: Color(0xFF1E2A36),
-        secondary: Color(0xFF324150),
-        overlay: Color(0x1A000000),
-        onAccentIcon: Color(0xFF1E2A36),
+        primary: ARAColors.ink,
+        secondary: ARAColors.inkSoft,
+        overlay: ARAColors.overlayLight,
+        onAccentIcon: ARAColors.ink,
       );
     }
 
     return const _TextPalette(
-      primary: Colors.white,
-      secondary: Color(0xFFEFF3F6),
-      overlay: Color(0x22FFFFFF),
-      onAccentIcon: Colors.white,
+      primary: ARAColors.cardBg,
+      secondary: ARAColors.surfaceCoolSoft,
+      overlay: ARAColors.overlayDark,
+      onAccentIcon: ARAColors.cardBg,
     );
   }
 
@@ -351,6 +365,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     final canJoin = _canJoin(auth);
     final meId = auth.me?.id;
     final sections = _sectionedIndices();
+    final countdownMessage = _joinCountdownMessage(auth);
 
     return Column(
       children: [
@@ -370,7 +385,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                     const Text(
                       'Zones & Tasks',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: ARAColors.cardBg,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -378,7 +393,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                     Text(
                       'Tap a task to join',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.95),
+                        color: ARAColors.cardBg.withOpacity(0.95),
                         fontSize: 14,
                       ),
                     ),
@@ -388,6 +403,34 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
             ],
           ),
         ),
+        if (countdownMessage != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: ARAColors.countdownSurface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_clock,
+                      size: 18, color: ARAColors.countdownText),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      countdownMessage,
+                      style: const TextStyle(
+                        color: ARAColors.countdownText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
         Expanded(
           child: ListView(
@@ -710,13 +753,13 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
             padding: const EdgeInsets.only(right: 4),
             child: CircleAvatar(
               radius: 12,
-              backgroundColor: Colors.white,
+              backgroundColor: ARAColors.cardBg,
               child: Text(
                 names[i].isNotEmpty ? names[i][0].toUpperCase() : '?',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: ARAColors.ink,
                 ),
               ),
             ),
@@ -726,8 +769,8 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
             padding: EdgeInsets.only(right: 4),
             child: CircleAvatar(
               radius: 12,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 14, color: Colors.black87),
+              backgroundColor: ARAColors.cardBg,
+              child: Icon(Icons.person, size: 14, color: ARAColors.ink),
             ),
           ),
       ],
@@ -743,12 +786,12 @@ class _HeaderIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: ARAColors.cardBg.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(
         Icons.location_on,
-        color: Colors.white,
+        color: ARAColors.cardBg,
         size: 28,
       ),
     );
@@ -881,13 +924,13 @@ class _ZoneCardState extends State<_ZoneCard> {
             padding: const EdgeInsets.only(right: 4),
             child: CircleAvatar(
               radius: 12,
-              backgroundColor: Colors.white,
+              backgroundColor: ARAColors.cardBg,
               child: Text(
                 names[i].isNotEmpty ? names[i][0].toUpperCase() : '?',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: ARAColors.ink,
                 ),
               ),
             ),
@@ -897,8 +940,8 @@ class _ZoneCardState extends State<_ZoneCard> {
             padding: EdgeInsets.only(right: 4),
             child: CircleAvatar(
               radius: 12,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 14, color: Colors.black87),
+              backgroundColor: ARAColors.cardBg,
+              child: Icon(Icons.person, size: 14, color: ARAColors.ink),
             ),
           ),
       ],
@@ -939,7 +982,7 @@ class _SectionHeader extends StatelessWidget {
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF37474F),
+        color: ARAColors.inkStrong,
       ),
     );
   }

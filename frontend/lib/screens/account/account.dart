@@ -114,7 +114,10 @@ class _AccountScreenState extends State<AccountScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.white),
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
             const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
@@ -181,12 +184,12 @@ class _AccountScreenState extends State<AccountScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF66BB6A).withValues(alpha: 0.15),
+                  color: ARAColors.success.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_circle,
-                  color: Color(0xFF66BB6A),
+                  color: ARAColors.success,
                   size: 64,
                 ),
               ),
@@ -194,7 +197,7 @@ class _AccountScreenState extends State<AccountScreen> {
               Text(
                 'Request Submitted',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: const Color(0xFF265073),
+                      color: ARAColors.ink,
                       fontWeight: FontWeight.bold,
                     ),
                 textAlign: TextAlign.center,
@@ -203,7 +206,7 @@ class _AccountScreenState extends State<AccountScreen> {
               Text(
                 'Your account is pending approval. You will get access once a staff member approves your request.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey.shade600,
+                      color: ARAColors.subInk,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -212,7 +215,7 @@ class _AccountScreenState extends State<AccountScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: ARAColors.ink.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -332,10 +335,10 @@ class _AccountScreenState extends State<AccountScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1EEE7),
+          color: ARAColors.surfaceWarmAlt,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: hasValue ? ARAColors.brandDark : Colors.transparent,
+            color: hasValue ? ARAColors.brandDark : ARAColors.transparent,
             width: hasValue ? 1.5 : 1,
           ),
         ),
@@ -347,13 +350,13 @@ class _AccountScreenState extends State<AccountScreen> {
                 Icon(
                   icon,
                   size: 18,
-                  color: hasValue ? ARAColors.brandDark : Colors.grey.shade600,
+                  color: hasValue ? ARAColors.brandDark : ARAColors.subInk,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: ARAColors.subInk,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -364,8 +367,7 @@ class _AccountScreenState extends State<AccountScreen> {
             Text(
               hasValue ? _fmt(value) : 'Select date',
               style: TextStyle(
-                color:
-                    hasValue ? const Color(0xFF1E2A36) : Colors.grey.shade600,
+                color: hasValue ? ARAColors.ink : ARAColors.subInk,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -379,7 +381,7 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5F0),
+      backgroundColor: ARAColors.surfaceWarm,
       body: SafeArea(
         child: Column(
           children: [
@@ -401,7 +403,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
+                            color: ARAColors.ink.withValues(alpha: 0.08),
                             blurRadius: 16,
                             offset: const Offset(0, 8),
                           ),
@@ -412,12 +414,12 @@ class _AccountScreenState extends State<AccountScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.20),
+                              color: ARAColors.cardBg.withValues(alpha: 0.20),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.volunteer_activism,
-                              color: Colors.white,
+                              color: ARAColors.cardBg,
                               size: 32,
                             ),
                           ),
@@ -425,7 +427,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           const Text(
                             'Join as Volunteer',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: ARAColors.cardBg,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
@@ -434,7 +436,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           Text(
                             'Help us make a difference',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.90),
+                              color: ARAColors.cardBg.withValues(alpha: 0.90),
                               fontSize: 14,
                             ),
                           ),
@@ -454,7 +456,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                   .textTheme
                                   .titleMedium
                                   ?.copyWith(
-                                    color: const Color(0xFF1E2A36),
+                                    color: ARAColors.ink,
                                     fontWeight: FontWeight.w700,
                                   ),
                             ),
@@ -465,7 +467,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    color: Colors.grey.shade600,
+                                    color: ARAColors.subInk,
                                   ),
                             ),
                             const SizedBox(height: 16),
@@ -548,22 +550,22 @@ class _AccountScreenState extends State<AccountScreen> {
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF6F1E8),
+                                color: ARAColors.surfaceWarmSoft,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.grey.shade300,
+                                  color: Theme.of(context).colorScheme.outline,
                                 ),
                               ),
                               child: const Row(
                                 children: [
                                   Icon(Icons.info_outline,
-                                      color: Colors.black54),
+                                      color: ARAColors.inkSoft),
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       'Your request will be reviewed by our staff team before you can access the volunteer portal.',
                                       style: TextStyle(
-                                        color: Colors.black54,
+                                        color: ARAColors.inkSoft,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -575,7 +577,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             FilledButton(
                               onPressed: _submitRequest,
                               style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFFE59A2A),
+                                backgroundColor: ARAColors.brand,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
@@ -595,7 +597,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               children: [
                                 Expanded(
                                   child: Divider(
-                                    color: Colors.grey.shade300,
+                                    color: Theme.of(context).dividerColor,
                                     height: 1,
                                   ),
                                 ),
@@ -604,14 +606,14 @@ class _AccountScreenState extends State<AccountScreen> {
                                   child: Text(
                                     'or',
                                     style: TextStyle(
-                                      color: Colors.grey,
+                                      color: ARAColors.subInk,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
                                 Expanded(
                                   child: Divider(
-                                    color: Colors.grey.shade300,
+                                    color: Theme.of(context).dividerColor,
                                     height: 1,
                                   ),
                                 ),

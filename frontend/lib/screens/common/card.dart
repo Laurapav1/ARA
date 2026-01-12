@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/ara_theme.dart';
 
 class AraCard extends StatelessWidget {
   final String title;
@@ -38,7 +39,7 @@ class AraCard extends StatelessWidget {
                 top: -30,
                 child: Opacity(
                   opacity: 0.15,
-                  child: Icon(icon, size: 180, color: Colors.white),
+                  child: Icon(icon, size: 180, color: ARAColors.cardBg),
                 ),
               ),
               Padding(
@@ -63,7 +64,7 @@ class AraCard extends StatelessWidget {
                           Text(
                             title,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: ARAColors.cardBg,
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
                             ),
@@ -72,7 +73,7 @@ class AraCard extends StatelessWidget {
                           Text(
                             description,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.95),
+                              color: ARAColors.cardBg.withOpacity(0.95),
                               fontSize: 16,
                             ),
                           ),
@@ -92,10 +93,10 @@ class AraCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
+                    color: ARAColors.cardBg.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.arrow_forward, color: Colors.white),
+                  child: const Icon(Icons.arrow_forward, color: ARAColors.cardBg),
                 ),
               ),
             ],

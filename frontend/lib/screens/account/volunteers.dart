@@ -66,9 +66,9 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
       setState(() {
         _requests = _requests.where((r) => r.id != request.id).toList();
       });
-      _showSnack('${request.fullName} approved!', const Color(0xFF66BB6A));
+      _showSnack('${request.fullName} approved!', ARAColors.success);
     } on ApiException catch (e) {
-      _showSnack(e.message, Colors.red);
+      _showSnack(e.message, ARAColors.danger);
     }
   }
 
@@ -80,9 +80,9 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
       setState(() {
         _requests = _requests.where((r) => r.id != request.id).toList();
       });
-      _showSnack('Request declined', Colors.red);
+      _showSnack('Request declined', ARAColors.danger);
     } on ApiException catch (e) {
-      _showSnack(e.message, Colors.red);
+      _showSnack(e.message, ARAColors.danger);
     }
   }
 
@@ -91,7 +91,10 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white),
+            Icon(
+              Icons.check_circle,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
             const SizedBox(width: 12),
             Text(message),
           ],
@@ -177,11 +180,11 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: ARAColors.cardBg,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: ARAColors.ink.withValues(alpha: 0.05),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -210,7 +213,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                                 .titleSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1E2A36),
+                                  color: ARAColors.ink,
                                 ),
                           ),
                           const SizedBox(height: 4),
@@ -219,7 +222,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
-                                ?.copyWith(color: Colors.grey.shade600),
+                                ?.copyWith(color: ARAColors.subInk),
                           ),
                         ],
                       ),
@@ -234,7 +237,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                       tooltip: 'Sign out',
                       onPressed: auth.logout,
                       icon: const Icon(Icons.logout),
-                      color: Colors.red.shade400,
+                      color: ARAColors.dangerMid,
                     ),
                   ],
                 ),
@@ -251,7 +254,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.person_add_alt_1,
-                        color: Colors.white, size: 28),
+                        color: ARAColors.cardBg, size: 28),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -264,7 +267,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                               .textTheme
                               .headlineSmall
                               ?.copyWith(
-                                color: const Color(0xFF265073),
+                                color: ARAColors.ink,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -274,7 +277,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                               : '${_requests.length} pending',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey.shade600,
+                                    color: ARAColors.subInk,
                                   ),
                         ),
                       ],
@@ -318,17 +321,17 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: ARAColors.surfaceCool,
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.check_circle_outline,
-                size: 80, color: Colors.grey.shade400),
+                size: 80, color: ARAColors.subInk),
           ),
           const SizedBox(height: 24),
           Text(
             'All caught up!',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.grey.shade700,
+                  color: ARAColors.ink,
                   fontWeight: FontWeight.bold,
                 ),
           ),
@@ -336,7 +339,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
           Text(
             'No pending volunteer requests',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade500,
+                  color: ARAColors.subInk,
                 ),
           ),
         ],
@@ -351,12 +354,12 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 80, color: Colors.grey.shade400),
+            const Icon(Icons.error_outline, size: 80, color: ARAColors.subInk),
             const SizedBox(height: 16),
             Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade600,
+                    color: ARAColors.subInk,
                   ),
               textAlign: TextAlign.center,
             ),
@@ -392,7 +395,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
               _decline(request);
             },
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: ARAColors.danger,
             ),
             child: const Text('Decline'),
           ),
@@ -456,14 +459,14 @@ class _VolunteerRequestCard extends StatelessWidget {
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF265073),
+                                  color: ARAColors.ink,
                                 ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         request.email,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey.shade600,
+                              color: ARAColors.subInk,
                             ),
                       ),
                     ],
@@ -499,8 +502,8 @@ class _VolunteerRequestCard extends StatelessWidget {
                     onPressed: onDecline,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: Colors.red.shade300),
-                      foregroundColor: Colors.red.shade700,
+                      side: const BorderSide(color: ARAColors.dangerLight),
+                      foregroundColor: ARAColors.danger,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -514,7 +517,7 @@ class _VolunteerRequestCard extends StatelessWidget {
                     onPressed: onAccept,
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: const Color(0xFF66BB6A),
+                      backgroundColor: ARAColors.success,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -554,9 +557,9 @@ class _InfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: ARAColors.infoSurface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFE0B2)),
+        border: Border.all(color: ARAColors.infoBorder),
       ),
       child: Row(
         children: [
@@ -569,7 +572,7 @@ class _InfoPill extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.grey.shade600,
+                        color: ARAColors.subInk,
                       ),
                 ),
                 const SizedBox(height: 2),

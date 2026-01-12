@@ -28,7 +28,7 @@ class AnimalHomeScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child:
-                        const Icon(Icons.pets, color: Colors.white, size: 32),
+                        const Icon(Icons.pets, color: ARAColors.cardBg, size: 32),
                   ),
                   const SizedBox(width: 16),
                   Column(
