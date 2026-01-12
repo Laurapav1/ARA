@@ -104,64 +104,61 @@ class VolunteerStatusScreen extends StatelessWidget {
     final email = me?.email ?? '';
 
     return Scaffold(
-      backgroundColor: ARAColors.surfaceCool,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(gradient: ARAColors.softBackgroundGradient),
-          child: Column(
-            children: [
-              const OfflineBanner(),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 8),
-                      _ProfileCard(name: name, email: email),
-                      const SizedBox(height: 24),
-                      const _SectionLabel(title: 'Stay'),
-                      const SizedBox(height: 12),
-                      _InfoCard(
-                        title: 'Current stay',
-                        value: me?.volunteerFrom != null &&
-                                me?.volunteerTo != null
-                            ? _fmtRange(
-                                DateTime.parse(me!.volunteerFrom!),
-                                DateTime.parse(me.volunteerTo!),
-                              )
-                            : 'No current stay scheduled',
-                        icon: Icons.event_available,
-                      ),
-                      const SizedBox(height: 12),
-                      _InfoCard(
-                        title: 'Previous stays',
-                        value: 'No previous stays',
-                        icon: Icons.history,
-                      ),
-                      const SizedBox(height: 24),
-                      const _SectionLabel(title: 'Account'),
-                      const SizedBox(height: 12),
-                      _SettingsTile(
-                        title: 'Change password',
-                        subtitle: 'Update your login details',
-                        icon: Icons.lock_reset,
-                        onTap: () => _showChangePasswordDialog(context),
-                      ),
-                      const SizedBox(height: 12),
-                      _SettingsTile(
-                        title: 'Log out',
-                        subtitle: 'Sign out of this device',
-                        icon: Icons.logout,
-                        onTap: () => auth.logout(),
-                        isDestructive: true,
-                      ),
-                    ],
-                  ),
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 8),
+                    _ProfileCard(name: name, email: email),
+                    const SizedBox(height: 24),
+                    const _SectionLabel(title: 'Stay'),
+                    const SizedBox(height: 12),
+                    _InfoCard(
+                      title: 'Current stay',
+                      value: me?.volunteerFrom != null &&
+                              me?.volunteerTo != null
+                          ? _fmtRange(
+                              DateTime.parse(me!.volunteerFrom!),
+                              DateTime.parse(me.volunteerTo!),
+                            )
+                          : 'No current stay scheduled',
+                      icon: Icons.event_available,
+                    ),
+                    const SizedBox(height: 12),
+                    _InfoCard(
+                      title: 'Previous stays',
+                      value: 'No previous stays',
+                      icon: Icons.history,
+                    ),
+                    const SizedBox(height: 24),
+                    const _SectionLabel(title: 'Account'),
+                    const SizedBox(height: 12),
+                    _SettingsTile(
+                      title: 'Change password',
+                      subtitle: 'Update your login details',
+                      icon: Icons.lock_reset,
+                      onTap: () => _showChangePasswordDialog(context),
+                    ),
+                    const SizedBox(height: 12),
+                    _SettingsTile(
+                      title: 'Log out',
+                      subtitle: 'Sign out of this device',
+                      icon: Icons.logout,
+                      onTap: () => auth.logout(),
+                      isDestructive: true,
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -114,7 +114,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ARAColors.surfaceCool,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [

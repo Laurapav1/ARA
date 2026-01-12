@@ -81,7 +81,7 @@ class StaffAccountScreen extends StatelessWidget {
     final me = auth.me;
 
     return Scaffold(
-      backgroundColor: ARAColors.surfaceCool,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
