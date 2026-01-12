@@ -131,6 +131,11 @@ class ARATheme {
           elevation: 0,
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: ARAColors.brandDeep,
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: ARAColors.cardBg,
