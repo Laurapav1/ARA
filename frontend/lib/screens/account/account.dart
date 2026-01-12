@@ -529,22 +529,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               const SizedBox(height: 20),
                               FilledButton(
                                 onPressed: _submitRequest,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: ARAColors.brand,
-                                  foregroundColor: ARAColors.ink,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Submit Request',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                child: const Text('Submit Request'),
                               ),
                               const SizedBox(height: 20),
                               Row(

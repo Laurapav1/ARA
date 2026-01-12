@@ -186,21 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 18),
                         FilledButton(
                           onPressed: _signIn,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: ARAColors.brand,
-                            foregroundColor: ARAColors.ink,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: const Text(
-                            'Sign in',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: const Text('Sign in'),
                         ),
                         const SizedBox(height: 10),
                         TextButton(

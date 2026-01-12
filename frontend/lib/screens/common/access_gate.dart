@@ -68,13 +68,15 @@ class AccessGate extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
-                      FilledButton(
-                        onPressed: onCta,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ARAColors.brand,
-                          foregroundColor: ARAColors.ink,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 280),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: onCta,
+                            child: Text(ctaLabel),
+                          ),
                         ),
-                        child: Text(ctaLabel),
                       ),
                     ],
                   ),
