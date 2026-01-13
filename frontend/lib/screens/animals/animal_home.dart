@@ -11,7 +11,6 @@ class AnimalHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // pull background from theme
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
@@ -57,7 +56,7 @@ class AnimalHomeScreen extends StatelessWidget {
                       title: 'Dogs',
                       description: 'Meet our canine companions',
                       icon: Icons.pets,
-                      gradient: ARAColors.dogGradient, // blue family
+                      gradient: ARAColors.dogGradient,
                       image: '🐕',
                       onTap: () => Navigator.push(
                         context,
@@ -69,7 +68,7 @@ class AnimalHomeScreen extends StatelessWidget {
                       title: 'Cats',
                       description: 'Explore our feline friends',
                       icon: Icons.pets,
-                      gradient: ARAColors.catGradient, // pink/magenta family
+                      gradient: ARAColors.catGradient,
                       image: '🐈',
                       onTap: () => Navigator.push(
                         context,

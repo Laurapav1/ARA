@@ -11,6 +11,8 @@ class Animal {
   final String history;
   final List<String> trainingVideos;
   final Set<HandlingFlag> flags;
+  final String zone;
+  final String kennel;
 
   Animal({
     required this.id,
@@ -22,6 +24,8 @@ class Animal {
     this.history = '',
     this.trainingVideos = const [],
     this.flags = const {},
+    this.zone = '',
+    this.kennel = '',
   });
 
   Animal copyWith({
@@ -31,6 +35,8 @@ class Animal {
     String? history,
     List<String>? trainingVideos,
     Set<HandlingFlag>? flags,
+    String? zone,
+    String? kennel,
   }) {
     return Animal(
       id: id,
@@ -42,6 +48,8 @@ class Animal {
       history: history ?? this.history,
       trainingVideos: trainingVideos ?? this.trainingVideos,
       flags: flags ?? this.flags,
+      zone: zone ?? this.zone,
+      kennel: kennel ?? this.kennel,
     );
   }
 }

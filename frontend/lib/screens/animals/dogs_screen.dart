@@ -1,4 +1,3 @@
-// File: lib/screens/animals/dogs_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,55 +5,134 @@ import '../../widgets/offline_banner.dart';
 import '../../services/mock_database.dart';
 import '../../models/animal.dart';
 import '../../models/handling_flag.dart';
-import '../../widgets/handling_flag_chips.dart';
 import '../../theme/ara_theme.dart';
 import 'animal_detail.dart';
 
-class DogsScreen extends StatelessWidget {
+class DogsScreen extends StatefulWidget {
   const DogsScreen({super.key});
 
-  static const Color _friendlyColor = ARAColors.friendly; // medium green
-  static const Color _carefulColor = ARAColors.careful; // strong amber
+  @override
+  State<DogsScreen> createState() => _DogsScreenState();
+}
 
-  bool _requiresCaution(Animal a) => a.isDangerous || a.flags.isNotEmpty;
+class _DogsScreenState extends State<DogsScreen> {
+  static const Color _accentColor = ARAColors.dogAccent;
+  static const Color _accentSoft = ARAColors.dogAccentLight;
+
+  String _query = '';
+
+  bool _needsCaution(Animal a) => a.isDangerous || a.flags.isNotEmpty;
+
+  List<Animal> _filterByName(List<Animal> list) {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return list;
+    return list.where((a) => a.name.toLowerCase().contains(query)).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     final animals = context.watch<MockDatabase>().animals;
     final dogs = animals.where((a) => a.species == 'dog').toList();
-    final friendly = dogs.where((d) => !_requiresCaution(d)).toList();
-    final careful = dogs.where((d) => _requiresCaution(d)).toList();
+    final filtered = _filterByName(dogs);
+    final friendly = filtered.where((a) => !_needsCaution(a)).toList();
+    final careful = filtered.where(_needsCaution).toList();
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             const OfflineBanner(),
             _buildHeader(context),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: _buildSearchField(),
+            ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  _buildSection(
-                    context,
-                    title: 'Friendly & Social',
-                    list: friendly,
-                    icon: Icons.favorite,
-                    color: _friendlyColor,
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSection(
-                    context,
-                    title: 'Handle with Care',
-                    list: careful,
-                    icon: Icons.warning_amber_rounded,
-                    color: _carefulColor,
-                  ),
+                  if (filtered.isEmpty) _buildEmptyState(),
+                  ...friendly.map((dog) => _AnimalListCard(
+                        animal: dog,
+                        accentColor: _accentColor,
+                        accentSoft: _accentSoft,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AnimalDetailScreen(animal: dog),
+                          ),
+                        ),
+                      )),
+                  if (careful.isNotEmpty) ...[
+                    if (friendly.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      const _SectionDivider(),
+                      const SizedBox(height: 6),
+                    ],
+                    const _GroupLabel(text: 'Care required'),
+                    ...careful.map((dog) => _AnimalListCard(
+                          animal: dog,
+                          accentColor: _accentColor,
+                          accentSoft: _accentSoft,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AnimalDetailScreen(animal: dog),
+                            ),
+                          ),
+                        )),
+                  ],
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      onChanged: (value) => setState(() => _query = value),
+      decoration: InputDecoration(
+        hintText: 'Search by name',
+        prefixIcon: const Icon(Icons.search),
+        filled: true,
+        fillColor: ARAColors.cardBg,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: ARAColors.surfaceWarmTint),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: ARAColors.brand, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ARAColors.surfaceWarm,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: ARAColors.surfaceWarmTint),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.search_off, color: ARAColors.subInk),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'No dogs match that name.',
+              style: TextStyle(color: ARAColors.subInk),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -70,33 +148,18 @@ class DogsScreen extends StatelessWidget {
             style: IconButton.styleFrom(backgroundColor: ARAColors.cardBg),
           ),
           const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: ARAColors.dogAccentLight.withOpacity(.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: ARAColors.dogAccentLight.withOpacity(.30),
-              ),
-            ),
-            child: const Icon(Icons.pets, color: ARAColors.dogAccent, size: 22),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Our Dogs',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: ARAColors.ink,
-                  ),
+                  'Dogs',
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
+                const SizedBox(height: 2),
                 Text(
                   'Tap to view profile',
-                  style: TextStyle(fontSize: 14, color: ARAColors.subInk),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -105,233 +168,116 @@ class DogsScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required List<Animal> list,
-    required IconData icon,
-    required Color color,
-  }) {
-    if (list.isEmpty) return const SizedBox.shrink();
+class _SectionDivider extends StatelessWidget {
+  const _SectionDivider();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section pill (static)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.22),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.35)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: color.withOpacity(0.95),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Cards (static)
-        ...list.map((dog) => _DogCard(
-              dog: dog,
-              accentColor: color,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AnimalDetailScreen(animal: dog),
-                ),
-              ),
-              onFlagsPressed: dog.flags.isEmpty
-                  ? null
-                  : () => _showFlagsQuick(context, dog),
-            )),
-      ],
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      color: ARAColors.surfaceWarmTint,
     );
   }
+}
 
-  void _showFlagsQuick(BuildContext context, Animal dog) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: ARAColors.cautionSurface,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.warning_amber_rounded,
-                      color: ARAColors.cautionText,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Handling • ${dog.name}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: ARAColors.ink,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              HandlingFlagChips(flags: dog.flags),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Close'),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AnimalDetailScreen(animal: dog),
-                        ),
-                      );
-                    },
-                    child: const Text('View Profile'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+class _GroupLabel extends StatelessWidget {
+  final String text;
+
+  const _GroupLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: ARAColors.subInk,
         ),
       ),
     );
   }
 }
 
-class _DogCard extends StatefulWidget {
-  final Animal dog;
+class _AnimalListCard extends StatelessWidget {
+  final Animal animal;
   final Color accentColor;
+  final Color accentSoft;
   final VoidCallback onTap;
-  final VoidCallback? onFlagsPressed;
 
-  const _DogCard({
-    required this.dog,
+  const _AnimalListCard({
+    required this.animal,
     required this.accentColor,
+    required this.accentSoft,
     required this.onTap,
-    this.onFlagsPressed,
   });
 
   @override
-  State<_DogCard> createState() => _DogCardState();
-}
-
-class _DogCardState extends State<_DogCard> {
-  bool _isPressed = false;
-
-  @override
   Widget build(BuildContext context) {
-    final borderColor = widget.accentColor.withOpacity(0.30);
-    final shadowColor = widget.accentColor.withOpacity(0.10);
+    const double tagRowHeight = 26;
+    const double cardMinHeight = 80;
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()..scale(_isPressed ? 0.97 : 1.0),
-        margin: const EdgeInsets.only(bottom: 14),
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: ARAColors.cardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: 1.5),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: ARAColors.surfaceWarmTint),
           boxShadow: [
             BoxShadow(
-              color: shadowColor,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: cardMinHeight),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Keep Hero? It’s static unless you also use a Hero on detail.
-              Hero(
-                tag: 'dog_${widget.dog.id}',
-                child: Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: widget.accentColor.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(Icons.pets, color: widget.accentColor, size: 36),
-                ),
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: accentSoft.withValues(alpha: 0.35),
+                child: Icon(Icons.pets, color: accentColor),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      widget.dog.name,
+                      animal.name,
                       style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                         color: ARAColors.ink,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.dog.personality,
-                      style: TextStyle(
-                        color: ARAColors.subInk,
-                        fontSize: 14,
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: tagRowHeight,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: animal.flags.isEmpty
+                            ? const SizedBox()
+                            : _FlagRow(flags: animal.flags),
                       ),
                     ),
-                    if (widget.dog.flags.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      InkWell(
-                        onTap: widget.onFlagsPressed,
-                        child: HandlingFlagIcons(
-                          flags: widget.dog.flags,
-                          size: 18,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios,
-                  color: ARAColors.subInk, size: 16),
+              const Icon(Icons.chevron_right, color: ARAColors.subInk),
             ],
           ),
         ),
@@ -340,56 +286,58 @@ class _DogCardState extends State<_DogCard> {
   }
 }
 
-class HandlingFlagIcons extends StatelessWidget {
+class _FlagRow extends StatelessWidget {
   final Set<HandlingFlag> flags;
-  final double size;
 
-  const HandlingFlagIcons({
-    super.key,
-    required this.flags,
-    this.size = 16,
-  });
+  const _FlagRow({required this.flags});
 
   @override
   Widget build(BuildContext context) {
-    final list = flags.toList();
+    return SizedBox(
+      height: 26,
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        scrollDirection: Axis.horizontal,
+        itemCount: flags.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final flag = flags.elementAt(index);
+          return _FlagPill(flag: flag);
+        },
+      ),
+    );
+  }
+}
+
+class _FlagPill extends StatelessWidget {
+  final HandlingFlag flag;
+
+  const _FlagPill({required this.flag});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: ARAColors.cautionSurface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: ARAColors.cautionBorder),
+        color: flag.color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: flag.color.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.warning_amber_rounded,
-              size: 16, color: ARAColors.cautionText),
+          Icon(flag.icon, size: 14, color: flag.color),
           const SizedBox(width: 4),
-          for (final f in list.take(2))
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: Icon(f.icon, size: size, color: f.color),
+          Text(
+            flag.label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: ARAColors.inkStrong,
             ),
-          if (list.length > 2) const SizedBox(width: 4),
-          if (list.length > 2)
-            const _CountPill(countColor: ARAColors.cautionText),
+          ),
         ],
       ),
-    );
-  }
-}
-
-class _CountPill extends StatelessWidget {
-  final Color countColor;
-  const _CountPill({required this.countColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '+',
-      style: TextStyle(
-          fontSize: 12, fontWeight: FontWeight.bold, color: countColor),
     );
   }
 }

@@ -15,9 +15,9 @@ class HandlingFlagChips extends StatelessWidget {
           visualDensity: VisualDensity.compact,
           label: Text(f.label),
           avatar: Icon(f.icon, size: 16, color: f.color),
-          side: BorderSide(color: f.color.withOpacity(0.5)),
+          side: BorderSide(color: f.color.withValues(alpha: 0.5)),
           labelStyle: const TextStyle(fontSize: 12),
-          backgroundColor: f.color.withOpacity(0.08),
+          backgroundColor: f.color.withValues(alpha: 0.08),
         );
       }).toList(),
     );

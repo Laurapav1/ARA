@@ -393,7 +393,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                     Text(
                       'Tap a task to join',
                       style: TextStyle(
-                        color: ARAColors.cardBg.withOpacity(0.95),
+                        color: ARAColors.cardBg.withValues(alpha: 0.95),
                         fontSize: 14,
                       ),
                     ),
@@ -786,7 +786,7 @@ class _HeaderIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: ARAColors.cardBg.withOpacity(0.2),
+        color: ARAColors.cardBg.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(
