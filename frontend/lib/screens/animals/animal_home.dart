@@ -47,37 +47,33 @@ class AnimalHomeScreen extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  children: [
-                    const Spacer(),
-                    AraCard(
-                      title: 'Dogs',
-                      description: 'Meet our canine companions',
-                      icon: Icons.pets,
-                      gradient: ARAColors.dogGradient,
-                      image: '🐕',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const DogsScreen()),
-                      ),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                children: [
+                  AraCard(
+                    title: 'Dogs',
+                    description: 'Meet our canine companions',
+                    icon: Icons.pets,
+                    gradient: ARAColors.dogGradient,
+                    image: '🐕',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const DogsScreen()),
                     ),
-                    const SizedBox(height: 20),
-                    AraCard(
-                      title: 'Cats',
-                      description: 'Explore our feline friends',
-                      icon: Icons.pets,
-                      gradient: ARAColors.catGradient,
-                      image: '🐈',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const CatsScreen()),
-                      ),
+                  ),
+                  const SizedBox(height: 20),
+                  AraCard(
+                    title: 'Cats',
+                    description: 'Explore our feline friends',
+                    icon: Icons.pets,
+                    gradient: ARAColors.catGradient,
+                    image: '🐈',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CatsScreen()),
                     ),
-                    const Spacer(flex: 2),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
