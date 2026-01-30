@@ -7,6 +7,8 @@ import '../../models/animal.dart';
 import '../../models/handling_flag.dart';
 import '../../widgets/handling_flag_chips.dart';
 import '../../theme/ara_theme.dart';
+import 'animal_editor.dart';
+import 'animal_status_dialog.dart';
 
 class AnimalDetailScreen extends StatelessWidget {
   final Animal animal;
@@ -35,20 +37,35 @@ class AnimalDetailScreen extends StatelessWidget {
           _buildInfoRow(a),
           const SizedBox(height: 16),
           _buildNotesSection(a),
+          const SizedBox(height: 12),
+          _buildMoreInfo(context, a),
           const SizedBox(height: 24),
           if (a.trainingVideos.isNotEmpty) ...[
-            ElevatedButton(
+            FilledButton(
               onPressed: () {
-                // TODO: launch a.trainingVideos.first via url_launcher
               },
               child: const Text('Training'),
             ),
             const SizedBox(height: 16),
           ],
           if (isStaff) ...[
-            ElevatedButton(
-              onPressed: () => _editFlags(context, a),
-              child: const Text('Edit handling flags'),
+            FilledButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AnimalEditorScreen(animal: a),
+                ),
+              ),
+              child: const Text('Edit details'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => showAnimalStatusDialog(context, a),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ARAColors.danger,
+                side: const BorderSide(color: Color(0xFFE47070)),
+              ),
+              child: const Text('Change status'),
             ),
           ],
         ],
@@ -63,13 +80,35 @@ class AnimalDetailScreen extends StatelessWidget {
         color: ARAColors.surfaceWarm,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: ARAColors.surfaceWarmTint),
-        gradient: ARAColors.softBackgroundGradient,
       ),
       child: Stack(
         children: [
-          Center(
-            child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
-          ),
+          if (a.photoBytes != null)
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.memory(
+                  a.photoBytes!,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            )
+          else
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration:
+                    BoxDecoration(gradient: ARAColors.softBackgroundGradient),
+                child: Center(
+                  child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
+                ),
+              ),
+            ),
+          if (a.flags.isNotEmpty)
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: _FlagOverlay(flags: a.flags),
+            ),
           Positioned(
             left: 16,
             bottom: 16,
@@ -96,27 +135,10 @@ class AnimalDetailScreen extends StatelessWidget {
 
   Widget _buildInfoRow(Animal a) {
     final needsCaution = a.isDangerous || a.flags.isNotEmpty;
+    final location = _buildLocationLabel(a);
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _InfoTile(
-                label: 'Species',
-                value: _titleCase(a.species),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _InfoTile(
-                label: 'Personality',
-                value: a.personality.isNotEmpty ? a.personality : 'Unknown',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -129,19 +151,13 @@ class AnimalDetailScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _InfoTile(
-                label: 'Flags',
-                value: a.flags.isNotEmpty
-                    ? '${a.flags.length} active'
-                    : 'None',
-                isWarning: a.flags.isNotEmpty,
+                label: 'Kennel / Zone',
+                value: location,
               ),
             ),
           ],
         ),
-        if (a.flags.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          HandlingFlagChips(flags: a.flags),
-        ],
+        const SizedBox(height: 12),
       ],
     );
   }
@@ -150,118 +166,122 @@ class AnimalDetailScreen extends StatelessWidget {
     return Column(
       children: [
         _NoteCard(
-          title: 'Care Notes',
-          body: a.description.isNotEmpty
-              ? a.description
-              : 'No care notes yet.',
-        ),
-        const SizedBox(height: 12),
-        _NoteCard(
-          title: 'History',
-          body: a.history.isNotEmpty ? a.history : 'No history yet.',
-        ),
-        const SizedBox(height: 12),
-        _NoteCard(
-          title: 'Kennel Card Summary',
-          body: _buildKennelSummary(a),
+          title: 'Handling Notes',
+          body: _buildHandlingNotes(a),
         ),
       ],
     );
   }
 
-  String _buildKennelSummary(Animal a) {
-    final parts = <String>[];
-    if (a.personality.isNotEmpty) {
-      parts.add(a.personality);
-    }
-    if (a.isDangerous) {
-      parts.add('Extra caution');
-    }
-    if (a.flags.isNotEmpty) {
-      final labels = a.flags.map((f) => f.label).join(', ');
-      parts.add('Handling: $labels');
-    }
-    if (parts.isEmpty) {
-      return 'No kennel notes yet.';
-    }
-    return parts.join(' | ');
-  }
-
-  String _titleCase(String value) {
-    if (value.isEmpty) return value;
-    return value[0].toUpperCase() + value.substring(1).toLowerCase();
-  }
-
-  void _editFlags(BuildContext context, Animal currentAnimal) async {
-    final db = context.read<MockDatabase>();
-    final working = Set<HandlingFlag>.from(currentAnimal.flags);
-
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 560,
-            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Handling flags',
-                        style: Theme.of(ctx).textTheme.titleLarge,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: StatefulBuilder(
-                    builder: (ctx, setState) => ListView(
-                      children: HandlingFlag.values.map((f) {
-                        return CheckboxListTile(
-                          value: working.contains(f),
-                          onChanged: (v) => setState(() {
-                            v == true ? working.add(f) : working.remove(f);
-                          }),
-                          secondary: Icon(f.icon, color: f.color),
-                          title: Text(f.label),
-                          dense: true,
-                          controlAffinity: ListTileControlAffinity.leading,
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: FilledButton(
-                    onPressed: () {
-                      db.updateAnimal(currentAnimal.copyWith(flags: working));
-                      Navigator.of(ctx).pop();
-                    },
-                    child: const Text('Save'),
-                  ),
-                ),
-              ],
+  Widget _buildMoreInfo(BuildContext context, Animal a) {
+    return Container(
+      decoration: BoxDecoration(
+        color: ARAColors.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: ARAColors.surfaceWarmTint),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          title: const Text(
+            'More information',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: ARAColors.ink,
             ),
           ),
+          trailing: const Icon(Icons.keyboard_arrow_down),
+          children: [
+            _InfoRow(
+              icon: Icons.pets,
+              label: 'Age',
+              value: _formatAge(a.age),
+            ),
+            const SizedBox(height: 10),
+            const Divider(height: 1, color: ARAColors.surfaceWarmTint),
+            const SizedBox(height: 10),
+            _InfoRow(
+              icon: Icons.bubble_chart_outlined,
+              label: 'Breed',
+              value: _orNotSet(a.breed),
+            ),
+            const SizedBox(height: 10),
+            const Divider(height: 1, color: ARAColors.surfaceWarmTint),
+            const SizedBox(height: 10),
+            _InfoRow(
+              icon: Icons.wc,
+              label: 'Gender',
+              value: _orNotSet(a.gender),
+            ),
+            const SizedBox(height: 10),
+            const Divider(height: 1, color: ARAColors.surfaceWarmTint),
+            const SizedBox(height: 10),
+            _InfoRow(
+              icon: Icons.place_outlined,
+              label: 'History',
+              value: a.history.isNotEmpty ? a.history : 'No history yet.',
+            ),
+          ],
         ),
       ),
     );
   }
+
+  String _orNotSet(String value) {
+    if (value.trim().isEmpty) return 'Not set';
+    return value.trim();
+  }
+
+  String _formatAge(String value) {
+    if (value.trim().isEmpty) return 'Not set';
+    final parsed = DateTime.tryParse(value.trim());
+    if (parsed == null) return value.trim();
+    final now = DateTime.now();
+    int years = now.year - parsed.year;
+    if (now.month < parsed.month ||
+        (now.month == parsed.month && now.day < parsed.day)) {
+      years -= 1;
+    }
+    if (years < 1) return 'Under 1 year';
+    return years == 1 ? '1 year' : '$years years';
+  }
+
+  String _buildHandlingNotes(Animal a) {
+    if (a.description.trim().isNotEmpty) {
+      return a.description.trim();
+    }
+    if (a.isDangerous || a.flags.isNotEmpty) {
+      return 'Check the handling flags for this animal.';
+    }
+    return 'No handling notes yet.';
+  }
+
+  String _buildLocationLabel(Animal a) {
+    final parts = <String>[];
+    if (a.kennel.trim().isNotEmpty) {
+      parts.add(_formatLocationPart(a.kennel.trim(), 'Kennel'));
+    }
+    if (a.zone.trim().isNotEmpty) {
+      parts.add(_formatLocationPart(a.zone.trim(), 'Zone'));
+    }
+    if (parts.isEmpty) return 'Not set';
+    return parts.join(' • ');
+  }
+
+  String _formatLocationPart(String value, String prefix) {
+    final lowered = value.toLowerCase();
+    if (lowered.startsWith(prefix.toLowerCase()) ||
+        lowered.contains('cattery')) {
+      return value;
+    }
+    return '$prefix $value';
+  }
+
 }
 
 class _InfoTile extends StatelessWidget {
@@ -283,7 +303,8 @@ class _InfoTile extends StatelessWidget {
         color: isWarning ? ARAColors.cautionSurface : ARAColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isWarning ? ARAColors.cautionBorder : ARAColors.surfaceWarmTint,
+          color:
+              isWarning ? ARAColors.cautionBorder : ARAColors.surfaceWarmTint,
         ),
       ),
       child: Column(
@@ -344,5 +365,63 @@ class _NoteCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: ARAColors.subInk),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: ARAColors.subInk,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: ARAColors.ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FlagOverlay extends StatelessWidget {
+  final Set<HandlingFlag> flags;
+
+  const _FlagOverlay({required this.flags});
+
+  @override
+  Widget build(BuildContext context) {
+    return HandlingFlagChips(flags: flags);
   }
 }
