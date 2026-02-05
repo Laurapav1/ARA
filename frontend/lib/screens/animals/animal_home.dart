@@ -37,10 +37,6 @@ class AnimalHomeScreen extends StatelessWidget {
                         'Meet Our Animals',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
-                      Text(
-                        'Find your furry friend',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
                     ],
                   ),
                 ],

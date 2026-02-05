@@ -12,7 +12,6 @@ import 'animal_editor.dart';
 
 class AnimalListScreen extends StatefulWidget {
   final String title;
-  final String subtitle;
   final String species;
   final Color accentColor;
   final Color accentSoft;
@@ -21,7 +20,6 @@ class AnimalListScreen extends StatefulWidget {
   const AnimalListScreen({
     super.key,
     required this.title,
-    required this.subtitle,
     required this.species,
     required this.accentColor,
     required this.accentSoft,
@@ -185,10 +183,6 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  widget.subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
               ],
             ),
           ),

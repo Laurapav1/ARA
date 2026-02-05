@@ -10,7 +10,6 @@ class DogsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const AnimalListScreen(
       title: 'Dogs',
-      subtitle: 'Tap to view profile',
       species: 'dog',
       accentColor: ARAColors.dogAccent,
       accentSoft: ARAColors.dogAccentLight,

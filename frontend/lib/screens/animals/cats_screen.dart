@@ -9,7 +9,6 @@ class CatsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const AnimalListScreen(
       title: 'Cats',
-      subtitle: 'Tap to view profile',
       species: 'cat',
       accentColor: Color(0xFFC2185B),
       accentSoft: Color(0xFFF3D6E0),
