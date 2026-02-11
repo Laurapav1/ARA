@@ -2,12 +2,14 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/animal.dart';
 import '../../models/handling_flag.dart';
-import '../../services/mock_database.dart';
+import '../../services/animals_service.dart';
+import '../../services/api_client.dart';
+import '../../services/api_config.dart';
+import '../../services/auth_store.dart';
 import '../../theme/ara_theme.dart';
 
 class AnimalEditorScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class AnimalEditorScreen extends StatefulWidget {
 
 class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
   final _formKey = GlobalKey<FormState>();
+  late final AnimalsService _animalsService;
 
   late final TextEditingController _nameController;
   late final TextEditingController _ageController;
@@ -44,6 +47,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
   @override
   void initState() {
     super.initState();
+    _animalsService = AnimalsService(ApiClient(ApiConfig.baseUrl));
     final a = widget.animal;
     _nameController = TextEditingController(text: a?.name ?? '');
     _ageController = TextEditingController(text: a?.age ?? '');
@@ -71,10 +75,24 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_genderController.text.trim().isEmpty) {
+      _showMessage('Gender is required.');
+      return;
+    }
+    if (_zoneController.text.trim().isEmpty) {
+      _showMessage('Zone is required.');
+      return;
+    }
 
-    final db = context.read<MockDatabase>();
+    final auth = context.read<AuthStore>();
+    final token = auth.accessToken;
+    if (token == null || token.isEmpty) {
+      _showMessage('You must be logged in as staff.');
+      return;
+    }
+
     final existing = widget.animal;
     final id = existing?.id ?? 'a${DateTime.now().millisecondsSinceEpoch}';
 
@@ -97,13 +115,17 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
       kennel: existing?.kennel ?? '',
     );
 
-    if (existing == null) {
-      db.addAnimal(updated);
-    } else {
-      db.updateAnimal(updated);
+    try {
+      if (existing == null) {
+        await _animalsService.createAnimal(animal: updated, token: token);
+      } else {
+        await _animalsService.updateAnimal(animal: updated, token: token);
+      }
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      _showMessage('Failed to save animal: $e');
     }
-
-    Navigator.pop(context);
   }
 
   Future<void> _pickPhoto(ImageSource source) async {
@@ -117,19 +139,8 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
     setState(() => _photoBytes = bytes);
   }
 
-  Future<void> _pickBirthDate() async {
-    final current = DateTime.tryParse(_ageController.text.trim());
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: current ?? DateTime(now.year - 2, now.month, now.day),
-      firstDate: DateTime(2000),
-      lastDate: now,
-    );
-    if (picked == null) return;
-    setState(() {
-      _ageController.text = DateFormat('yyyy-MM-dd').format(picked);
-    });
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   List<String> _locationOptions() {
@@ -241,13 +252,11 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
                       left: _FieldCard(
                         child: TextFormField(
                           controller: _ageController,
-                          readOnly: true,
                           decoration: _inputDecoration(
                             label: 'Age',
-                            hint: 'Select date',
-                            suffixIcon: const Icon(Icons.calendar_today),
+                            hint: 'Years',
                           ),
-                          onTap: _pickBirthDate,
+                          keyboardType: TextInputType.number,
                         ),
                       ),
                       right: _FieldCard(

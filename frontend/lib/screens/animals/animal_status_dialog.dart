@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../models/animal.dart';
-import '../../services/mock_database.dart';
 import '../../theme/ara_theme.dart';
 
 Future<void> showAnimalStatusDialog(
   BuildContext context,
   Animal currentAnimal,
+  Future<void> Function() onConfirm,
 ) {
   StatusChoice selection = StatusChoice.adopted;
   return showDialog(
@@ -56,8 +55,8 @@ Future<void> showAnimalStatusDialog(
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () {
-              context.read<MockDatabase>().deleteAnimal(currentAnimal.id);
+            onPressed: () async {
+              await onConfirm();
               Navigator.pop(ctx);
               Navigator.pop(context);
             },

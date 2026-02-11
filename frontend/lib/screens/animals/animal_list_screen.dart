@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/animal.dart';
-import '../../services/mock_database.dart';
+import '../../services/animals_service.dart';
+import '../../services/api_client.dart';
+import '../../services/api_config.dart';
+import '../../services/auth_store.dart';
 import '../../theme/ara_theme.dart';
 import '../../widgets/animal_grid.dart';
 import '../../widgets/offline_banner.dart';
@@ -31,52 +34,74 @@ class AnimalListScreen extends StatefulWidget {
 }
 
 class _AnimalListScreenState extends State<AnimalListScreen> {
+  late final AnimalsService _animalsService;
   String _query = '';
   AnimalFilter _activeFilter = AnimalFilter.all;
+  List<Animal> _animals = const [];
+  bool _isLoading = true;
+  String? _loadError;
 
   bool _needsCaution(Animal a) => a.isDangerous || a.flags.isNotEmpty;
-  bool _isInTreatment(Animal a) => a.isInTreatment;
 
-  List<Animal> _filterByName(List<Animal> list) {
-    final query = _query.trim().toLowerCase();
-    if (query.isEmpty) return list;
-    return list.where((a) => a.name.toLowerCase().contains(query)).toList();
+  @override
+  void initState() {
+    super.initState();
+    _animalsService = AnimalsService(ApiClient(ApiConfig.baseUrl));
+    _loadAnimals();
   }
 
-  List<Animal> _applyFilters(List<Animal> list) {
-    final filtered = _filterByName(list);
-    switch (_activeFilter) {
-      case AnimalFilter.all:
-        return filtered;
-      case AnimalFilter.careRequired:
-        return filtered.where(_needsCaution).toList();
-      case AnimalFilter.inTreatment:
-        return filtered.where(_isInTreatment).toList();
+  Future<void> _loadAnimals() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
+    try {
+      final auth = context.read<AuthStore>();
+      final animals = await _animalsService.getAnimals(
+        species: widget.species,
+        filter: _activeFilter,
+        search: _query,
+        token: auth.accessToken,
+      );
+      if (!mounted) return;
+      setState(() {
+        _animals = animals;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e.toString();
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final db = context.watch<MockDatabase>();
-    final animals = db.animals;
-    final speciesAnimals =
-        animals.where((a) => a.species == widget.species).toList();
-    final filtered = _applyFilters(speciesAnimals);
-    final isStaff = db.isStaff;
+    final auth = context.watch<AuthStore>();
+    final isStaff = auth.isStaff;
     final showCautionIcon = _activeFilter == AnimalFilter.all;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: isStaff
           ? FloatingActionButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AnimalEditorScreen(
-                    initialSpecies: widget.species,
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AnimalEditorScreen(
+                      initialSpecies: widget.species,
+                    ),
                   ),
-                ),
-              ),
+                );
+                await _loadAnimals();
+              },
               backgroundColor: ARAColors.brand,
               foregroundColor: ARAColors.ink,
               child: const Icon(Icons.add),
@@ -90,7 +115,10 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               child: SearchField(
-                onChanged: (value) => setState(() => _query = value),
+                onChanged: (value) {
+                  setState(() => _query = value);
+                  _loadAnimals();
+                },
                 hintText: 'Search by name',
               ),
             ),
@@ -98,27 +126,41 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: AnimalFilterRow(
                 activeFilter: _activeFilter,
-                onChanged: (value) => setState(() => _activeFilter = value),
+                onChanged: (value) {
+                  setState(() => _activeFilter = value);
+                  _loadAnimals();
+                },
                 onMoreFilters: () {},
               ),
             ),
             Expanded(
               child: Stack(
                 children: [
-                  AnimalGrid(
-                    animals: filtered,
-                    accentColor: widget.accentColor,
-                    accentSoft: widget.accentSoft,
-                    showCautionIcons: showCautionIcon,
-                    needsCaution: _needsCaution,
-                    onTap: (animal) => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AnimalDetailScreen(animal: animal),
-                      ),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_loadError != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildErrorState(),
+                    )
+                  else
+                    AnimalGrid(
+                      animals: _animals,
+                      accentColor: widget.accentColor,
+                      accentSoft: widget.accentSoft,
+                      showCautionIcons: showCautionIcon,
+                      needsCaution: _needsCaution,
+                      onTap: (animal) async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AnimalDetailScreen(animal: animal),
+                          ),
+                        );
+                        await _loadAnimals();
+                      },
                     ),
-                  ),
-                  if (filtered.isEmpty)
+                  if (!_isLoading && _loadError == null && _animals.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _buildEmptyState(),
@@ -135,6 +177,36 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ARAColors.surfaceWarm,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: ARAColors.surfaceWarmTint),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, color: ARAColors.danger),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Failed to load animals. $_loadError',
+              style: const TextStyle(color: ARAColors.subInk),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: _loadAnimals,
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }

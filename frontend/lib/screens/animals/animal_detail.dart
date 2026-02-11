@@ -1,75 +1,136 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../widgets/offline_banner.dart';
-import '../../services/mock_database.dart';
 import '../../models/animal.dart';
 import '../../models/handling_flag.dart';
-import '../../widgets/handling_flag_chips.dart';
+import '../../services/animals_service.dart';
+import '../../services/api_client.dart';
+import '../../services/api_config.dart';
+import '../../services/auth_store.dart';
 import '../../theme/ara_theme.dart';
+import '../../widgets/handling_flag_chips.dart';
+import '../../widgets/offline_banner.dart';
 import 'animal_editor.dart';
 import 'animal_status_dialog.dart';
 
-class AnimalDetailScreen extends StatelessWidget {
+class AnimalDetailScreen extends StatefulWidget {
   final Animal animal;
   const AnimalDetailScreen({super.key, required this.animal});
 
   @override
-  Widget build(BuildContext context) {
-    final db = context.watch<MockDatabase>();
-    final isStaff = db.isStaff;
+  State<AnimalDetailScreen> createState() => _AnimalDetailScreenState();
+}
 
-    final a = db.animals.firstWhere(
-      (x) => x.id == animal.id,
-      orElse: () => animal,
-    );
+class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
+  late final AnimalsService _animalsService;
+  late Animal _animal;
+  bool _isLoading = true;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    _animalsService = AnimalsService(ApiClient(ApiConfig.baseUrl));
+    _animal = widget.animal;
+    _loadDetails();
+  }
+
+  Future<void> _loadDetails() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    try {
+      final auth = context.read<AuthStore>();
+      final detailed = await _animalsService.getAnimalById(
+        widget.animal.id,
+        token: auth.accessToken,
+      );
+      if (!mounted) return;
+      setState(() => _animal = detailed);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadError = e.toString());
+    } finally {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteAnimal() async {
+    final auth = context.read<AuthStore>();
+    final token = auth.accessToken;
+    if (token == null || token.isEmpty) {
+      _showMessage('Missing login token.');
+      return;
+    }
+    try {
+      await _animalsService.deleteAnimal(id: _animal.id, token: token);
+    } catch (e) {
+      _showMessage('Failed to remove animal: $e');
+      rethrow;
+    }
+  }
+
+  void _showMessage(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthStore>();
+    final isStaff = auth.isStaff;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text(a.name)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const OfflineBanner(),
-          const SizedBox(height: 16),
-          _buildHero(a),
-          const SizedBox(height: 16),
-          _buildInfoRow(a),
-          const SizedBox(height: 16),
-          _buildNotesSection(a),
-          const SizedBox(height: 12),
-          _buildMoreInfo(context, a),
-          const SizedBox(height: 24),
-          if (a.trainingVideos.isNotEmpty) ...[
-            FilledButton(
-              onPressed: () {
-              },
-              child: const Text('Training'),
-            ),
-            const SizedBox(height: 16),
-          ],
-          if (isStaff) ...[
-            FilledButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AnimalEditorScreen(animal: a),
+      appBar: AppBar(title: Text(_animal.name)),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _loadError != null
+              ? _ErrorState(error: _loadError!, onRetry: _loadDetails)
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    const OfflineBanner(),
+                    const SizedBox(height: 16),
+                    _buildHero(_animal),
+                    const SizedBox(height: 16),
+                    _buildInfoRow(_animal),
+                    const SizedBox(height: 16),
+                    _buildNotesSection(_animal),
+                    const SizedBox(height: 12),
+                    _buildMoreInfo(context, _animal),
+                    const SizedBox(height: 24),
+                    if (isStaff) ...[
+                      FilledButton(
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AnimalEditorScreen(animal: _animal),
+                            ),
+                          );
+                          await _loadDetails();
+                        },
+                        child: const Text('Edit details'),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () => showAnimalStatusDialog(
+                          context,
+                          _animal,
+                          _deleteAnimal,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: ARAColors.danger,
+                          side: const BorderSide(color: Color(0xFFE47070)),
+                        ),
+                        child: const Text('Change status'),
+                      ),
+                    ],
+                  ],
                 ),
-              ),
-              child: const Text('Edit details'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () => showAnimalStatusDialog(context, a),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: ARAColors.danger,
-                side: const BorderSide(color: Color(0xFFE47070)),
-              ),
-              child: const Text('Change status'),
-            ),
-          ],
-        ],
-      ),
     );
   }
 
@@ -83,26 +144,14 @@ class AnimalDetailScreen extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          if (a.photoBytes != null)
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.memory(
-                  a.photoBytes!,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            )
-          else
-            const Positioned.fill(
-              child: DecoratedBox(
-                decoration:
-                    BoxDecoration(gradient: ARAColors.softBackgroundGradient),
-                child: Center(
-                  child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
-                ),
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: ARAColors.softBackgroundGradient),
+              child: Center(
+                child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
               ),
             ),
+          ),
           if (a.flags.isNotEmpty)
             Positioned(
               right: 12,
@@ -181,9 +230,7 @@ class AnimalDetailScreen extends StatelessWidget {
         border: Border.all(color: ARAColors.surfaceWarmTint),
       ),
       child: Theme(
-        data: Theme.of(context).copyWith(
-          dividerColor: Colors.transparent,
-        ),
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -239,22 +286,13 @@ class AnimalDetailScreen extends StatelessWidget {
 
   String _formatAge(String value) {
     if (value.trim().isEmpty) return 'Not set';
-    final parsed = DateTime.tryParse(value.trim());
-    if (parsed == null) return value.trim();
-    final now = DateTime.now();
-    int years = now.year - parsed.year;
-    if (now.month < parsed.month ||
-        (now.month == parsed.month && now.day < parsed.day)) {
-      years -= 1;
-    }
-    if (years < 1) return 'Under 1 year';
+    final years = int.tryParse(value.trim());
+    if (years == null) return value.trim();
     return years == 1 ? '1 year' : '$years years';
   }
 
   String _buildHandlingNotes(Animal a) {
-    if (a.description.trim().isNotEmpty) {
-      return a.description.trim();
-    }
+    if (a.description.trim().isNotEmpty) return a.description.trim();
     if (a.isDangerous || a.flags.isNotEmpty) {
       return 'Check the handling flags for this animal.';
     }
@@ -262,26 +300,37 @@ class AnimalDetailScreen extends StatelessWidget {
   }
 
   String _buildLocationLabel(Animal a) {
-    final parts = <String>[];
-    if (a.kennel.trim().isNotEmpty) {
-      parts.add(_formatLocationPart(a.kennel.trim(), 'Kennel'));
-    }
-    if (a.zone.trim().isNotEmpty) {
-      parts.add(_formatLocationPart(a.zone.trim(), 'Zone'));
-    }
-    if (parts.isEmpty) return 'Not set';
-    return parts.join(' • ');
+    if (a.zone.trim().isNotEmpty) return a.zone.trim();
+    return 'Not set';
   }
+}
 
-  String _formatLocationPart(String value, String prefix) {
-    final lowered = value.toLowerCase();
-    if (lowered.startsWith(prefix.toLowerCase()) ||
-        lowered.contains('cattery')) {
-      return value;
-    }
-    return '$prefix $value';
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.error, required this.onRetry});
+
+  final String error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: ARAColors.danger),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: ARAColors.subInk),
+          ),
+          const SizedBox(height: 12),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
   }
-
 }
 
 class _InfoTile extends StatelessWidget {
@@ -303,8 +352,7 @@ class _InfoTile extends StatelessWidget {
         color: isWarning ? ARAColors.cautionSurface : ARAColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color:
-              isWarning ? ARAColors.cautionBorder : ARAColors.surfaceWarmTint,
+          color: isWarning ? ARAColors.cautionBorder : ARAColors.surfaceWarmTint,
         ),
       ),
       child: Column(
