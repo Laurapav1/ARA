@@ -26,6 +26,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
         return new BadRequestObjectResult(new { error = "Validation failed", errors });
     };
 });
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -124,6 +125,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
