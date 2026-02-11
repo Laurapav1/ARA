@@ -35,6 +35,9 @@ class MockDatabase extends ChangeNotifier {
       species: 'dog',
       personality: 'Friendly',
       isDangerous: false,
+      age: '2023-01-15',
+      breed: 'Mixed',
+      gender: 'Male',
       description: 'Loves belly rubs, high energy.',
       history: 'Found stray near park. Vaccinated 2025-06-10.',
       trainingVideos: ['https://youtube.com/watch?v=abc123'],
@@ -46,6 +49,10 @@ class MockDatabase extends ChangeNotifier {
       species: 'dog',
       personality: 'Shy',
       isDangerous: true,
+      isInTreatment: true,
+      age: '2021-06-10',
+      breed: 'Shepherd mix',
+      gender: 'Female',
       description: 'Very quiet, scared of loud noises.',
       history: 'Surrendered by owner. Medical check pending.',
       flags: const {HandlingFlag.doubleLeash, HandlingFlag.muzzle},
@@ -127,9 +134,27 @@ class MockDatabase extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setStaff(bool value) {
+    if (isStaff == value) return;
+    isStaff = value;
+    notifyListeners();
+  }
+
   void updateAnimal(Animal updated) {
     final idx = _animals.indexWhere((a) => a.id == updated.id);
     if (idx != -1) _animals[idx] = updated;
+    pendingChanges++;
+    notifyListeners();
+  }
+
+  void addAnimal(Animal animal) {
+    _animals.add(animal);
+    pendingChanges++;
+    notifyListeners();
+  }
+
+  void deleteAnimal(String id) {
+    _animals.removeWhere((a) => a.id == id);
     pendingChanges++;
     notifyListeners();
   }

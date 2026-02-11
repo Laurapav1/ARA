@@ -13,20 +13,23 @@ namespace Ara.Api.Migrations
         {
             migrationBuilder.DropForeignKey(
                 name: "FK_TaskInstances_TaskTemplates_TaskTemplateId",
-                table: "TaskInstances");
+                table: "TaskInstances"
+            );
 
             migrationBuilder.AddColumn<string>(
                 name: "Category",
                 table: "TaskTemplates",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: ""
+            );
 
             migrationBuilder.AddColumn<int>(
                 name: "DaysOfWeekMask",
                 table: "TaskTemplates",
                 type: "integer",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AlterColumn<Guid>(
                 name: "TaskTemplateId",
@@ -34,27 +37,31 @@ namespace Ara.Api.Migrations
                 type: "uuid",
                 nullable: true,
                 oldClrType: typeof(Guid),
-                oldType: "uuid");
+                oldType: "uuid"
+            );
 
             migrationBuilder.AddColumn<string>(
                 name: "Category",
                 table: "TaskInstances",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: ""
+            );
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsExtra",
                 table: "TaskInstances",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
 
             migrationBuilder.AddColumn<TimeOnly>(
                 name: "StartTime",
                 table: "TaskInstances",
                 type: "time without time zone",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_TaskInstances_TaskTemplates_TaskTemplateId",
@@ -62,7 +69,8 @@ namespace Ara.Api.Migrations
                 column: "TaskTemplateId",
                 principalTable: "TaskTemplates",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.SetNull
+            );
         }
 
         /// <inheritdoc />
@@ -70,27 +78,18 @@ namespace Ara.Api.Migrations
         {
             migrationBuilder.DropForeignKey(
                 name: "FK_TaskInstances_TaskTemplates_TaskTemplateId",
-                table: "TaskInstances");
+                table: "TaskInstances"
+            );
 
-            migrationBuilder.DropColumn(
-                name: "Category",
-                table: "TaskTemplates");
+            migrationBuilder.DropColumn(name: "Category", table: "TaskTemplates");
 
-            migrationBuilder.DropColumn(
-                name: "DaysOfWeekMask",
-                table: "TaskTemplates");
+            migrationBuilder.DropColumn(name: "DaysOfWeekMask", table: "TaskTemplates");
 
-            migrationBuilder.DropColumn(
-                name: "Category",
-                table: "TaskInstances");
+            migrationBuilder.DropColumn(name: "Category", table: "TaskInstances");
 
-            migrationBuilder.DropColumn(
-                name: "IsExtra",
-                table: "TaskInstances");
+            migrationBuilder.DropColumn(name: "IsExtra", table: "TaskInstances");
 
-            migrationBuilder.DropColumn(
-                name: "StartTime",
-                table: "TaskInstances");
+            migrationBuilder.DropColumn(name: "StartTime", table: "TaskInstances");
 
             migrationBuilder.AlterColumn<Guid>(
                 name: "TaskTemplateId",
@@ -100,7 +99,8 @@ namespace Ara.Api.Migrations
                 defaultValue: new Guid("00000000-0000-0000-0000-000000000000"),
                 oldClrType: typeof(Guid),
                 oldType: "uuid",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_TaskInstances_TaskTemplates_TaskTemplateId",
@@ -108,7 +108,8 @@ namespace Ara.Api.Migrations
                 column: "TaskTemplateId",
                 principalTable: "TaskTemplates",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
     }
 }

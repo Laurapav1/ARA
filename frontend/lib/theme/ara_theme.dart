@@ -22,6 +22,7 @@ class ARAColors {
 
   static const Color success = Color(0xFF66BB6A);
   static const Color successSoft = Color(0xFFB9E0B9);
+  static const Color successDark = Color(0xFF1B5E20);
   static const Color warning = Color(0xFFFB8C00);
   static const Color warningSoft = Color(0xFFEACD8C);
   static const Color dangerSoft = Color(0xFFE7AEB5);

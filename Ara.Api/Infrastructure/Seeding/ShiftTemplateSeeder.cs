@@ -172,10 +172,7 @@ public static class ShiftTemplateSeeder
 
         foreach (var template in templates)
         {
-            var existing = new HashSet<string>(
-                template.Tasks.Select(t => t.Name),
-                comparer
-            );
+            var existing = new HashSet<string>(template.Tasks.Select(t => t.Name), comparer);
 
             var newTasks = new List<TaskTemplate>();
             foreach (var name in desiredNames)
@@ -209,10 +206,7 @@ public static class ShiftTemplateSeeder
 
             foreach (var shift in shiftInstances)
             {
-                var shiftTaskNames = new HashSet<string>(
-                    shift.Tasks.Select(t => t.Name),
-                    comparer
-                );
+                var shiftTaskNames = new HashSet<string>(shift.Tasks.Select(t => t.Name), comparer);
                 foreach (var task in newTasks)
                 {
                     if (shiftTaskNames.Contains(task.Name))

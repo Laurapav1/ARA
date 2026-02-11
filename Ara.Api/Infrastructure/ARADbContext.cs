@@ -12,6 +12,7 @@ public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(op
     public DbSet<ShiftInstance> ShiftInstances => Set<ShiftInstance>();
     public DbSet<TaskInstance> TaskInstances => Set<TaskInstance>();
     public DbSet<TaskAssignment> TaskAssignments => Set<TaskAssignment>();
+    public DbSet<Animal> Animals => Set<Animal>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -120,6 +121,26 @@ public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(op
                 .WithMany() // you can add navigation User.Assignments later if you want
                 .HasForeignKey(x => x.VolunteerId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<Animal>(e =>
+        {
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Species).HasConversion<string>().IsRequired();
+            e.Property(x => x.Gender).HasConversion<string>().IsRequired();
+            e.Property(x => x.HandlingLevel).HasConversion<string>().IsRequired();
+            e.Property(x => x.HandlingFlags);
+            e.Property(x => x.AnimalStatus).HasConversion<string>().IsRequired();
+            e.Property(x => x.DogZone).HasConversion<string>().IsRequired(false);
+            e.Property(x => x.CatZone).HasConversion<string>().IsRequired(false);
+            e.Property(x => x.Picture).HasMaxLength(500);
+            e.Property(x => x.Breed).HasMaxLength(200);
+            e.Property(x => x.History).HasMaxLength(500);
+            e.Property(x => x.RequiresCare).IsRequired();
+            e.Property(x => x.InTreatment).IsRequired();
+            e.Ignore(x => x.TrainingLinks);
         });
     }
 

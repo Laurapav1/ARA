@@ -29,7 +29,7 @@ class InformationScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: ARAColors.brand.withOpacity(.12),
+                        color: ARAColors.brand.withValues(alpha: .12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.map, color: ARAColors.brandDark),
@@ -97,7 +97,7 @@ class InformationScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: ARAColors.ink.withOpacity(.12),
+                        color: ARAColors.ink.withValues(alpha: .12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child:
@@ -379,7 +379,7 @@ class _MapCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: ARAColors.brand.withOpacity(0.25),
+            color: ARAColors.brand.withValues(alpha: 0.25),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -391,7 +391,7 @@ class _MapCard extends StatelessWidget {
           children: [
             Positioned.fill(
               child: Container(
-                color: ARAColors.cardBg.withOpacity(0.08),
+                color: ARAColors.cardBg.withValues(alpha: 0.08),
                 child: const Center(
                   child: Text(
                     'Shelter map (pinch to zoom)',
@@ -418,7 +418,7 @@ class _MapCard extends StatelessWidget {
                   children: [
                     for (final z in _zoneGuides.keys)
                       ActionChip(
-                        backgroundColor: ARAColors.cardBg.withOpacity(.9),
+                        backgroundColor: ARAColors.cardBg.withValues(alpha: .9),
                         label: Text(z),
                         avatar: const Icon(Icons.place, size: 18),
                         onPressed: () => onZoneTap(z),
@@ -447,8 +447,8 @@ class _ZoneChips extends StatelessWidget {
       children: zones
           .map(
             (z) => ActionChip(
-              backgroundColor: ARAColors.brand.withOpacity(.10),
-              side: BorderSide(color: ARAColors.brand.withOpacity(.35)),
+              backgroundColor: ARAColors.brand.withValues(alpha: .10),
+              side: BorderSide(color: ARAColors.brand.withValues(alpha: .35)),
               avatar:
                   const Icon(Icons.map, size: 18, color: ARAColors.brandDark),
               label: Text(
@@ -498,7 +498,7 @@ class _QuickActionCard extends StatelessWidget {
                 child: Icon(
                   icon,
                   size: 120,
-                  color: ARAColors.cardBg.withOpacity(.18),
+                  color: ARAColors.cardBg.withValues(alpha: .18),
                 ),
               ),
               Padding(
@@ -508,7 +508,7 @@ class _QuickActionCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: ARAColors.cardBg.withOpacity(.28),
+                        color: ARAColors.cardBg.withValues(alpha: .28),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(icon, color: ARAColors.cardBg),
@@ -530,7 +530,7 @@ class _QuickActionCard extends StatelessWidget {
                             subtitle,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: ARAColors.cardBg.withOpacity(.92),
+                              color: ARAColors.cardBg.withValues(alpha: .92),
                             ),
                           ),
                         ],
@@ -590,9 +590,9 @@ class _FlagPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 18, color: color),

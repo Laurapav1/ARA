@@ -339,8 +339,10 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         }
 
         var label = name[(idx + separator.Length)..].Trim();
-        if (!label.Equals("Water", StringComparison.OrdinalIgnoreCase) &&
-            !label.Equals("Cleaning", StringComparison.OrdinalIgnoreCase))
+        if (
+            !label.Equals("Water", StringComparison.OrdinalIgnoreCase)
+            && !label.Equals("Cleaning", StringComparison.OrdinalIgnoreCase)
+        )
         {
             return false;
         }

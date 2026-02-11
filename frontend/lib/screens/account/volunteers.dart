@@ -5,6 +5,7 @@ import '../../theme/ara_theme.dart';
 import '../../services/auth_store.dart';
 import '../../services/volunteers_service.dart';
 import '../../services/api_client.dart';
+import '../../widgets/search_field.dart';
 
 class VolunteerRequestsScreen extends StatefulWidget {
   const VolunteerRequestsScreen({super.key});
@@ -19,6 +20,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
   List<PendingVolunteer> _requests = [];
   bool _loading = true;
   String? _error;
+  String _query = '';
 
   @override
   void initState() {
@@ -113,6 +115,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visibleRequests = _filterRequests(_requests, _query);
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -146,6 +149,14 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                 ),
               ),
             ),
+            if (!_loading && _error == null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                child: SearchField(
+                  onChanged: (value) => setState(() => _query = value),
+                  hintText: 'Search by name or email',
+                ),
+              ),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
@@ -153,24 +164,40 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                       ? _buildErrorState(context, _error!)
                       : _requests.isEmpty
                           ? _buildEmptyState(context)
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _requests.length,
-                              itemBuilder: (context, index) {
-                                final request = _requests[index];
-                                return _VolunteerRequestCard(
-                                  request: request,
-                                  onAccept: () => _approve(request),
-                                  onDecline: () =>
-                                      _showDeclineDialog(context, request),
-                                );
-                              },
-                            ),
+                          : visibleRequests.isEmpty
+                              ? _buildNoResultsState(context)
+                              : ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: visibleRequests.length,
+                                  itemBuilder: (context, index) {
+                                    final request = visibleRequests[index];
+                                    return _VolunteerRequestCard(
+                                      request: request,
+                                      onAccept: () => _approve(request),
+                                      onDecline: () =>
+                                          _showDeclineDialog(context, request),
+                                    );
+                                  },
+                                ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  List<PendingVolunteer> _filterRequests(
+    List<PendingVolunteer> requests,
+    String query,
+  ) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return requests;
+    final needle = trimmed.toLowerCase();
+    return requests
+        .where((r) =>
+            r.fullName.toLowerCase().contains(needle) ||
+            r.email.toLowerCase().contains(needle))
+        .toList();
   }
 
   Widget _buildEmptyState(BuildContext context) {
@@ -225,6 +252,32 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNoResultsState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.search_off, size: 72, color: ARAColors.subInk),
+          const SizedBox(height: 16),
+          Text(
+            'No matches found',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: ARAColors.ink,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try a different name or email.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: ARAColors.subInk,
+                ),
+          ),
+        ],
       ),
     );
   }

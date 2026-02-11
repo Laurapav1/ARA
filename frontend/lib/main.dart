@@ -17,8 +17,15 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => MockDatabase()..isStaff = false),
         ChangeNotifierProvider(create: (_) => AuthStore()),
+        ChangeNotifierProxyProvider<AuthStore, MockDatabase>(
+          create: (_) => MockDatabase(),
+          update: (_, auth, db) {
+            db ??= MockDatabase();
+            db.setStaff(auth.isStaff);
+            return db;
+          },
+        ),
       ],
       child: const AnimalRescueApp(),
     ),

@@ -73,7 +73,7 @@ class AraCard extends StatelessWidget {
                           Text(
                             description,
                             style: TextStyle(
-                              color: ARAColors.cardBg.withOpacity(0.95),
+                              color: ARAColors.cardBg.withValues(alpha: 0.95),
                               fontSize: 16,
                             ),
                           ),
@@ -93,7 +93,7 @@ class AraCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: ARAColors.cardBg.withOpacity(0.3),
+                    color: ARAColors.cardBg.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.arrow_forward, color: ARAColors.cardBg),

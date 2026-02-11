@@ -53,6 +53,19 @@ class ApiClient {
     return _handle(res);
   }
 
+  Future<dynamic> postAny(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+  }) async {
+    final res = await _client.post(
+      Uri.parse('$baseUrl$path'),
+      headers: _headers(token),
+      body: jsonEncode(body ?? {}),
+    );
+    return _handleAny(res);
+  }
+
   Future<Map<String, dynamic>> putJson(
     String path, {
     Map<String, dynamic>? body,
