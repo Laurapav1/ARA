@@ -4,6 +4,7 @@ using Ara.Api.Enums;
 using Ara.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ara.Api.Controllers;
@@ -15,7 +16,7 @@ public class AnimalsController(ARADbContext db) : ControllerBase
     // GET /animals?species=Dog&filter=All&search=
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<AnimalListItemDto>>> GetAnimals(
-        [FromQuery] Species species,
+        [FromQuery, BindRequired] Species species,
         [FromQuery] AnimalFilter filter = AnimalFilter.All,
         [FromQuery] string? search = null
     )
