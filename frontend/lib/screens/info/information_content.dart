@@ -274,14 +274,3 @@ const List<String> _endOfShiftChecklist = [
   'Confirm all gates and doors are secured.',
   'Sign out and return borrowed keys or equipment.',
 ];
-
-const List<String> _cleaningStandardSteps = [
-  'Pick up waste first.',
-  'Move items so all surfaces can be cleaned.',
-  'Clean/scrub, then mop/disinfect where required.',
-  'Refill fresh water and reset bowls/beds/litter.',
-  'Secure doors and gates before leaving the area.',
-  'Leave area dry, hygienic, and ready for the next person.',
-];
-
-

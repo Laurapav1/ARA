@@ -9,6 +9,7 @@ part 'sections/overview_tab.dart';
 part 'sections/cleaning_tab.dart';
 part 'sections/safety_tab.dart';
 part 'sections/checklist_tab.dart';
+
 class InformationScreen extends StatefulWidget {
   const InformationScreen({super.key});
 
@@ -46,7 +47,8 @@ class _InformationScreenState extends State<InformationScreen> {
                         childAspectRatio: 1.28,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        children: _InfoSection.values.asMap().entries.map((entry) {
+                        children:
+                            _InfoSection.values.asMap().entries.map((entry) {
                           final index = entry.key;
                           final section = entry.value;
                           final isTopRow = index < 2;
@@ -207,15 +209,6 @@ class _SectionCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _CleaningStandardBlock extends StatelessWidget {
-  const _CleaningStandardBlock();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _NumberedList(items: _cleaningStandardSteps);
   }
 }
 
@@ -635,7 +628,3 @@ class _InteractiveChecklist extends StatelessWidget {
     );
   }
 }
-
-
-
-
