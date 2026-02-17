@@ -26,7 +26,7 @@ class _ChecklistTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         ExpandableSectionGroup(
-          initiallyExpandedId: 'first_day',
+          initiallyExpandedId: '',
           sections: [
             ExpandableSectionItem(
               id: 'first_day',

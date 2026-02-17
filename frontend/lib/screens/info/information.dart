@@ -230,7 +230,7 @@ class _CleaningPanelBody extends StatefulWidget {
 }
 
 class _CleaningPanelBodyState extends State<_CleaningPanelBody> {
-  String _expandedId = 'do';
+  String _expandedId = '';
 
   void _setExpanded(String id, bool expanded) {
     setState(() => _expandedId = expanded ? id : '');

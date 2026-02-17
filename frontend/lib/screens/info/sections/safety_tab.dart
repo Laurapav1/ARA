@@ -9,7 +9,7 @@ class _SafetyTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       children: const [
         ExpandableSectionGroup(
-          initiallyExpandedId: 'rules',
+          initiallyExpandedId: '',
           sections: [
             ExpandableSectionItem(
               id: 'rules',

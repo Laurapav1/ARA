@@ -28,7 +28,7 @@ class _OverviewTabState extends State<_OverviewTab> {
         ),
         const SizedBox(height: 12),
         const ExpandableSectionGroup(
-          initiallyExpandedId: 'first_day',
+          initiallyExpandedId: '',
           sections: [
             ExpandableSectionItem(
               id: 'first_day',
