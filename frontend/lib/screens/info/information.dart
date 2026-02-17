@@ -41,28 +41,29 @@ class _InformationScreenState extends State<InformationScreen> {
                       constraints: const BoxConstraints(maxWidth: 460),
                       child: GridView.count(
                         crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1.42,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 1.28,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        children: _InfoSection.values.map((section) {
+                        children: _InfoSection.values.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final section = entry.value;
+                          final isTopRow = index < 2;
                           return InfoTileCard(
                             title: section.label,
-                            leading: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: section.iconTint,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                section.icon,
-                                size: 30,
-                                color: section.iconColor,
-                              ),
-                            ),
-                            titleTopGap: 8,
+                            subtitle: section.subtitle,
+                            backgroundGradient: _sectionGradient(section),
+                            textColor: ARAColors.cardBg,
+                            showArrow: true,
+                            backgroundIcon: section.icon,
+                            backgroundIconColor: ARAColors.cardBg,
+                            backgroundIconSize: isTopRow ? 112 : 106,
+                            backgroundIconOpacity: 0.14,
+                            backgroundIconRight: isTopRow ? -12 : -8,
+                            backgroundIconTop: isTopRow ? -14 : -6,
+                            backgroundIconAngle: isTopRow ? 0.05 : -0.04,
+                            pinTitleToBottom: true,
                             onTap: () => _openSection(section),
                           );
                         }).toList(),
@@ -113,6 +114,16 @@ class _InformationScreenState extends State<InformationScreen> {
 
   void _onResetChecklist() {
     setState(_checkedItems.clear);
+  }
+
+  Gradient _sectionGradient(_InfoSection section) {
+    final start = Color.lerp(section.iconColor, Colors.white, 0.24)!;
+    final end = Color.lerp(section.iconColor, Colors.black, 0.08)!;
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [start, end],
+    );
   }
 }
 
