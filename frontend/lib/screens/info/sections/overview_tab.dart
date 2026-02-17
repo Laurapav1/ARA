@@ -17,122 +17,35 @@ class _OverviewTabState extends State<_OverviewTab> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: ARAColors.countdownSurface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: ARAColors.infoBorder),
-          ),
-          child: const Row(
-            children: [
-              Icon(
-                Icons.flag_circle_outlined,
-                size: 18,
-                color: ARAColors.countdownText,
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'New volunteer? Start here.',
-                  style: TextStyle(
-                    color: ARAColors.countdownText,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
         _SectionCard(
           title: 'Shelter map',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tap a zone to see a short description.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              _ShelterMapPanel(
-                selectedArea: _selectedArea,
-                onAreaSelected: (area) => setState(() => _selectedArea = area),
-              ),
-              const SizedBox(height: 10),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: content.zones.map((zone) {
-                    final selected = zone == _selectedArea;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: OutlinedButton(
-                        onPressed: () => setState(() => _selectedArea = zone),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: selected
-                              ? ARAColors.brand.withValues(alpha: 0.20)
-                              : ARAColors.cardBg,
-                          side: BorderSide(
-                            color: selected
-                                ? ARAColors.brandDark
-                                : ARAColors.surfaceWarmTint,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          minimumSize: const Size(0, 38),
-                        ),
-                        child: Text(
-                          zone,
-                          style: TextStyle(
-                            color:
-                                selected ? ARAColors.inkStrong : ARAColors.subInk,
-                            fontWeight:
-                                selected ? FontWeight.w700 : FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: ARAColors.surfaceWarmSoft,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: ARAColors.surfaceWarmTint),
-                ),
-                child: Text(
-                  _areaSummary(_selectedArea),
-                  style: const TextStyle(color: ARAColors.ink),
-                ),
-              ),
-            ],
+          child: _OverviewMapContent(
+            zones: content.zones,
+            selectedArea: _selectedArea,
+            onAreaSelected: (area) => setState(() => _selectedArea = area),
+            areaSummary: _areaSummary,
           ),
         ),
         const SizedBox(height: 12),
-        const _SectionCard(
-          title: 'If this is your first day, start here',
-          child: _PlainBulletList(items: _overviewStructureBullets),
-        ),
-        const SizedBox(height: 12),
-        const _SectionCard(
-          title: 'Who\'s who',
-          child: _PlainBulletList(items: _overviewWhoIsWhoBullets),
-        ),
-        const SizedBox(height: 12),
-        const _SectionCard(
-          title: 'Morning shift flow',
-          child: _NumberedList(items: _overviewMorningFlow),
+        const ExpandableSectionGroup(
+          initiallyExpandedId: 'first_day',
+          sections: [
+            ExpandableSectionItem(
+              id: 'first_day',
+              title: 'If this is your first day, start here',
+              child: _PlainBulletList(items: _overviewStructureBullets),
+            ),
+            ExpandableSectionItem(
+              id: 'who_is_who',
+              title: 'Who\'s who',
+              child: _PlainBulletList(items: _overviewWhoIsWhoBullets),
+            ),
+            ExpandableSectionItem(
+              id: 'morning_flow',
+              title: 'Morning shift flow',
+              child: _NumberedList(items: _overviewMorningFlow),
+            ),
+          ],
         ),
       ],
     );

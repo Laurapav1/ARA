@@ -3,6 +3,8 @@ import '../../theme/ara_theme.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/info_tile_card.dart';
 import '../../widgets/screen_header.dart';
+import '../../widgets/expandable_section.dart';
+import '../../widgets/expandable_section_group.dart';
 part 'information_content.dart';
 part 'sections/info_section_enum.dart';
 part 'sections/overview_tab.dart';
@@ -212,7 +214,7 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _CleaningPanelBody extends StatelessWidget {
+class _CleaningPanelBody extends StatefulWidget {
   final List<String> doItems;
   final List<String> doNotItems;
   final List<String> doneWhenItems;
@@ -224,41 +226,165 @@ class _CleaningPanelBody extends StatelessWidget {
   });
 
   @override
+  State<_CleaningPanelBody> createState() => _CleaningPanelBodyState();
+}
+
+class _CleaningPanelBodyState extends State<_CleaningPanelBody> {
+  String _expandedId = 'do';
+
+  void _setExpanded(String id, bool expanded) {
+    setState(() => _expandedId = expanded ? id : '');
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _MinorSectionTitle('How to clean correctly'),
-          _PlainBulletList(items: doItems),
-          const SizedBox(height: 8),
-          const _MinorSectionTitle('Do not forget'),
-          _PlainBulletList(items: doNotItems),
-          const SizedBox(height: 8),
-          const _MinorSectionTitle('Done when'),
-          _PlainBulletList(items: doneWhenItems),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ExpandableSection(
+          title: 'How to clean correctly',
+          isExpanded: _expandedId == 'do',
+          onChanged: (expanded) => _setExpanded('do', expanded),
+          child: _PlainBulletList(items: widget.doItems),
+        ),
+        const SizedBox(height: 8),
+        ExpandableSection(
+          title: 'Do not forget',
+          isExpanded: _expandedId == 'do_not',
+          onChanged: (expanded) => _setExpanded('do_not', expanded),
+          child: _PlainBulletList(items: widget.doNotItems),
+        ),
+        const SizedBox(height: 8),
+        ExpandableSection(
+          title: 'Done when',
+          isExpanded: _expandedId == 'done',
+          onChanged: (expanded) => _setExpanded('done', expanded),
+          child: _PlainBulletList(items: widget.doneWhenItems),
+        ),
+      ],
     );
   }
 }
 
-class _MinorSectionTitle extends StatelessWidget {
-  final String text;
+class _OverviewMapContent extends StatelessWidget {
+  final List<String> zones;
+  final String selectedArea;
+  final ValueChanged<String> onAreaSelected;
+  final String Function(String area) areaSummary;
 
-  const _MinorSectionTitle(this.text);
+  const _OverviewMapContent({
+    required this.zones,
+    required this.selectedArea,
+    required this.onAreaSelected,
+    required this.areaSummary,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: ARAColors.inkStrong,
-          fontWeight: FontWeight.w700,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tap a zone to see a short description.',
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
+        const SizedBox(height: 12),
+        _ShelterMapPanel(
+          selectedArea: selectedArea,
+          onAreaSelected: onAreaSelected,
+        ),
+        const SizedBox(height: 10),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: zones.map((zone) {
+              final selected = zone == selectedArea;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: OutlinedButton(
+                  onPressed: () => onAreaSelected(zone),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: selected
+                        ? ARAColors.brand.withValues(alpha: 0.20)
+                        : ARAColors.cardBg,
+                    side: BorderSide(
+                      color:
+                          selected ? ARAColors.brandDark : ARAColors.surfaceWarmTint,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    minimumSize: const Size(0, 38),
+                  ),
+                  child: Text(
+                    zone,
+                    style: TextStyle(
+                      color: selected ? ARAColors.inkStrong : ARAColors.subInk,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: ARAColors.surfaceWarmSoft,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: ARAColors.surfaceWarmTint),
+          ),
+          child: Text(
+            areaSummary(selectedArea),
+            style: const TextStyle(color: ARAColors.ink),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChecklistProgressCard extends StatelessWidget {
+  final int done;
+  final int total;
+  final VoidCallback onReset;
+
+  const _ChecklistProgressCard({
+    required this.done,
+    required this.total,
+    required this.onReset,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Checklist progress',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LinearProgressIndicator(
+            value: total == 0 ? 0 : done / total,
+            borderRadius: BorderRadius.circular(999),
+            backgroundColor: ARAColors.surfaceWarmTint,
+            color: ARAColors.brandDark,
+            minHeight: 10,
+          ),
+          const SizedBox(height: 8),
+          Text('$done of $total completed'),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: onReset,
+            icon: const Icon(Icons.replay),
+            label: const Text('Reset checks'),
+          ),
+        ],
       ),
     );
   }
