@@ -33,6 +33,9 @@ class _ZoneInfoContent {
 class _CleaningPanelData {
   final String id;
   final String title;
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
   final List<String> doItems;
   final List<String> doNotItems;
   final List<String> doneWhenItems;
@@ -40,6 +43,9 @@ class _CleaningPanelData {
   const _CleaningPanelData({
     required this.id,
     required this.title,
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
     required this.doItems,
     required this.doNotItems,
     required this.doneWhenItems,

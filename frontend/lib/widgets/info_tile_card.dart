@@ -14,11 +14,13 @@ class InfoTileCard extends StatelessWidget {
     required this.onTap,
     this.leading,
     this.pinTitleToBottom = false,
-    this.titleTopGap = 8,
+    this.titleTopGap = 6,
   });
 
   @override
   Widget build(BuildContext context) {
+    final displayTitle = title.replaceFirst(' (', '\n(');
+
     return Material(
       borderRadius: BorderRadius.circular(16),
       elevation: 0,
@@ -50,7 +52,7 @@ class InfoTileCard extends StatelessWidget {
                 if (leading != null) SizedBox(height: titleTopGap),
                 if (pinTitleToBottom) const Spacer(),
                 Text(
-                  title,
+                  displayTitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

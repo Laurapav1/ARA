@@ -50,18 +50,19 @@ class _InformationScreenState extends State<InformationScreen> {
                           return InfoTileCard(
                             title: section.label,
                             leading: Container(
-                              width: 42,
-                              height: 42,
+                              width: 48,
+                              height: 48,
                               decoration: BoxDecoration(
                                 color: section.iconTint,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 section.icon,
-                                size: 28,
+                                size: 30,
                                 color: section.iconColor,
                               ),
                             ),
+                            titleTopGap: 8,
                             onTap: () => _openSection(section),
                           );
                         }).toList(),
