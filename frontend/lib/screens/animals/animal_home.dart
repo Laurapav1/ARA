@@ -4,6 +4,7 @@ import 'dogs_screen.dart';
 import 'cats_screen.dart';
 import '../../theme/ara_theme.dart';
 import '../common/card.dart';
+import '../../widgets/screen_header.dart';
 
 class AnimalHomeScreen extends StatelessWidget {
   const AnimalHomeScreen({super.key});
@@ -16,31 +17,8 @@ class AnimalHomeScreen extends StatelessWidget {
         child: Column(
           children: [
             const OfflineBanner(),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: ARAColors.brand,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child:
-                        const Icon(Icons.pets, color: ARAColors.cardBg, size: 32),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Meet Our Animals',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            const ScreenHeader(
+              title: 'Meet Our Animals',
             ),
             Expanded(
               child: ListView(

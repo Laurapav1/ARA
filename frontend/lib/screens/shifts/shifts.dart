@@ -5,6 +5,7 @@ import 'morning_shift.dart';
 import 'evening_shift.dart';
 import '../../models/zone_data.dart';
 import '../../theme/ara_theme.dart';
+import '../../widgets/screen_header.dart';
 
 class ShiftsScreen extends StatelessWidget {
   const ShiftsScreen({super.key});
@@ -19,56 +20,40 @@ class ShiftsScreen extends StatelessWidget {
         child: Column(
           children: [
             const OfflineBanner(),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Choose Your Shift',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Select when you\'d like to volunteer',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
+            const ScreenHeader(
+              title: 'Choose Your Shift',
+              subtitle: 'Select when you\'d like to volunteer',
             ),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AraCard(
-                      title: 'Morning Shift',
-                      description: '${schedule.label} - ${schedule.morning}',
-                      icon: Icons.wb_sunny,
-                      gradient: ARAColors.morningGradient,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MorningShiftScreen(),
-                        ),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                children: [
+                  AraCard(
+                    title: 'Morning Shift',
+                    description: '${schedule.label} - ${schedule.morning}',
+                    icon: Icons.wb_sunny,
+                    gradient: ARAColors.morningGradient,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MorningShiftScreen(),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    AraCard(
-                      title: 'Evening Shift',
-                      description: '${schedule.label} - ${schedule.evening}',
-                      icon: Icons.nightlight_round,
-                      gradient: ARAColors.eveningGradient,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const EveningShiftScreen(),
-                        ),
+                  ),
+                  const SizedBox(height: 20),
+                  AraCard(
+                    title: 'Evening Shift',
+                    description: '${schedule.label} - ${schedule.evening}',
+                    icon: Icons.nightlight_round,
+                    gradient: ARAColors.eveningGradient,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EveningShiftScreen(),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
