@@ -34,6 +34,7 @@ class _CleaningPanelData {
   final String id;
   final String title;
   final IconData icon;
+  final String? emoji;
   final Color iconBgColor;
   final Color iconColor;
   final List<String> doItems;
@@ -44,6 +45,7 @@ class _CleaningPanelData {
     required this.id,
     required this.title,
     required this.icon,
+    this.emoji,
     required this.iconBgColor,
     required this.iconColor,
     required this.doItems,

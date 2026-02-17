@@ -6,6 +6,7 @@ class InfoTileCard extends StatelessWidget {
   final String? subtitle;
   final VoidCallback onTap;
   final Widget? leading;
+  final String? backgroundEmoji;
   final IconData? backgroundIcon;
   final Color? backgroundIconColor;
   final Color? backgroundColor;
@@ -26,6 +27,7 @@ class InfoTileCard extends StatelessWidget {
     this.subtitle,
     required this.onTap,
     this.leading,
+    this.backgroundEmoji,
     this.backgroundIcon,
     this.backgroundIconColor,
     this.backgroundColor,
@@ -76,7 +78,22 @@ class InfoTileCard extends StatelessWidget {
           onTap: onTap,
           child: Stack(
             children: [
-              if (backgroundIcon != null)
+              if (backgroundEmoji != null)
+                Positioned(
+                  right: backgroundIconRight,
+                  top: backgroundIconTop,
+                  child: Opacity(
+                    opacity: backgroundIconOpacity,
+                    child: Transform.rotate(
+                      angle: backgroundIconAngle,
+                      child: Text(
+                        backgroundEmoji!,
+                        style: TextStyle(fontSize: backgroundIconSize),
+                      ),
+                    ),
+                  ),
+                )
+              else if (backgroundIcon != null)
                 Positioned(
                   right: backgroundIconRight,
                   top: backgroundIconTop,

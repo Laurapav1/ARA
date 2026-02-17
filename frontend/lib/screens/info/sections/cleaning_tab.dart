@@ -28,15 +28,17 @@ class _CleaningTab extends StatelessWidget {
                 return InfoTileCard(
                   title: panel.title,
                   subtitle: 'Open guide',
-                  backgroundGradient: _cleaningPanelGradient(panel),
-                  textColor: ARAColors.cardBg,
-                  showArrow: true,
+                  backgroundColor: ARAColors.cardBg,
+                  textColor: ARAColors.inkStrong,
+                  backgroundEmoji: panel.emoji,
                   backgroundIcon: panel.icon,
-                  backgroundIconColor: ARAColors.cardBg,
-                  backgroundIconSize: isTopRow ? 112 : 106,
-                  backgroundIconOpacity: 0.14,
-                  backgroundIconRight: isTopRow ? -12 : -8,
-                  backgroundIconTop: isTopRow ? -14 : -6,
+                  backgroundIconColor: panel.iconColor,
+                  backgroundIconSize: panel.emoji != null
+                      ? (isTopRow ? 96 : 92)
+                      : (isTopRow ? 104 : 98),
+                  backgroundIconOpacity: panel.emoji != null ? 0.08 : 0.12,
+                  backgroundIconRight: isTopRow ? -2 : 2,
+                  backgroundIconTop: isTopRow ? -4 : 8,
                   backgroundIconAngle: isTopRow ? 0.05 : -0.04,
                   pinTitleToBottom: true,
                   onTap: () => _openCleaningPanel(context, panel),
@@ -115,23 +117,14 @@ class _CleaningPanelScreen extends StatelessWidget {
   }
 }
 
-Gradient _cleaningPanelGradient(_CleaningPanelData panel) {
-  final start = Color.lerp(panel.iconColor, Colors.white, 0.24)!;
-  final end = Color.lerp(panel.iconColor, Colors.black, 0.08)!;
-  return LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [start, end],
-  );
-}
-
 List<_CleaningPanelData> _cleaningPanels() {
   final content = _zoneContent();
   return <_CleaningPanelData>[
     _CleaningPanelData(
       id: 'kennels',
       title: 'Cleaning Kennels',
-      icon: Icons.home_outlined,
+      icon: Icons.pets,
+      emoji: '🐶',
       iconBgColor: ARAColors.infoSectionCleaningBg,
       iconColor: ARAColors.infoSectionCleaningIcon,
       doItems: content.kennelCleaning,
@@ -145,7 +138,8 @@ List<_CleaningPanelData> _cleaningPanels() {
     _CleaningPanelData(
       id: 'catteries',
       title: 'Cleaning Catteries',
-      icon: Icons.grid_view_rounded,
+      icon: Icons.pets_outlined,
+      emoji: '🐱',
       iconBgColor: const Color(0xFFEAE4F3),
       iconColor: const Color(0xFF9A7BC2),
       doItems: content.catteryCleaning,
