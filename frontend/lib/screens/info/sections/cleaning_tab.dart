@@ -99,13 +99,10 @@ class _CleaningPanelScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                 children: [
-                  _SectionCard(
-                    title: panel.title,
-                    child: _CleaningPanelBody(
-                      doItems: panel.doItems,
-                      doNotItems: panel.doNotItems,
-                      doneWhenItems: panel.doneWhenItems,
-                    ),
+                  _CleaningPanelBody(
+                    doItems: panel.doItems,
+                    doNotItems: panel.doNotItems,
+                    doneWhenItems: panel.doneWhenItems,
                   ),
                 ],
               ),
