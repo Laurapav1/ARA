@@ -13,6 +13,7 @@ part 'sections/cleaning_tab.dart';
 part 'sections/safety_tab.dart';
 part 'sections/before_you_arrive_tab.dart';
 part 'sections/first_day_tab.dart';
+part 'sections/checklist_tab.dart';
 part 'sections/living_info_tab.dart';
 part 'widgets/cleaning_panel_body.dart';
 part 'widgets/overview_map_content.dart';

@@ -1,6 +1,8 @@
 part of '../information.dart';
 
 class _ShelterMapPanel extends StatelessWidget {
+  static const String _mapAssetPath = 'assets/images/ARA-map.png';
+
   final String selectedArea;
   final ValueChanged<String> onAreaSelected;
 
@@ -12,90 +14,50 @@ class _ShelterMapPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 250,
+      height: 300,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                ARAColors.surfaceWarm,
-                ARAColors.surfaceWarmAlt,
-              ],
-            ),
-          ),
-          child: InteractiveViewer(
-            minScale: 1,
-            maxScale: 2.8,
-            boundaryMargin: const EdgeInsets.all(60),
-            child: SizedBox(
-              width: 540,
-              height: 340,
-              child: Stack(
-                children: [
-                  const _MapParkBlob(
-                      left: 26, top: 192, width: 160, height: 98),
-                  const _MapParkBlob(
-                      left: 382, top: 220, width: 136, height: 86),
-                  _MapRoad(
-                    left: 80,
-                    top: 56,
-                    width: 380,
-                    angle: 0.10,
-                  ),
-                  _MapRoad(
-                    left: 74,
-                    top: 208,
-                    width: 318,
-                    angle: -0.18,
-                  ),
-                  ..._mapSpots.map(
-                    (spot) => _MapPin(
-                      left: spot.left,
-                      top: spot.top,
-                      label: spot.label,
-                      selected: selectedArea == spot.label,
-                      onTap: () => onAreaSelected(spot.label),
+        child: InteractiveViewer(
+          minScale: 1,
+          maxScale: 3,
+          constrained: false,
+          alignment: Alignment.topLeft,
+          boundaryMargin: EdgeInsets.zero,
+          clipBehavior: Clip.hardEdge,
+          child: SizedBox(
+            width: 540,
+            height: 540,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    _mapAssetPath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            ARAColors.surfaceWarm,
+                            ARAColors.surfaceWarmAlt,
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                ..._mapSpots.map(
+                  (spot) => _MapPin(
+                    left: spot.left,
+                    top: spot.top,
+                    label: spot.label,
+                    selected: selectedArea == spot.label,
+                    onTap: () => onAreaSelected(spot.label),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MapRoad extends StatelessWidget {
-  final double left;
-  final double top;
-  final double width;
-  final double angle;
-
-  const _MapRoad({
-    required this.left,
-    required this.top,
-    required this.width,
-    required this.angle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: Transform.rotate(
-        angle: angle,
-        child: Container(
-          width: width,
-          height: 6,
-          decoration: BoxDecoration(
-            color: ARAColors.surfaceWarmTint,
-            borderRadius: BorderRadius.circular(999),
           ),
         ),
       ),
@@ -181,36 +143,6 @@ class _MapPin extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MapParkBlob extends StatelessWidget {
-  final double left;
-  final double top;
-  final double width;
-  final double height;
-
-  const _MapParkBlob({
-    required this.left,
-    required this.top,
-    required this.width,
-    required this.height,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: ARAColors.surfaceWarmTint.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(50),
         ),
       ),
     );

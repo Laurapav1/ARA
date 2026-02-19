@@ -281,6 +281,14 @@ const List<String> _firstDayLivingAtAra = [
   'Follow staff guidance at all times.',
 ];
 
+const List<String> _firstDayChecklist = [
+  'Arrive and check in at Reception.',
+  'Meet staff and complete the shelter tour.',
+  'Review safety rules before starting tasks.',
+  'Confirm your assigned zone and first tasks.',
+  'Ask questions if anything is unclear.',
+];
+
 const List<String> _beforeYouArriveArrivalCheckIn = [
   'Arrival at the shelter must be before 3pm.',
   'Inform staff of your arrival time in advance.',
