@@ -48,6 +48,9 @@ class InfoTileCard extends StatelessWidget {
     final displayTitle = title.replaceFirst(' (', '\n(');
     final resolvedTextColor = textColor ??
         (backgroundGradient != null ? ARAColors.cardBg : ARAColors.inkStrong);
+    final contentPadding = showArrow
+        ? const EdgeInsets.fromLTRB(16, 16, 64, 16)
+        : const EdgeInsets.all(16);
 
     return Material(
       borderRadius: BorderRadius.circular(16),
@@ -113,7 +116,7 @@ class InfoTileCard extends StatelessWidget {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: contentPadding,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -147,23 +150,6 @@ class InfoTileCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (showArrow)
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: Container(
-                    padding: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      color: ARAColors.cardBg.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward,
-                      color: ARAColors.cardBg,
-                      size: 18,
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

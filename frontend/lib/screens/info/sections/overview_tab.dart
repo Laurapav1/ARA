@@ -31,22 +31,14 @@ class _OverviewTabState extends State<_OverviewTab> {
           initiallyExpandedId: '',
           sections: [
             ExpandableSectionItem(
-              id: 'first_day',
-              title: 'If this is your first day, start here',
+              id: 'zone_basics',
+              title: 'Zone basics',
               child: InfoSectionList(items: _overviewStructureBullets),
             ),
             ExpandableSectionItem(
               id: 'who_is_who',
               title: 'Who\'s who',
               child: InfoSectionList(items: _overviewWhoIsWhoBullets),
-            ),
-            ExpandableSectionItem(
-              id: 'morning_flow',
-              title: 'Morning shift flow',
-              child: InfoSectionList(
-                items: _overviewMorningFlow,
-                style: InfoSectionListStyle.numbered,
-              ),
             ),
           ],
         ),

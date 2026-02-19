@@ -1,7 +1,7 @@
 part of '../information.dart';
 
 enum _InfoSection {
-  overview(
+  shelterMap(
     'Shelter Map',
     'Find zones and key areas',
     Icons.map_outlined,
@@ -10,24 +10,38 @@ enum _InfoSection {
   ),
   cleaning(
     'Cleaning',
-    'Routines for kennels and catteries',
+    'Kennels, catteries, parks, and housing',
     Icons.cleaning_services_outlined,
     ARAColors.infoSectionCleaningBg,
     ARAColors.infoSectionCleaningIcon,
   ),
   safety(
-    'Safety Rules',
-    'Daily safety and incidents',
+    'Safety',
+    'Safety rules and incident response',
     Icons.shield_outlined,
     ARAColors.infoSectionSafetyBg,
     ARAColors.infoSectionSafetyIcon,
   ),
-  checklist(
-    'Checklist',
-    'Start and end-of-shift tasks',
-    Icons.checklist_outlined,
+  beforeYouArrive(
+    'Before You Arrive',
+    'Travel, packing, and arrival prep',
+    Icons.flight_land_outlined,
     ARAColors.infoSectionChecklistBg,
     ARAColors.infoSectionChecklistIcon,
+  ),
+  firstDay(
+    'First Day',
+    'Orientation and first-shift essentials',
+    Icons.star_outline,
+    ARAColors.infoSectionChecklistBg,
+    ARAColors.infoSectionChecklistIcon,
+  ),
+  livingInfo(
+    'Living Info',
+    'Accommodation and facilities',
+    Icons.home_outlined,
+    ARAColors.infoSectionOverviewBg,
+    ARAColors.infoSectionOverviewIcon,
   );
 
   const _InfoSection(

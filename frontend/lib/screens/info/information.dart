@@ -11,7 +11,9 @@ part 'sections/info_section_enum.dart';
 part 'sections/overview_tab.dart';
 part 'sections/cleaning_tab.dart';
 part 'sections/safety_tab.dart';
-part 'sections/checklist_tab.dart';
+part 'sections/before_you_arrive_tab.dart';
+part 'sections/first_day_tab.dart';
+part 'sections/living_info_tab.dart';
 part 'widgets/cleaning_panel_body.dart';
 part 'widgets/overview_map_content.dart';
 part 'widgets/shelter_map_panel.dart';
@@ -24,8 +26,6 @@ class InformationScreen extends StatefulWidget {
 }
 
 class _InformationScreenState extends State<InformationScreen> {
-  final Set<String> _checkedItems = <String>{};
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,14 +89,12 @@ class _InformationScreenState extends State<InformationScreen> {
 
   void _openSection(_InfoSection section) {
     final content = switch (section) {
-      _InfoSection.overview => const _OverviewTab(),
+      _InfoSection.shelterMap => const _OverviewTab(),
       _InfoSection.cleaning => const _CleaningTab(),
       _InfoSection.safety => const _SafetyTab(),
-      _InfoSection.checklist => _ChecklistTab(
-          checkedItems: _checkedItems,
-          onToggle: _onToggleItem,
-          onReset: _onResetChecklist,
-        ),
+      _InfoSection.beforeYouArrive => const _BeforeYouArriveTab(),
+      _InfoSection.firstDay => const _FirstDayTab(),
+      _InfoSection.livingInfo => const _LivingInfoTab(),
     };
 
     Navigator.push(
@@ -108,20 +106,6 @@ class _InformationScreenState extends State<InformationScreen> {
         ),
       ),
     );
-  }
-
-  void _onToggleItem(String key, bool checked) {
-    setState(() {
-      if (checked) {
-        _checkedItems.add(key);
-      } else {
-        _checkedItems.remove(key);
-      }
-    });
-  }
-
-  void _onResetChecklist() {
-    setState(_checkedItems.clear);
   }
 
   Gradient _sectionGradient(_InfoSection section) {

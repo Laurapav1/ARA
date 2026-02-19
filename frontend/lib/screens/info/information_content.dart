@@ -259,12 +259,83 @@ const List<String> _incidentSteps = [
   'Disinfect affected area and replace used supplies.',
 ];
 
-const List<String> _firstDayChecklist = [
-  'Sign in, get orientation and confirm your assigned zone.',
-  'Walk through map, gates and emergency points.',
-  'Learn cleaning flow for kennels and catteries.',
-  'Review safety rules and incident reporting steps.',
-  'Confirm gate return-time rules before starting tasks.',
+const List<String> _firstDayInductionOverview = [
+  'You will be welcomed by a staff member.',
+  'You will receive a tour of the shelter.',
+  'You will be introduced to the animals.',
+  'Cleaning and walking procedures will be explained.',
+  'Ask questions if anything is unclear.',
+];
+
+const List<String> _firstDayHowShiftsWork = [
+  'There are morning and afternoon shifts.',
+  'All volunteers start shifts at the same time.',
+  'Between shifts you have free time.',
+  'Work hours vary depending on season.',
+];
+
+const List<String> _firstDayLivingAtAra = [
+  'Accommodation is shared.',
+  'You may share your room with a dog or puppy.',
+  'Respect other volunteers and shared spaces.',
+  'Follow staff guidance at all times.',
+];
+
+const List<String> _beforeYouArriveArrivalCheckIn = [
+  'Arrival at the shelter must be before 3pm.',
+  'Inform staff of your arrival time in advance.',
+  'If delayed, notify staff as soon as possible.',
+  'A staff member will welcome you upon arrival.',
+];
+
+const List<String> _beforeYouArriveHowToGetHere = [
+  'Use Google Maps: "Animal Rescue Algarve".',
+  'The shelter is 5 minutes by car from Loule.',
+  'Loule town is 15-20 minutes walking distance.',
+  'Uber is available from Loule.',
+];
+
+const List<String> _beforeYouArriveWhatToBring = [
+  'Clothes you do not mind getting dirty.',
+  'Long trousers for kennel cleaning.',
+  'Sturdy shoes or boots.',
+  'Sun protection (hat, sunscreen, sunglasses).',
+  'Mosquito repellent.',
+  'Towel and toiletries.',
+  'Travel adapter (if needed).',
+  'Ear plugs (dogs may bark at night).',
+];
+
+const List<String> _beforeYouArriveImportantInfo = [
+  'Minimum stay: 2 weeks.',
+  'Maximum stay: 4 weeks.',
+  'Volunteers must be 18 years or older.',
+  'Food is not included (water is provided).',
+  'Volunteers are responsible for their own insurance.',
+];
+
+const List<String> _beforeYouArriveClimatePrep = [
+  'Summer temperatures can exceed 40C.',
+  'Winter days can still reach 20C but may be chilly.',
+  'Working hours depend on daylight and season.',
+  'Stay hydrated and prepare for outdoor work.',
+];
+
+const List<String> _safetyDogHandlingRules = [
+  'Always use harness and lead.',
+  'Follow staff instructions on walks.',
+  'Do not feed dogs in parks.',
+  'Only give treats in kennels.',
+  'Return harnesses after use.',
+  'Always lock kennel doors.',
+];
+
+const List<String> _safetyConduct = [
+  'No drugs (zero tolerance).',
+  'Alcohol only after work and in moderation.',
+  'No working under influence.',
+  'No visitors without permission.',
+  'Return before 23:00.',
 ];
 
 const List<String> _endOfShiftChecklist = [
@@ -273,4 +344,24 @@ const List<String> _endOfShiftChecklist = [
   'Update logs and handover notes (animals, incidents, supplies).',
   'Confirm all gates and doors are secured.',
   'Sign out and return borrowed keys or equipment.',
+];
+
+const List<String> _livingInfoAccommodation = [
+  'Shared rooms.',
+  'Shared kitchen and bathrooms.',
+  'Respect quiet hours.',
+];
+
+const List<String> _livingInfoFacilities = [
+  'WiFi available.',
+  'Washing facilities available.',
+  'Pool may be used during free time.',
+  'Drinking water is provided.',
+  'Food is not included.',
+];
+
+const List<String> _livingInfoLocalArea = [
+  'Loule is 15-20 minutes walking distance.',
+  'Shops, restaurants and markets nearby.',
+  'Beaches accessible by bus.',
 ];
