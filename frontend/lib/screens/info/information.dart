@@ -5,6 +5,7 @@ import '../../widgets/info_tile_card.dart';
 import '../../widgets/screen_header.dart';
 import '../../widgets/expandable_section.dart';
 import '../../widgets/expandable_section_group.dart';
+import '../../widgets/info_section_list.dart';
 part 'information_content.dart';
 part 'sections/info_section_enum.dart';
 part 'sections/overview_tab.dart';
@@ -245,21 +246,21 @@ class _CleaningPanelBodyState extends State<_CleaningPanelBody> {
           title: 'How to clean correctly',
           isExpanded: _expandedId == 'do',
           onChanged: (expanded) => _setExpanded('do', expanded),
-          child: _PlainBulletList(items: widget.doItems),
+          child: InfoSectionList(items: widget.doItems),
         ),
         const SizedBox(height: 8),
         ExpandableSection(
           title: 'Do not forget',
           isExpanded: _expandedId == 'do_not',
           onChanged: (expanded) => _setExpanded('do_not', expanded),
-          child: _PlainBulletList(items: widget.doNotItems),
+          child: InfoSectionList(items: widget.doNotItems),
         ),
         const SizedBox(height: 8),
         ExpandableSection(
           title: 'Done when',
           isExpanded: _expandedId == 'done',
           onChanged: (expanded) => _setExpanded('done', expanded),
-          child: _PlainBulletList(items: widget.doneWhenItems),
+          child: InfoSectionList(items: widget.doneWhenItems),
         ),
       ],
     );
@@ -603,122 +604,6 @@ class _MapParkBlob extends StatelessWidget {
           borderRadius: BorderRadius.circular(50),
         ),
       ),
-    );
-  }
-}
-
-class _BulletList extends StatelessWidget {
-  final List<String> items;
-
-  const _BulletList({required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: items.map((item) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(
-                  Icons.check_circle_outline,
-                  size: 16,
-                  color: ARAColors.brand,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  item,
-                  style: const TextStyle(color: ARAColors.ink),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _PlainBulletList extends StatelessWidget {
-  final List<String> items;
-
-  const _PlainBulletList({required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: items.map((item) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Text('•', style: TextStyle(color: ARAColors.brand)),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  item,
-                  style: const TextStyle(color: ARAColors.ink),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _NumberedList extends StatelessWidget {
-  final List<String> items;
-
-  const _NumberedList({required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(items.length, (i) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 22,
-                height: 22,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: ARAColors.brand.withValues(alpha: 0.20),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '${i + 1}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: ARAColors.inkStrong,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  items[i],
-                  style: const TextStyle(color: ARAColors.ink),
-                ),
-              ),
-            ],
-          ),
-        );
-      }),
     );
   }
 }

@@ -14,12 +14,15 @@ class _SafetyTab extends StatelessWidget {
             ExpandableSectionItem(
               id: 'rules',
               title: 'Rules',
-              child: _BulletList(items: _safetyRules),
+              child: InfoSectionList(items: _safetyRules),
             ),
             ExpandableSectionItem(
               id: 'incidents',
               title: 'Incident steps',
-              child: _NumberedList(items: _incidentSteps),
+              child: InfoSectionList(
+                items: _incidentSteps,
+                style: InfoSectionListStyle.numbered,
+              ),
             ),
           ],
         ),

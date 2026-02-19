@@ -33,17 +33,20 @@ class _OverviewTabState extends State<_OverviewTab> {
             ExpandableSectionItem(
               id: 'first_day',
               title: 'If this is your first day, start here',
-              child: _PlainBulletList(items: _overviewStructureBullets),
+              child: InfoSectionList(items: _overviewStructureBullets),
             ),
             ExpandableSectionItem(
               id: 'who_is_who',
               title: 'Who\'s who',
-              child: _PlainBulletList(items: _overviewWhoIsWhoBullets),
+              child: InfoSectionList(items: _overviewWhoIsWhoBullets),
             ),
             ExpandableSectionItem(
               id: 'morning_flow',
               title: 'Morning shift flow',
-              child: _NumberedList(items: _overviewMorningFlow),
+              child: InfoSectionList(
+                items: _overviewMorningFlow,
+                style: InfoSectionListStyle.numbered,
+              ),
             ),
           ],
         ),
