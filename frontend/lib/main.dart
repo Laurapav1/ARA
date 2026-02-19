@@ -8,7 +8,7 @@ import 'screens/account/volunteer_status.dart';
 import 'screens/account/staff_account.dart';
 import 'screens/shifts/shifts.dart';
 import 'screens/info/information.dart';
-import 'screens/account/account.dart';
+import 'screens/account/account_home_screen.dart';
 import 'screens/animals/animal_home.dart';
 import 'screens/common/access_gate.dart';
 import 'theme/ara_theme.dart';
