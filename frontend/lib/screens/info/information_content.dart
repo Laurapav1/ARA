@@ -344,14 +344,6 @@ const List<String> _safetyConduct = [
   'Return before 23:00.',
 ];
 
-const List<String> _endOfShiftChecklist = [
-  'Finish final bowl and water checks for your zone.',
-  'Remove trash and leave cleaning tools ready for next shift.',
-  'Update logs and handover notes (animals, incidents, supplies).',
-  'Confirm all gates and doors are secured.',
-  'Sign out and return borrowed keys or equipment.',
-];
-
 const List<String> _livingInfoAccommodation = [
   'Shared rooms.',
   'Shared kitchen and bathrooms.',
