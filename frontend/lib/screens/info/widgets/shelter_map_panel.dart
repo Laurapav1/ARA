@@ -66,6 +66,8 @@ class _ShelterMapPanel extends StatelessWidget {
 }
 
 class _MapPin extends StatelessWidget {
+  static const double _dotSize = 22;
+
   final double left;
   final double top;
   final String label;
@@ -83,24 +85,21 @@ class _MapPin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: left,
-      top: top,
+      left: left - (_dotSize / 2),
+      top: top - (_dotSize / 2),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
-          child: AnimatedScale(
-            duration: const Duration(milliseconds: 180),
-            scale: selected ? 1.08 : 1.0,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedOpacity(
-                  duration: const Duration(milliseconds: 150),
-                  opacity: selected ? 1 : 0,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              if (selected)
+                Positioned(
+                  bottom: _dotSize + 8,
                   child: Container(
-                    margin: const EdgeInsets.only(bottom: 4),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -120,10 +119,12 @@ class _MapPin extends StatelessWidget {
                     ),
                   ),
                 ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: selected ? 26 : 20,
-                  height: selected ? 26 : 20,
+              AnimatedScale(
+                duration: const Duration(milliseconds: 180),
+                scale: selected ? 1.12 : 1.0,
+                child: Container(
+                  width: _dotSize,
+                  height: _dotSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _pinColor(label),
@@ -140,8 +141,8 @@ class _MapPin extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

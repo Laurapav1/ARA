@@ -13,7 +13,6 @@ part 'sections/cleaning_tab.dart';
 part 'sections/safety_tab.dart';
 part 'sections/before_you_arrive_tab.dart';
 part 'sections/first_day_tab.dart';
-part 'sections/checklist_tab.dart';
 part 'sections/living_info_tab.dart';
 part 'widgets/cleaning_panel_body.dart';
 part 'widgets/overview_map_content.dart';
@@ -199,78 +198,6 @@ class _SectionCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-
-class _ChecklistProgressCard extends StatelessWidget {
-  final int done;
-  final int total;
-  final VoidCallback onReset;
-
-  const _ChecklistProgressCard({
-    required this.done,
-    required this.total,
-    required this.onReset,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionCard(
-      title: 'Checklist progress',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          LinearProgressIndicator(
-            value: total == 0 ? 0 : done / total,
-            borderRadius: BorderRadius.circular(999),
-            backgroundColor: ARAColors.surfaceWarmTint,
-            color: ARAColors.brandDark,
-            minHeight: 10,
-          ),
-          const SizedBox(height: 8),
-          Text('$done of $total completed'),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: onReset,
-            icon: const Icon(Icons.replay),
-            label: const Text('Reset checks'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InteractiveChecklist extends StatelessWidget {
-  final String prefix;
-  final List<String> items;
-  final Set<String> checkedItems;
-  final void Function(String key, bool checked) onToggle;
-
-  const _InteractiveChecklist({
-    required this.prefix,
-    required this.items,
-    required this.checkedItems,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(items.length, (i) {
-        final key = '$prefix-$i';
-        final checked = checkedItems.contains(key);
-        return CheckboxListTile(
-          value: checked,
-          onChanged: (value) => onToggle(key, value ?? false),
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          controlAffinity: ListTileControlAffinity.leading,
-          title: Text(items[i]),
-        );
-      }),
     );
   }
 }

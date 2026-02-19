@@ -69,43 +69,53 @@ class _MapSpot {
 const List<_MapSpot> _mapSpots = [
   _MapSpot(
     label: 'Reception',
-    left: 54,
-    top: 88,
+    left: 108.7,
+    top: 309.1,
   ),
   _MapSpot(
     label: 'Zone A',
-    left: 176,
-    top: 124,
+    left: 452.9,
+    top: 244.9,
+  ),
+  _MapSpot(
+    label: 'Staff House',
+    left: 224.0,
+    top: 188.8,
+  ),
+  _MapSpot(
+    label: 'Paradise park',
+    left: 200.5,
+    top: 500.9,
+  ),
+  _MapSpot(
+    label: '66 starts',
+    left: 126.8,
+    top: 398.6,
   ),
   _MapSpot(
     label: 'Zone B',
-    left: 284,
-    top: 148,
+    left: 286.4,
+    top: 338.9,
   ),
   _MapSpot(
     label: 'Zone C',
-    left: 402,
-    top: 136,
+    left: 182.9,
+    top: 352.4,
   ),
   _MapSpot(
-    label: 'Catteries',
-    left: 244,
-    top: 246,
+    label: 'Volunteer house',
+    left: 328.4,
+    top: 227.3,
   ),
   _MapSpot(
-    label: 'Park North',
-    left: 106,
-    top: 256,
+    label: 'Adult catteries',
+    left: 287.6,
+    top: 283.4,
   ),
   _MapSpot(
-    label: 'Park South',
-    left: 432,
-    top: 266,
-  ),
-  _MapSpot(
-    label: 'Volunteer accommodation',
-    left: 66,
-    top: 188,
+    label: 'Pool side cattries',
+    left: 158.4,
+    top: 180.6,
   ),
 ];
 
@@ -113,8 +123,10 @@ Color _pinColor(String label) {
   const facility = ARAColors.brandDeep;
   const zone = ARAColors.brandDark;
   if (label == 'Reception' ||
-      label == 'Catteries' ||
-      label == 'Volunteer accommodation') {
+      label == 'Staff House' ||
+      label == 'Volunteer house' ||
+      label == 'Adult catteries' ||
+      label == 'Pool side cattries') {
     return facility;
   }
   return zone;
@@ -125,12 +137,14 @@ _ZoneInfoContent _zoneContent() {
     zones: [
       'Reception',
       'Zone A',
+      'Staff House',
+      'Paradise park',
+      '66 starts',
       'Zone B',
       'Zone C',
-      'Catteries',
-      'Park North',
-      'Park South',
-      'Volunteer accommodation',
+      'Volunteer house',
+      'Adult catteries',
+      'Pool side cattries',
     ],
     kennelCleaning: [
       'pick up the poo',
@@ -232,14 +246,6 @@ const List<String> _overviewWhoIsWhoBullets = [
   'Use the shelter phone/WhatsApp group for urgent updates if requested.',
 ];
 
-const List<String> _overviewMorningFlow = [
-  'Check task board and assigned zone.',
-  'Feed animals and refill water.',
-  'Clean your assigned zones.',
-  'Review notes for behavior or health updates.',
-  'Update completed tasks before handover.',
-];
-
 const List<String> _safetyRules = [
   'Always lock the doors from the kennels',
   'Do no give food when dogs are in the parks',
@@ -279,14 +285,6 @@ const List<String> _firstDayLivingAtAra = [
   'You may share your room with a dog or puppy.',
   'Respect other volunteers and shared spaces.',
   'Follow staff guidance at all times.',
-];
-
-const List<String> _firstDayChecklist = [
-  'Arrive and check in at Reception.',
-  'Meet staff and complete the shelter tour.',
-  'Review safety rules before starting tasks.',
-  'Confirm your assigned zone and first tasks.',
-  'Ask questions if anything is unclear.',
 ];
 
 const List<String> _beforeYouArriveArrivalCheckIn = [
