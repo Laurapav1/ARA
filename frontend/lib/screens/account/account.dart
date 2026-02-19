@@ -7,14 +7,14 @@ import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
 import 'login_screen.dart';
 
-class AccountScreen extends StatefulWidget {
-  const AccountScreen({super.key});
+class RequestAccessScreen extends StatefulWidget {
+  const RequestAccessScreen({super.key});
 
   @override
-  State<AccountScreen> createState() => _AccountScreenState();
+  State<RequestAccessScreen> createState() => _RequestAccessScreenState();
 }
 
-class _AccountScreenState extends State<AccountScreen> {
+class _RequestAccessScreenState extends State<RequestAccessScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _lastNameController = TextEditingController();
