@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/ara_theme.dart';
+import '../common/hero_circle.dart';
 import '../../widgets/offline_banner.dart';
 import 'account.dart';
 import 'login_screen.dart';
@@ -122,28 +123,13 @@ class _AraHomeLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 158,
-        height: 158,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipOval(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Image.asset(
-              'assets/images/ARA-logo.png',
-              fit: BoxFit.contain,
-            ),
+    return HeroCircle(
+      child: ClipOval(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Image.asset(
+            'assets/images/ARA-logo.png',
+            fit: BoxFit.contain,
           ),
         ),
       ),
