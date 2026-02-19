@@ -49,20 +49,33 @@ class InfoSectionList extends StatelessWidget {
 
   Widget _marker(int index) {
     if (style == InfoSectionListStyle.numbered) {
-      return Container(
-        width: 22,
-        height: 22,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: ARAColors.brand.withValues(alpha: 0.20),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          '${index + 1}',
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: ARAColors.inkStrong,
+      return Padding(
+        padding: const EdgeInsets.only(top: 7),
+        child: SizedBox(
+          width: 8,
+          height: 8,
+          child: OverflowBox(
+            minWidth: 14,
+            maxWidth: 14,
+            minHeight: 14,
+            maxHeight: 14,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: ARAColors.brand,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       );
