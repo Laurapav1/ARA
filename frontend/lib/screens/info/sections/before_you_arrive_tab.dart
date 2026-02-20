@@ -27,6 +27,16 @@ class _BeforeYouArriveTab extends StatelessWidget {
               child: InfoSectionList(items: _beforeYouArriveWhatToBring),
             ),
             ExpandableSectionItem(
+              id: 'summer_preparation',
+              title: 'Summer Preparation',
+              child: InfoSectionList(items: _beforeYouArriveSummerPreparation),
+            ),
+            ExpandableSectionItem(
+              id: 'winter_preparation',
+              title: 'Winter Preparation',
+              child: InfoSectionList(items: _beforeYouArriveWinterPreparation),
+            ),
+            ExpandableSectionItem(
               id: 'important_information',
               title: 'Important Information',
               child: InfoSectionList(items: _beforeYouArriveImportantInfo),

@@ -305,11 +305,23 @@ const List<String> _beforeYouArriveWhatToBring = [
   'Clothes you do not mind getting dirty.',
   'Long trousers for kennel cleaning.',
   'Sturdy shoes or boots.',
-  'Sun protection (hat, sunscreen, sunglasses).',
-  'Mosquito repellent.',
   'Towel and toiletries.',
   'Travel adapter (if needed).',
   'Ear plugs (dogs may bark at night).',
+];
+
+const List<String> _beforeYouArriveSummerPreparation = [
+  'Sun protection (hat, sunscreen, sunglasses).',
+  'Light breathable clothing.',
+  'Sturdy shoes or boots.',
+  'Mosquito repellent.',
+  'High hydration (drink plenty of water).',
+];
+
+const List<String> _beforeYouArriveWinterPreparation = [
+  'Warm clothes (jacket, gloves, warm socks).',
+  'Rain jacket or waterproof clothing.',
+  'Waterproof shoes or boots.',
 ];
 
 const List<String> _beforeYouArriveImportantInfo = [
