@@ -36,79 +36,29 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
   String _fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
   String _fmtIso(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  Future<DateTime?> _pickDate({
-    required BuildContext context,
-    required DateTime initialDate,
-    required DateTime firstDate,
-    required DateTime lastDate,
-  }) async {
-    return showDatePicker(
+  Future<void> _selectStayRange() async {
+    final now = _dateOnly(DateTime.now());
+    final pickedRange = await showDialog<DateTimeRange>(
       context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (context, child) {
-        final scheme = Theme.of(context).colorScheme;
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: scheme.copyWith(
-              primary: ARAColors.brand,
-              secondary: ARAColors.brand,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: ARAColors.brand),
-            ),
-          ),
-          child: child!,
-        );
-      },
+      builder: (ctx) => _StayDateRangeDialog(
+        initialStart: _startDate,
+        initialEnd: _endDate,
+        firstDate: now,
+        lastDate: now.add(const Duration(days: 365)),
+      ),
     );
-  }
-
-  Future<void> _selectStartDate() async {
-    final now = DateTime.now();
-    final picked = await _pickDate(
-      context: context,
-      initialDate: _startDate ?? now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-    );
-
-    if (picked == null) return;
-
+    if (pickedRange == null) return;
     setState(() {
-      _startDate = picked;
-
-      // If end date exists but is before new start date, clear end date.
-      if (_endDate != null && _endDate!.isBefore(picked)) {
-        _endDate = null;
-      }
+      _startDate = _dateOnly(pickedRange.start);
+      _endDate = _dateOnly(pickedRange.end);
     });
-  }
-
-  Future<void> _selectEndDate() async {
-    final now = DateTime.now();
-
-    // If start isn't set, default start to "now" for constraints,
-    // but still require user to pick start for submit.
-    final start = _startDate ?? now;
-
-    final picked = await _pickDate(
-      context: context,
-      initialDate: _endDate ?? start,
-      firstDate: start, // ✅ cannot end before start
-      lastDate: now.add(const Duration(days: 365)),
-    );
-
-    if (picked == null) return;
-
-    setState(() => _endDate = picked);
   }
 
   bool get _datesValid {
     if (_startDate == null || _endDate == null) return false;
-    return !_endDate!.isBefore(_startDate!);
+    return _endDate!.isAfter(_startDate!);
   }
 
   void _showSnack(String message) {
@@ -157,7 +107,7 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
       return;
     }
     if (!_datesValid) {
-      _showSnack('End date must be the same as or after the start date');
+      _showSnack('End stay must be after the start stay');
       return;
     }
 
@@ -515,19 +465,19 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                                 children: [
                                   Expanded(
                                     child: _dateCard(
-                                      label: 'Start',
+                                      label: 'Start stay',
                                       value: _startDate,
                                       icon: Icons.calendar_today,
-                                      onTap: _selectStartDate,
+                                      onTap: _selectStayRange,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _dateCard(
-                                      label: 'End',
+                                      label: 'End stay',
                                       value: _endDate,
                                       icon: Icons.event_available,
-                                      onTap: _selectEndDate,
+                                      onTap: _selectStayRange,
                                     ),
                                   ),
                                 ],
@@ -595,3 +545,266 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
     );
   }
 }
+
+class _StayDateRangeDialog extends StatefulWidget {
+  final DateTime? initialStart;
+  final DateTime? initialEnd;
+  final DateTime firstDate;
+  final DateTime lastDate;
+
+  const _StayDateRangeDialog({
+    required this.initialStart,
+    required this.initialEnd,
+    required this.firstDate,
+    required this.lastDate,
+  });
+
+  @override
+  State<_StayDateRangeDialog> createState() => _StayDateRangeDialogState();
+}
+
+class _StayDateRangeDialogState extends State<_StayDateRangeDialog> {
+  DateTime? _start;
+  DateTime? _end;
+  late DateTime _focusedMonth;
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+  bool _isDisabled(DateTime day) =>
+      day.isBefore(widget.firstDate) || day.isAfter(widget.lastDate);
+
+  @override
+  void initState() {
+    super.initState();
+    _start = widget.initialStart != null ? _dateOnly(widget.initialStart!) : null;
+    _end = widget.initialEnd != null ? _dateOnly(widget.initialEnd!) : null;
+
+    final fallback = _dateOnly(DateTime.now());
+    _focusedMonth = _start ?? fallback;
+    if (_focusedMonth.isBefore(widget.firstDate)) _focusedMonth = widget.firstDate;
+    if (_focusedMonth.isAfter(widget.lastDate)) _focusedMonth = widget.lastDate;
+    _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+  }
+
+  void _onDayTap(DateTime day) {
+    if (_isDisabled(day)) return;
+    setState(() {
+      if (_start == null || _end != null) {
+        _start = day;
+        _end = null;
+        return;
+      }
+      if (day.isAfter(_start!)) {
+        _end = day;
+        Navigator.of(context).pop(DateTimeRange(start: _start!, end: _end!));
+      } else {
+        _start = day;
+        _end = null;
+      }
+    });
+  }
+
+  void _changeMonth(int delta) {
+    final next = DateTime(_focusedMonth.year, _focusedMonth.month + delta, 1);
+    final minMonth = DateTime(widget.firstDate.year, widget.firstDate.month, 1);
+    final maxMonth = DateTime(widget.lastDate.year, widget.lastDate.month, 1);
+    if (next.isBefore(minMonth) || next.isAfter(maxMonth)) return;
+    setState(() => _focusedMonth = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = MaterialLocalizations.of(context);
+    final monthLabel = localizations.formatMonthYear(_focusedMonth);
+    final firstOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+    final daysInMonth =
+        DateUtils.getDaysInMonth(_focusedMonth.year, _focusedMonth.month);
+    final firstWeekdaySundayBased = firstOfMonth.weekday % 7;
+    final leadingBlanks = (firstWeekdaySundayBased -
+            localizations.firstDayOfWeekIndex +
+            7) %
+        7;
+    final totalCells = ((leadingBlanks + daysInMonth + 6) ~/ 7) * 7;
+    final today = _dateOnly(DateTime.now());
+
+    final title = _start == null || _end != null
+        ? 'Select arrival date'
+        : 'Select departure date';
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      backgroundColor: ARAColors.surfaceWarm,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: ARAColors.ink,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: ARAColors.subInk),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => _changeMonth(-1),
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      monthLabel,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: ARAColors.inkStrong,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _changeMonth(1),
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: List.generate(7, (index) {
+                final weekday =
+                    (localizations.firstDayOfWeekIndex + index) % 7;
+                return Expanded(
+                  child: Center(
+                    child: Text(
+                      localizations.narrowWeekdays[weekday],
+                      style: const TextStyle(
+                        color: ARAColors.subInk,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 8),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                childAspectRatio: 1.05,
+              ),
+              itemCount: totalCells,
+              itemBuilder: (context, index) {
+                final dayNumber = index - leadingBlanks + 1;
+                if (dayNumber < 1 || dayNumber > daysInMonth) {
+                  return const SizedBox.shrink();
+                }
+
+                final day =
+                    DateTime(_focusedMonth.year, _focusedMonth.month, dayNumber);
+                final isStart = _start != null && _isSameDay(day, _start!);
+                final isEnd = _end != null && _isSameDay(day, _end!);
+                final inRange = _start != null &&
+                    _end != null &&
+                    day.isAfter(_start!) &&
+                    day.isBefore(_end!);
+                final isSelected = isStart || isEnd;
+                final isToday = _isSameDay(day, today);
+                final isDisabled = _isDisabled(day);
+
+                return InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: isDisabled ? null : () => _onDayTap(day),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (inRange)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 16,
+                          bottom: 16,
+                          child: Container(
+                            color: ARAColors.brand.withValues(alpha: 0.20),
+                          ),
+                        ),
+                      if (isStart && _end != null)
+                        Positioned(
+                          left: 20,
+                          right: 0,
+                          top: 16,
+                          bottom: 16,
+                          child: Container(
+                            color: ARAColors.brand.withValues(alpha: 0.20),
+                          ),
+                        ),
+                      if (isEnd && _start != null)
+                        Positioned(
+                          left: 0,
+                          right: 20,
+                          top: 16,
+                          bottom: 16,
+                          child: Container(
+                            color: ARAColors.brand.withValues(alpha: 0.20),
+                          ),
+                        ),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 120),
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected ? ARAColors.brand : Colors.transparent,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$dayNumber',
+                          style: TextStyle(
+                            color: isDisabled
+                                ? ARAColors.subInk.withValues(alpha: 0.38)
+                                : isSelected
+                                    ? ARAColors.ink
+                                    : ARAColors.inkStrong,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      if (isToday && !isSelected)
+                        Positioned(
+                          bottom: 9,
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: ARAColors.subInk.withValues(alpha: 0.7),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
