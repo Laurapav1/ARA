@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/ara_theme.dart';
-
+//
 class SearchField extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final String hintText;
