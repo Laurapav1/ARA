@@ -35,7 +35,7 @@ class InfoSectionList extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    items[index],
+                    _capitalizeFirstLetter(items[index]),
                     style: const TextStyle(color: ARAColors.ink),
                   ),
                 ),
@@ -45,6 +45,16 @@ class InfoSectionList extends StatelessWidget {
         }),
       ),
     );
+  }
+
+  String _capitalizeFirstLetter(String text) {
+    for (var i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (RegExp(r'[A-Za-z]').hasMatch(char)) {
+        return '${text.substring(0, i)}${char.toUpperCase()}${text.substring(i + 1)}';
+      }
+    }
+    return text;
   }
 
   Widget _marker(int index) {

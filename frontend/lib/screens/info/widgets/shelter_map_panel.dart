@@ -54,7 +54,7 @@ class _ShelterMapPanelState extends State<_ShelterMapPanel> {
     final dx = rawDx.clamp(minDx, 0.0).toDouble();
     final dy = rawDy.clamp(minDy, 0.0).toDouble();
 
-    _controller.value = Matrix4.identity()..translate(dx, dy);
+    _controller.value = Matrix4.identity()..translateByDouble(dx, dy, 0.0, 1.0);
     _initialViewportSet = true;
   }
 
