@@ -7,6 +7,7 @@ import '../../services/auth_store.dart';
 import '../../services/shifts_service.dart';
 import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
+import '../../widgets/global_search_filter.dart';
 import '../../theme/ara_theme.dart';
 import 'zone_list_screen.dart';
 
@@ -31,11 +32,35 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   ShiftView? _currentShift;
   bool _isRefreshing = false;
   Timer? _midnightTimer;
+  late final GlobalSearchFilterController<Zone> _searchFilterController;
 
   @override
   void initState() {
     super.initState();
+    _searchFilterController = GlobalSearchFilterController<Zone>(
+      resourceType: 'tasks_${widget.shiftType.toLowerCase()}',
+      titleOf: (zone) => zone.name,
+      subtitleOf: (zone) {
+        final taskCount = zone.taskCount ?? zone.tasks.length;
+        final start = zone.startTime ?? '';
+        if (start.isEmpty) return '$taskCount task${taskCount == 1 ? '' : 's'}';
+        return '$start - $taskCount task${taskCount == 1 ? '' : 's'}';
+      },
+      tagsOf: (zone) => [
+        zone.category,
+        ...zone.tasks,
+        ...zone.subtasks.map((task) => task.name),
+      ],
+    )..addListener(_onSearchFilterChanged);
     _future = _loadShift();
+    _future.then((shift) {
+      if (!mounted) return;
+      setState(() {
+        _currentShift = shift;
+      });
+    }).catchError((_) {
+      // Error handling stays in FutureBuilder.
+    });
     _scheduleMidnightRefresh();
   }
 
@@ -316,14 +341,158 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
 
   @override
   void dispose() {
+    _searchFilterController
+      ..removeListener(_onSearchFilterChanged)
+      ..dispose();
     _midnightTimer?.cancel();
     super.dispose();
+  }
+
+  void _onSearchFilterChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  List<GlobalFilterOption<Zone>> _zoneFilters(List<Zone> zones) {
+    if (widget.shiftType == 'Evening') {
+      return [
+        GlobalFilterOption<Zone>(
+          id: 'evening_parks',
+          label: 'Parks',
+          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.parks,
+        ),
+        GlobalFilterOption<Zone>(
+          id: 'evening_zones',
+          label: 'Zones',
+          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.zones,
+        ),
+        GlobalFilterOption<Zone>(
+          id: 'evening_extra',
+          label: 'Extra tasks',
+          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.extra,
+        ),
+      ];
+    }
+
+    final options = <GlobalFilterOption<Zone>>[
+      GlobalFilterOption<Zone>(
+        id: 'status_done',
+        label: 'Done',
+        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.done,
+      ),
+      GlobalFilterOption<Zone>(
+        id: 'status_in_progress',
+        label: 'In progress',
+        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.inProgress,
+      ),
+      GlobalFilterOption<Zone>(
+        id: 'status_unassigned',
+        label: 'Unassigned',
+        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.unassigned,
+      ),
+    ];
+
+    final categories = zones
+        .map((zone) => zone.category.trim())
+        .where((category) => category.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    for (final category in categories) {
+      options.add(
+        GlobalFilterOption<Zone>(
+          id: 'category_${category.toLowerCase()}',
+          label: category,
+          predicate: (zone) =>
+              zone.category.toLowerCase() == category.toLowerCase(),
+        ),
+      );
+    }
+    return options;
+  }
+
+  _ZoneStatus _zoneStatus(Zone zone) {
+    if (zone.subtasks.isNotEmpty) {
+      if (zone.subtasks.every((task) => task.progress >= 1.0)) {
+        return _ZoneStatus.done;
+      }
+      if (zone.subtasks.any((task) => task.progress > 0 || task.volunteers > 0)) {
+        return _ZoneStatus.inProgress;
+      }
+      return _ZoneStatus.unassigned;
+    }
+
+    if (zone.progress >= 1.0) return _ZoneStatus.done;
+    if (zone.progress > 0 || zone.volunteers > 0) return _ZoneStatus.inProgress;
+    return _ZoneStatus.unassigned;
+  }
+
+  _EveningGroup _eveningGroupFor(Zone zone) {
+    final category = zone.category.toLowerCase();
+    final name = zone.name.toLowerCase();
+
+    if (_isEveningSpecialTask(name)) {
+      return _EveningGroup.extra;
+    }
+
+    // Zone/kennel matching must win over generic category labels.
+    if (name.contains('zone') ||
+        name.contains('kennel') ||
+        category.contains('zone') ||
+        category.contains('kennel')) {
+      return _EveningGroup.zones;
+    }
+
+    if (name.contains('park') || category.contains('park')) {
+      return _EveningGroup.parks;
+    }
+
+    // In evening shifts, non-park/non-special work is zone-related by default.
+    return _EveningGroup.zones;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.shiftType} Shift')),
+      appBar: AppBar(
+        title: Text('${widget.shiftType} Shift'),
+        actions: buildGlobalSearchFilterActions<Zone>(
+          context: context,
+          title: 'tasks',
+          items: _currentShift == null ? <Zone>[] : _toZones(_currentShift!),
+          controller: _searchFilterController,
+          searchResultBuilder: (context, zone, onTap) => Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+            child: Card(
+              child: ListTile(
+                onTap: onTap,
+                leading: CircleAvatar(
+                  backgroundColor: zone.progress >= 1.0
+                      ? ARAColors.successSoft
+                      : ARAColors.surfaceWarm,
+                  child: Icon(
+                    zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
+                    color: ARAColors.ink,
+                  ),
+                ),
+                title: Text(zone.name),
+                subtitle: Text(
+                  [
+                    if (zone.category.trim().toLowerCase() != 'general')
+                      zone.category,
+                    if ((zone.startTime ?? '').isNotEmpty) zone.startTime!,
+                    '${zone.taskCount ?? zone.tasks.length} task(s)',
+                  ].join(' - '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: const Icon(Icons.chevron_right),
+              ),
+            ),
+          ),
+          onItemSelected: (_) {},
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -342,17 +511,18 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
                           : 'Could not load shift.';
                       return _ErrorState(message: message);
                     }
-                    _currentShift = snapshot.data;
                   }
 
                   final shift = _currentShift!;
                   final zones = _toZones(shift);
+                  _searchFilterController.setFilterOptions(_zoneFilters(zones));
+                  final visibleZones = _searchFilterController.apply(zones);
                   return Stack(
                     children: [
                       ZoneListScreen(
                         key: ValueKey('${shift.shiftId}-$_reloadKey'),
                         shiftType: widget.shiftType,
-                        zones: zones,
+                        zones: visibleZones,
                         shiftId: shift.shiftId,
                         onReload: _reload,
                       ),
@@ -389,6 +559,9 @@ class _TaskGrouping {
   const _TaskGrouping(this.groupName, this.subLabel);
 }
 
+enum _ZoneStatus { done, inProgress, unassigned }
+enum _EveningGroup { parks, zones, extra }
+
 class _ErrorState extends StatelessWidget {
   final String message;
 
@@ -399,7 +572,7 @@ class _ErrorState extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-          child: Column(
+        child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
             const Icon(Icons.error_outline, size: 64, color: ARAColors.subInk),

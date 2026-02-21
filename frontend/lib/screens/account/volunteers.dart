@@ -5,7 +5,7 @@ import '../../theme/ara_theme.dart';
 import '../../services/auth_store.dart';
 import '../../services/volunteers_service.dart';
 import '../../services/api_client.dart';
-import '../../widgets/search_field.dart';
+import '../../widgets/global_search_filter.dart';
 
 class VolunteerRequestsScreen extends StatefulWidget {
   const VolunteerRequestsScreen({super.key});
@@ -17,15 +17,38 @@ class VolunteerRequestsScreen extends StatefulWidget {
 
 class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
   final _service = VolunteersService();
+  late final GlobalSearchFilterController<PendingVolunteer>
+      _searchFilterController;
   List<PendingVolunteer> _requests = [];
   bool _loading = true;
   String? _error;
-  String _query = '';
 
   @override
   void initState() {
     super.initState();
+    _searchFilterController = GlobalSearchFilterController<PendingVolunteer>(
+      resourceType: 'volunteers',
+      titleOf: (request) => request.fullName,
+      subtitleOf: (request) => request.email,
+      tagsOf: (request) => [
+        request.requestedAtLabel,
+        request.stayLabel,
+      ],
+    )..addListener(_onSearchFilterChanged);
     _loadPending();
+  }
+
+  @override
+  void dispose() {
+    _searchFilterController
+      ..removeListener(_onSearchFilterChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onSearchFilterChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<List<PendingVolunteer>> _loadPending() async {
@@ -115,8 +138,37 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final visibleRequests = _filterRequests(_requests, _query);
+    final visibleRequests = _searchFilterController.apply(_requests);
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Volunteer requests'),
+        actions: buildGlobalSearchFilterActions<PendingVolunteer>(
+          context: context,
+          title: 'volunteers',
+          items: _requests,
+          controller: _searchFilterController,
+          showFilter: false,
+          searchResultBuilder: (context, request, onTap) => Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+            child: Card(
+              child: ListTile(
+                onTap: onTap,
+                leading: const CircleAvatar(
+                  child: Icon(Icons.person),
+                ),
+                title: Text(request.fullName),
+                subtitle: Text(
+                  '${request.email}\n${request.stayLabel}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: const Icon(Icons.chevron_right),
+              ),
+            ),
+          ),
+          onItemSelected: (_) {},
+        ),
+      ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
@@ -149,14 +201,6 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                 ),
               ),
             ),
-            if (!_loading && _error == null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                child: SearchField(
-                  onChanged: (value) => setState(() => _query = value),
-                  hintText: 'Search by name or email',
-                ),
-              ),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
@@ -184,20 +228,6 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
         ),
       ),
     );
-  }
-
-  List<PendingVolunteer> _filterRequests(
-    List<PendingVolunteer> requests,
-    String query,
-  ) {
-    final trimmed = query.trim();
-    if (trimmed.isEmpty) return requests;
-    final needle = trimmed.toLowerCase();
-    return requests
-        .where((r) =>
-            r.fullName.toLowerCase().contains(needle) ||
-            r.email.toLowerCase().contains(needle))
-        .toList();
   }
 
   Widget _buildEmptyState(BuildContext context) {

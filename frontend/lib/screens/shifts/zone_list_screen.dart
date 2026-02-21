@@ -48,12 +48,6 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     }
   }
 
-  Gradient _shiftGradient() {
-    return widget.shiftType == 'Morning'
-        ? ARAColors.morningGradient
-        : ARAColors.eveningGradient;
-  }
-
   // State colors:
   //  - Done: green
   //  - In progress (someone on it): softer amber
@@ -369,40 +363,6 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: _shiftGradient(),
-          ),
-          child: Row(
-            children: [
-              const _HeaderIcon(),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Zones & Tasks',
-                      style: TextStyle(
-                        color: ARAColors.cardBg,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Tap a task to join',
-                      style: TextStyle(
-                        color: ARAColors.cardBg.withValues(alpha: 0.95),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
         if (countdownMessage != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -493,7 +453,8 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   }
 
   String _titleForCategory(String category) {
-    if (category.isEmpty) return 'Other tasks';
+    final normalized = category.trim().toLowerCase();
+    if (normalized.isEmpty || normalized == 'general') return '';
     return category;
   }
 
@@ -774,26 +735,6 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _HeaderIcon extends StatelessWidget {
-  const _HeaderIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ARAColors.cardBg.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(
-        Icons.location_on,
-        color: ARAColors.cardBg,
-        size: 28,
-      ),
     );
   }
 }

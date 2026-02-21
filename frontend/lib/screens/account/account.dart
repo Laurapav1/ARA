@@ -131,6 +131,18 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
     );
   }
 
+  void _clearRequestForm() {
+    _formKey.currentState?.reset();
+    _nameController.clear();
+    _lastNameController.clear();
+    _emailController.clear();
+    _passwordController.clear();
+    setState(() {
+      _startDate = null;
+      _endDate = null;
+    });
+  }
+
   Future<void> _submitRequest() async {
     final formOk = _formKey.currentState!.validate();
 
@@ -214,13 +226,7 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
               FilledButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  _formKey.currentState!.reset();
-                  _nameController.clear();
-                  _lastNameController.clear();
-                  setState(() {
-                    _startDate = null;
-                    _endDate = null;
-                  });
+                  _clearRequestForm();
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: ARAColors.brand,

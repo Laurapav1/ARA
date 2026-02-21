@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted) return;
       _showSnack('Signed in. You can view shifts now.');
-      Navigator.pop(context);
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } on ApiException catch (error) {
       if (error.errors != null && error.errors!.isNotEmpty) {
         final firstError = error.errors!.values.first.isNotEmpty

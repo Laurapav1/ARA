@@ -92,13 +92,6 @@ class StaffAccountScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Staff account',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: ARAColors.ink,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
                     const SizedBox(height: 16),
                     _ProfileCard(
                       name: me?.fullName ?? 'Staff',
