@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/ara_theme.dart';
 import '../../widgets/offline_banner.dart';
+import 'hero_circle.dart';
 
 class AccessGate extends StatelessWidget {
   final bool allowed;
@@ -25,60 +26,73 @@ class AccessGate extends StatelessWidget {
     if (allowed) return child;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             const OfflineBanner(),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
                 child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: ARAColors.brand.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.lock,
-                          size: 64,
-                          color: ARAColors.brandDark,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        title,
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: ARAColors.ink,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        message,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: ARAColors.subInk,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        HeroCircle(
+                          backgroundColor: ARAColors.brand.withValues(
+                            alpha: 0.15,
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.lock,
+                              size: 52,
+                              color: ARAColors.brandDark,
                             ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 280),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: onCta,
-                            child: Text(ctaLabel),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 22),
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                color: ARAColors.ink,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.2,
+                              ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          message,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: ARAColors.subInk.withValues(alpha: 0.7),
+                                height: 1.5,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 28),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 280),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                onPressed: onCta,
+                                child: Text(ctaLabel),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
