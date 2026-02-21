@@ -1,280 +1,80 @@
-﻿// File: lib/screens/info/information.dart
-import 'package:flutter/material.dart';
-import '../../widgets/offline_banner.dart';
+﻿import 'package:flutter/material.dart';
 import '../../theme/ara_theme.dart';
+import '../../widgets/offline_banner.dart';
+import '../../widgets/info_tile_card.dart';
+import '../../widgets/screen_header.dart';
+import '../../widgets/expandable_section.dart';
+import '../../widgets/expandable_section_group.dart';
+import '../../widgets/info_section_list.dart';
+part 'information_content.dart';
+part 'sections/info_section_enum.dart';
+part 'sections/overview_tab.dart';
+part 'sections/cleaning_tab.dart';
+part 'sections/safety_tab.dart';
+part 'sections/before_you_arrive_tab.dart';
+part 'sections/first_day_tab.dart';
+part 'sections/living_info_tab.dart';
+part 'widgets/cleaning_panel_body.dart';
+part 'widgets/overview_map_content.dart';
+part 'widgets/shelter_map_panel.dart';
 
-class InformationScreen extends StatelessWidget {
+class InformationScreen extends StatefulWidget {
   const InformationScreen({super.key});
 
-  Future<void> _showZoneGuide(BuildContext context, String zone) async {
-    final tasks = _zoneGuides[zone] ?? const <String>[];
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 560,
-            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: ARAColors.brand.withValues(alpha: .12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.map, color: ARAColors.brandDark),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text('Guide â€¢ $zone',
-                          style: Theme.of(ctx).textTheme.titleLarge),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemBuilder: (_, i) => ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.task_alt, color: ARAColors.ink),
-                      title: Text(tasks[i]),
-                    ),
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemCount: tasks.length,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Close'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  @override
+  State<InformationScreen> createState() => _InformationScreenState();
+}
 
-  Future<void> _showChecklist(
-    BuildContext context,
-    String title,
-    List<String> items,
-  ) async {
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 560,
-            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: ARAColors.ink.withValues(alpha: .12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child:
-                          const Icon(Icons.checklist_rtl, color: ARAColors.ink),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(title,
-                          style: Theme.of(ctx).textTheme.titleLarge),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemBuilder: (_, i) => ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.check_circle_outline,
-                          color: ARAColors.brandDark),
-                      title: Text(items[i]),
-                    ),
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemCount: items.length,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Close'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
+class _InformationScreenState extends State<InformationScreen> {
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Scaffold(
-      // background comes from ARATheme.light.scaffoldBackgroundColor
+      backgroundColor: ARAColors.bg,
       body: SafeArea(
         child: Column(
           children: [
             const OfflineBanner(),
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: ARAColors.ink,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.info,
-                        color: ARAColors.cardBg, size: 28),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Information Hub',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: ARAColors.ink,
-                          ),
-                        ),
-                        Text(
-                          'Maps â€¢ Guides â€¢ Safety â€¢ Contacts',
-                          style: TextStyle(color: ARAColors.subInk),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            const ScreenHeader(
+              title: 'Information',
+              subtitle: 'Everything you need to know',
             ),
-
-            // Content
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 children: [
-                  _SectionHeader(
-                    title: 'Shelter Map',
-                    trailing: Text('Pinch to zoom',
-                        style: Theme.of(context).textTheme.labelSmall),
-                  ),
-                  const SizedBox(height: 12),
-                  _MapCard(onZoneTap: (z) => _showZoneGuide(context, z)),
-                  const SizedBox(height: 24),
-                  const _SectionHeader(title: 'Zones'),
-                  const SizedBox(height: 12),
-                  _ZoneChips(
-                    zones: _zoneGuides.keys.toList(),
-                    onTap: (z) => _showZoneGuide(context, z),
-                  ),
-                  const SizedBox(height: 28),
-                  const _SectionHeader(title: 'Quick Actions'),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      // Dog (blue gradient)
-                      _QuickActionCard(
-                        gradient: ARAColors.dogGradient,
-                        icon: Icons.checklist_rtl,
-                        title: 'First-day checklist',
-                        subtitle: 'Start here on day one',
-                        onTap: () => _showChecklist(
-                          context,
-                          'First-day checklist',
-                          _firstDayChecklist,
-                        ),
-                      ),
-                      // Brand orange
-                      _QuickActionCard(
-                        gradient: const LinearGradient(
-                          colors: [ARAColors.brand, ARAColors.brandDark],
-                        ),
-                        icon: Icons.done_all,
-                        title: 'End-of-shift',
-                        subtitle: 'Make sure nothing is missed',
-                        onTap: () => _showChecklist(
-                          context,
-                          'End-of-shift checklist',
-                          _endOfShiftChecklist,
-                        ),
-                      ),
-                      // Cat (coral/pink gradient)
-                      _QuickActionCard(
-                        gradient: ARAColors.catGradient,
-                        icon: Icons.report_gmailerrorred,
-                        title: 'Incident steps',
-                        subtitle: 'What to do immediately',
-                        onTap: () => _showChecklist(
-                          context,
-                          'Incident procedure',
-                          _incidentSteps,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  const _SectionHeader(title: 'Safety Flags'),
-                  const SizedBox(height: 12),
-                  const _SafetyFlags(),
-                  const SizedBox(height: 28),
-                  const _SectionHeader(title: 'Tips & How-tos'),
-                  const SizedBox(height: 12),
-                  const _TipsAccordion(),
-                  const SizedBox(height: 28),
-                  const _SectionHeader(title: 'Contacts'),
-                  const SizedBox(height: 12),
-                  const _ContactsList(),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Last updated just now',
-                      style: TextStyle(
-                        color: scheme.outline,
-                        fontSize: 12,
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 460),
+                      child: GridView.count(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 1.28,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children:
+                            _InfoSection.values.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final section = entry.value;
+                          final isTopRow = index < 2;
+                          return InfoTileCard(
+                            title: section.label,
+                            subtitle: section.subtitle,
+                            backgroundGradient: _sectionGradient(section),
+                            textColor: ARAColors.cardBg,
+                            showArrow: true,
+                            backgroundIcon: section.icon,
+                            backgroundIconColor: ARAColors.cardBg,
+                            backgroundIconSize: isTopRow ? 112 : 106,
+                            backgroundIconOpacity: 0.14,
+                            backgroundIconRight: isTopRow ? -12 : -8,
+                            backgroundIconTop: isTopRow ? -14 : -6,
+                            backgroundIconAngle: isTopRow ? 0.05 : -0.04,
+                            pinTitleToBottom: true,
+                            onTap: () => _openSection(section),
+                          );
+                        }).toList(),
                       ),
                     ),
                   ),
@@ -286,432 +86,118 @@ class InformationScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-/* ---------- Data ---------- */
+  void _openSection(_InfoSection section) {
+    final content = switch (section) {
+      _InfoSection.shelterMap => const _OverviewTab(),
+      _InfoSection.cleaning => const _CleaningTab(),
+      _InfoSection.safety => const _SafetyTab(),
+      _InfoSection.beforeYouArrive => const _BeforeYouArriveTab(),
+      _InfoSection.firstDay => const _FirstDayTab(),
+      _InfoSection.livingInfo => const _LivingInfoTab(),
+    };
 
-const Map<String, List<String>> _zoneGuides = {
-  'Zone A': [
-    'Kennels 1â€“10: morning clean',
-    'Refill water bowls',
-    'Feed according to board',
-    'Note any diarrhoea/cough',
-    'Walk dogs assigned to Zone A (15â€“20 min)',
-  ],
-  'Zone B': [
-    'Kennels 11â€“20: sweep & disinfect',
-    'Park 1 rotation (max 2 dogs)',
-    'Red tag dogs need muzzle',
-    'Laundry drop-off by 11:00',
-  ],
-  'Quarantine': [
-    'No cross-zone tools',
-    'Gloves & boot dip required',
-    'Waste bagged and sealed',
-  ],
-};
-
-const List<String> _firstDayChecklist = [
-  'Sign in & get badge',
-  'Read safety flags board',
-  'Shadow an experienced volunteer',
-  'Learn leash & gate rules',
-  'Locate first aid & emergency exits',
-];
-
-const List<String> _endOfShiftChecklist = [
-  'Return keys & badge',
-  'Update whiteboard (food/water/notes)',
-  'Log incidents (if any)',
-  'Laundry started / folded',
-  'Tools cleaned & stored',
-];
-
-const List<String> _incidentSteps = [
-  'Secure dog/cat safely',
-  'Inform coordinator immediately',
-  'Provide basic first aid if trained',
-  'Record incident in log (who/what/when)',
-  'Disinfect area and tools',
-];
-
-/* -------------------- UI pieces -------------------- */
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final Widget? trailing;
-  const _SectionHeader({required this.title, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme.titleLarge;
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: text?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: ARAColors.ink,
-            ),
-          ),
-        ),
-        if (trailing != null) trailing!,
-      ],
-    );
-  }
-}
-
-class _MapCard extends StatelessWidget {
-  final void Function(String zone) onZoneTap;
-  const _MapCard({required this.onZoneTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 260,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [ARAColors.brand, ARAColors.brandDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: ARAColors.brand.withValues(alpha: 0.25),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Container(
-                color: ARAColors.cardBg.withValues(alpha: 0.08),
-                child: const Center(
-                  child: Text(
-                    'Shelter map (pinch to zoom)',
-                    style: TextStyle(color: ARAColors.cardBg),
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: InteractiveViewer(
-                boundaryMargin: const EdgeInsets.all(24),
-                minScale: 1,
-                maxScale: 4,
-                child: Container(color: ARAColors.transparent),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final z in _zoneGuides.keys)
-                      ActionChip(
-                        backgroundColor: ARAColors.cardBg.withValues(alpha: .9),
-                        label: Text(z),
-                        avatar: const Icon(Icons.place, size: 18),
-                        onPressed: () => onZoneTap(z),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _InformationSectionScreen(
+          title: section.label,
+          child: content,
         ),
       ),
     );
   }
-}
 
-class _ZoneChips extends StatelessWidget {
-  final List<String> zones;
-  final void Function(String) onTap;
-  const _ZoneChips({required this.zones, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: zones
-          .map(
-            (z) => ActionChip(
-              backgroundColor: ARAColors.brand.withValues(alpha: .10),
-              side: BorderSide(color: ARAColors.brand.withValues(alpha: .35)),
-              avatar:
-                  const Icon(Icons.map, size: 18, color: ARAColors.brandDark),
-              label: Text(
-                z,
-                style: const TextStyle(color: ARAColors.ink),
-              ),
-              onPressed: () => onTap(z),
-            ),
-          )
-          .toList(),
+  Gradient _sectionGradient(_InfoSection section) {
+    final start = Color.lerp(section.iconColor, Colors.white, 0.24)!;
+    final end = Color.lerp(section.iconColor, Colors.black, 0.08)!;
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [start, end],
     );
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
-  final Gradient gradient;
-  final IconData icon;
+class _InformationSectionScreen extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+  final Widget child;
 
-  const _QuickActionCard({
-    required this.gradient,
-    required this.icon,
+  const _InformationSectionScreen({
     required this.title,
-    required this.subtitle,
-    required this.onTap,
+    required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: Ink(
-        width: 320,
-        height: 120,
-        decoration: BoxDecoration(gradient: gradient),
-        child: InkWell(
-          onTap: onTap,
-          child: Stack(
-            children: [
-              Positioned(
-                right: -10,
-                top: -10,
-                child: Icon(
-                  icon,
-                  size: 120,
-                  color: ARAColors.cardBg.withValues(alpha: .18),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: ARAColors.cardBg.withValues(alpha: .28),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: ARAColors.cardBg),
+    return Scaffold(
+      backgroundColor: ARAColors.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 16, 8),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: ARAColors.ink,
+                                fontWeight: FontWeight.w700,
+                              ),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(title,
-                              style: const TextStyle(
-                                color: ARAColors.cardBg,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 18,
-                              )),
-                          const SizedBox(height: 4),
-                          Text(
-                            subtitle,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: ARAColors.cardBg.withValues(alpha: .92),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.arrow_forward, color: ARAColors.cardBg),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Expanded(child: child),
+          ],
         ),
       ),
     );
   }
 }
 
-class _SafetyFlags extends StatelessWidget {
-  const _SafetyFlags();
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: const [
-        _FlagPill(
-            icon: Icons.mood_bad,
-            color: ARAColors.flagDanger,
-            text: 'Bite risk â€¢ Red tag'),
-        _FlagPill(
-            icon: Icons.heart_broken,
-            color: ARAColors.flagCaution,
-            text: 'Fearful â€¢ Slow approach'),
-        _FlagPill(
-            icon: Icons.sick,
-            color: ARAColors.flagQuarantine,
-            text: 'Quarantine â€¢ PPE required'),
-        _FlagPill(
-            icon: Icons.emoji_food_beverage,
-            color: ARAColors.flagInfo,
-            text: 'Special diet'),
-      ],
-    );
-  }
-}
-
-class _FlagPill extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String text;
-  const _FlagPill(
-      {required this.icon, required this.color, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 6),
-        Text(text),
-      ]),
-    );
-  }
-}
-
-class _TipsAccordion extends StatelessWidget {
-  const _TipsAccordion();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: const [
-        _TipsTile(
-          title: 'Cleaning',
-          bullets: [
-            'Sweep before disinfectant',
-            'Let surfaces dry fully',
-            'Separate tools for quarantine',
-          ],
-        ),
-        _TipsTile(
-          title: 'Feeding',
-          bullets: [
-            'Follow whiteboard portions',
-            'Fresh water every shift',
-            'Log special diets',
-          ],
-        ),
-        _TipsTile(
-          title: 'Safety',
-          bullets: [
-            'One dog per gate at a time',
-            'Two points of contact on leash',
-            'Ask for help with red tags',
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _TipsTile extends StatelessWidget {
+class _SectionCard extends StatelessWidget {
   final String title;
-  final List<String> bullets;
-  const _TipsTile({required this.title, required this.bullets});
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
-      child: ExpansionTile(
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: ARAColors.ink,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        children: bullets
-            .map((b) => ListTile(
-                  dense: true,
-                  leading:
-                      const Icon(Icons.arrow_right, color: ARAColors.brandDark),
-                  title: Text(b),
-                ))
-            .toList(),
-      ),
-    );
-  }
-}
-
-class _ContactsList extends StatelessWidget {
-  const _ContactsList();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: const [
-        _ContactTile(name: 'Volunteer Coordinator', phone: '+351 900 000 001'),
-        _ContactTile(name: 'Vet (on call)', phone: '+351 900 000 002'),
-        _ContactTile(name: 'Emergency', phone: '112'),
-      ],
-    );
-  }
-}
-
-class _ContactTile extends StatelessWidget {
-  final String name;
-  final String phone;
-  const _ContactTile({required this.name, required this.phone});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: ARAColors.brand,
-          child: Icon(Icons.phone, color: ARAColors.cardBg),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(
-            color: ARAColors.ink,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        subtitle: Text(phone),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Call $phone (hook up url_launcher later)')),
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (title.isNotEmpty)
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: ARAColors.inkStrong,
+                ),
+              ),
+            if (title.isNotEmpty) const SizedBox(height: 10),
+            child,
+          ],
         ),
       ),
     );
   }
 }
-

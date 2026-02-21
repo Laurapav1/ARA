@@ -54,6 +54,15 @@ class ARAColors {
   static const Color flagQuarantine = Color(0xFF7B1FA2);
   static const Color flagInfo = Color(0xFF1E88E5);
 
+  static const Color infoSectionOverviewBg = Color(0xFFE2F0EA);
+  static const Color infoSectionOverviewIcon = Color(0xFF67A38A);
+  static const Color infoSectionCleaningBg = Color(0xFFF4EAD3);
+  static const Color infoSectionCleaningIcon = Color(0xFFD6952A);
+  static const Color infoSectionSafetyBg = Color(0xFFF5E1E4);
+  static const Color infoSectionSafetyIcon = Color(0xFFD25C67);
+  static const Color infoSectionChecklistBg = Color(0xFFE1E9F4);
+  static const Color infoSectionChecklistIcon = Color(0xFF4D8FC4);
+
   static const Gradient morningGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

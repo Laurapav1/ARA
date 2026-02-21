@@ -8,6 +8,7 @@ import '../../services/api_client.dart';
 import '../../services/api_config.dart';
 import '../../services/auth_store.dart';
 import '../../theme/ara_theme.dart';
+import '../../widgets/expandable_section.dart';
 import '../../widgets/handling_flag_chips.dart';
 import '../../widgets/offline_banner.dart';
 import 'animal_editor.dart';
@@ -24,6 +25,7 @@ class AnimalDetailScreen extends StatefulWidget {
 class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   late final AnimalsService _animalsService;
   late Animal _animal;
+  bool _moreInfoExpanded = false;
   bool _isLoading = true;
   String? _loadError;
 
@@ -223,58 +225,52 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   }
 
   Widget _buildMoreInfo(BuildContext context, Animal a) {
-    return Container(
-      decoration: BoxDecoration(
-        color: ARAColors.cardBg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: ARAColors.surfaceWarmTint),
+    return ExpandableSection(
+      title: 'More information',
+      isExpanded: _moreInfoExpanded,
+      onChanged: (expanded) => setState(() => _moreInfoExpanded = expanded),
+      borderRadius: 18,
+      headerPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      backgroundColor: ARAColors.cardBg,
+      borderColor: ARAColors.surfaceWarmTint,
+      titleStyle: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: ARAColors.ink,
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          title: const Text(
-            'More information',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: ARAColors.ink,
-            ),
+      child: Column(
+        children: [
+          _InfoRow(
+            icon: Icons.pets,
+            label: 'Age',
+            value: _formatAge(a.age),
           ),
-          trailing: const Icon(Icons.keyboard_arrow_down),
-          children: [
-            _InfoRow(
-              icon: Icons.pets,
-              label: 'Age',
-              value: _formatAge(a.age),
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1, color: ARAColors.surfaceWarmTint),
-            const SizedBox(height: 10),
-            _InfoRow(
-              icon: Icons.bubble_chart_outlined,
-              label: 'Breed',
-              value: _orNotSet(a.breed),
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1, color: ARAColors.surfaceWarmTint),
-            const SizedBox(height: 10),
-            _InfoRow(
-              icon: Icons.wc,
-              label: 'Gender',
-              value: _orNotSet(a.gender),
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1, color: ARAColors.surfaceWarmTint),
-            const SizedBox(height: 10),
-            _InfoRow(
-              icon: Icons.place_outlined,
-              label: 'History',
-              value: a.history.isNotEmpty ? a.history : 'No history yet.',
-            ),
-          ],
-        ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: ARAColors.surfaceWarmTint),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: Icons.bubble_chart_outlined,
+            label: 'Breed',
+            value: _orNotSet(a.breed),
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: ARAColors.surfaceWarmTint),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: Icons.wc,
+            label: 'Gender',
+            value: _orNotSet(a.gender),
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: ARAColors.surfaceWarmTint),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: Icons.place_outlined,
+            label: 'History',
+            value: a.history.isNotEmpty ? a.history : 'No history yet.',
+          ),
+        ],
       ),
     );
   }
