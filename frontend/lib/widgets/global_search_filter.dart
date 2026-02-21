@@ -76,6 +76,23 @@ class GlobalSearchFilterController<T> extends ChangeNotifier {
     updateQuery('');
   }
 
+  void clearFilters() {
+    if (_state.selectedFilterIds.isEmpty) return;
+    _state.selectedFilterIds.clear();
+    notifyListeners();
+  }
+
+  void reset({bool notify = true}) {
+    final hadQuery = _state.query.isNotEmpty;
+    final hadFilters = _state.selectedFilterIds.isNotEmpty;
+    if (!hadQuery && !hadFilters) return;
+    _state.query = '';
+    _state.selectedFilterIds.clear();
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
   void toggleFilter(String id) {
     if (_state.selectedFilterIds.contains(id)) {
       _state.selectedFilterIds.remove(id);

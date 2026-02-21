@@ -11,6 +11,8 @@ class ZoneListScreen extends StatefulWidget {
   final List<Zone> zones;
   final String? shiftId;
   final VoidCallback? onReload;
+  final String? focusedZoneName;
+  final int focusRequestId;
 
   const ZoneListScreen({
     Key? key,
@@ -18,6 +20,8 @@ class ZoneListScreen extends StatefulWidget {
     required this.zones,
     this.shiftId,
     this.onReload,
+    this.focusedZoneName,
+    this.focusRequestId = 0,
   }) : super(key: key);
 
   @override
@@ -28,7 +32,10 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   late List<Zone> _zones;
   late List<bool> _signedUp;
   final Map<String, bool> _signedUpTasks = {};
+  final Map<String, GlobalKey> _zoneCardKeys = <String, GlobalKey>{};
+  final ScrollController _scrollController = ScrollController();
   final _service = ShiftsService();
+  int _lastHandledFocusRequestId = -1;
 
   @override
   void initState() {
@@ -36,6 +43,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     _zones = widget.zones.map((z) => z.copy()).toList();
     _signedUp = List<bool>.filled(_zones.length, false);
     _signedUpTasks.clear();
+    _scheduleFocusIfNeeded();
   }
 
   @override
@@ -46,6 +54,53 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       _signedUp = List<bool>.filled(_zones.length, false);
       _signedUpTasks.clear();
     }
+    _scheduleFocusIfNeeded();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  String _zoneIdentity(Zone zone) {
+    if (zone.taskId != null && zone.taskId!.isNotEmpty) {
+      return zone.taskId!;
+    }
+    return '${zone.name}::${zone.category}'.toLowerCase();
+  }
+
+  GlobalKey _zoneCardKey(Zone zone) {
+    final id = _zoneIdentity(zone);
+    return _zoneCardKeys.putIfAbsent(id, GlobalKey.new);
+  }
+
+  void _scheduleFocusIfNeeded() {
+    if (widget.focusedZoneName == null || widget.focusedZoneName!.trim().isEmpty) {
+      return;
+    }
+    if (widget.focusRequestId == _lastHandledFocusRequestId) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final target = widget.focusedZoneName!.trim().toLowerCase();
+      final zone = _zones.cast<Zone?>().firstWhere(
+            (z) => z != null && z.name.trim().toLowerCase() == target,
+            orElse: () => null,
+          );
+      if (zone == null) return;
+      final keyContext = _zoneCardKey(zone).currentContext;
+      if (keyContext != null) {
+        Scrollable.ensureVisible(
+          keyContext,
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          alignment: 0.1,
+        );
+      }
+      _lastHandledFocusRequestId = widget.focusRequestId;
+    });
   }
 
   // State colors:
@@ -394,6 +449,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
         Expanded(
           child: ListView(
+            controller: _scrollController,
             padding: const EdgeInsets.all(16),
             children: [
               for (final section in sections) ...[
@@ -404,6 +460,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                   ),
                 for (final index in section.indices)
                   Padding(
+                    key: _zoneCardKey(_zones[index]),
                     padding: const EdgeInsets.only(bottom: 16),
                     child: _buildZoneCard(
                       index,

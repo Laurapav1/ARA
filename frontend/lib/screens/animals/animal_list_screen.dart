@@ -76,6 +76,7 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
   @override
   void dispose() {
     _searchFilterController
+      ..reset(notify: false)
       ..removeListener(_onSearchFilterChanged)
       ..dispose();
     super.dispose();

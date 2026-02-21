@@ -28,11 +28,12 @@ class ShiftZoneScreen extends StatefulWidget {
 class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   final _service = ShiftsService();
   late Future<ShiftView> _future;
-  int _reloadKey = 0;
   ShiftView? _currentShift;
   bool _isRefreshing = false;
   Timer? _midnightTimer;
   late final GlobalSearchFilterController<Zone> _searchFilterController;
+  String? _focusedZoneName;
+  int _focusRequestId = 0;
 
   @override
   void initState() {
@@ -328,7 +329,6 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
       if (!mounted) return;
       setState(() {
         _currentShift = shift;
-        _reloadKey++;
       });
     } on ApiException catch (_) {
       // Keep existing data on refresh errors.
@@ -342,6 +342,7 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   @override
   void dispose() {
     _searchFilterController
+      ..reset(notify: false)
       ..removeListener(_onSearchFilterChanged)
       ..dispose();
     _midnightTimer?.cancel();
@@ -453,45 +454,63 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMorningShift = widget.shiftType == 'Morning';
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.shiftType} Shift'),
-        actions: buildGlobalSearchFilterActions<Zone>(
-          context: context,
-          title: 'tasks',
-          items: _currentShift == null ? <Zone>[] : _toZones(_currentShift!),
-          controller: _searchFilterController,
-          searchResultBuilder: (context, zone, onTap) => Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-            child: Card(
-              child: ListTile(
-                onTap: onTap,
-                leading: CircleAvatar(
-                  backgroundColor: zone.progress >= 1.0
-                      ? ARAColors.successSoft
-                      : ARAColors.surfaceWarm,
-                  child: Icon(
-                    zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
-                    color: ARAColors.ink,
+        actions: isMorningShift
+            ? null
+            : [
+                ...buildGlobalSearchFilterActions<Zone>(
+                  context: context,
+                  title: 'tasks',
+                  items:
+                      _currentShift == null ? <Zone>[] : _toZones(_currentShift!),
+                  controller: _searchFilterController,
+                  searchResultBuilder: (context, zone, onTap) => Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                    child: Card(
+                      child: ListTile(
+                        onTap: onTap,
+                        leading: CircleAvatar(
+                          backgroundColor: zone.progress >= 1.0
+                              ? ARAColors.successSoft
+                              : ARAColors.surfaceWarm,
+                          child: Icon(
+                            zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
+                            color: ARAColors.ink,
+                          ),
+                        ),
+                        title: Text(zone.name),
+                        subtitle: Text(
+                          [
+                            if (zone.category.trim().toLowerCase() != 'general')
+                              zone.category,
+                            if ((zone.startTime ?? '').isNotEmpty) zone.startTime!,
+                            '${zone.taskCount ?? zone.tasks.length} task(s)',
+                          ].join(' - '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                      ),
+                    ),
                   ),
+                  onItemSelected: (zone) {
+                    _searchFilterController.updateQuery(zone.name);
+                    setState(() {
+                      _focusedZoneName = zone.name;
+                      _focusRequestId++;
+                    });
+                  },
                 ),
-                title: Text(zone.name),
-                subtitle: Text(
-                  [
-                    if (zone.category.trim().toLowerCase() != 'general')
-                      zone.category,
-                    if ((zone.startTime ?? '').isNotEmpty) zone.startTime!,
-                    '${zone.taskCount ?? zone.tasks.length} task(s)',
-                  ].join(' - '),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: const Icon(Icons.chevron_right),
-              ),
-            ),
-          ),
-          onItemSelected: (_) {},
-        ),
+                if (_searchFilterController.query.trim().isNotEmpty)
+                  IconButton(
+                    tooltip: 'Clear search',
+                    icon: const Icon(Icons.close),
+                    onPressed: _searchFilterController.clearQuery,
+                  ),
+              ],
       ),
       body: SafeArea(
         child: Column(
@@ -515,16 +534,24 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
 
                   final shift = _currentShift!;
                   final zones = _toZones(shift);
-                  _searchFilterController.setFilterOptions(_zoneFilters(zones));
-                  final visibleZones = _searchFilterController.apply(zones);
+                  final visibleZones = isMorningShift
+                      ? zones
+                      : () {
+                          _searchFilterController.setFilterOptions(
+                            _zoneFilters(zones),
+                          );
+                          return _searchFilterController.apply(zones);
+                        }();
                   return Stack(
                     children: [
                       ZoneListScreen(
-                        key: ValueKey('${shift.shiftId}-$_reloadKey'),
+                        key: ValueKey(shift.shiftId),
                         shiftType: widget.shiftType,
                         zones: visibleZones,
                         shiftId: shift.shiftId,
                         onReload: _reload,
+                        focusedZoneName: _focusedZoneName,
+                        focusRequestId: _focusRequestId,
                       ),
                       if (_isRefreshing)
                         const Positioned(
