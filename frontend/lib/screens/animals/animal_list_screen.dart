@@ -8,8 +8,8 @@ import '../../services/api_config.dart';
 import '../../services/auth_store.dart';
 import '../../theme/ara_theme.dart';
 import '../../widgets/animal_grid.dart';
+import '../../widgets/global_search_filter.dart';
 import '../../widgets/offline_banner.dart';
-import '../../widgets/search_field.dart';
 import 'animal_detail.dart';
 import 'animal_editor.dart';
 
@@ -35,8 +35,7 @@ class AnimalListScreen extends StatefulWidget {
 
 class _AnimalListScreenState extends State<AnimalListScreen> {
   late final AnimalsService _animalsService;
-  String _query = '';
-  AnimalFilter _activeFilter = AnimalFilter.all;
+  late final GlobalSearchFilterController<Animal> _searchFilterController;
   List<Animal> _animals = const [];
   bool _isLoading = true;
   String? _loadError;
@@ -47,7 +46,45 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
   void initState() {
     super.initState();
     _animalsService = AnimalsService(ApiClient(ApiConfig.baseUrl));
+    _searchFilterController = GlobalSearchFilterController<Animal>(
+      resourceType: 'animals_${widget.species.toLowerCase()}',
+      titleOf: (animal) => animal.name,
+      subtitleOf: (animal) => '${animal.breed} ${animal.age}'.trim(),
+      tagsOf: (animal) => [
+        animal.species,
+        animal.gender,
+        animal.zone,
+        animal.kennel,
+        ...animal.flags.map((flag) => flag.name),
+      ].whereType<String>().where((value) => value.trim().isNotEmpty).toList(),
+      filterOptions: [
+        GlobalFilterOption<Animal>(
+          id: 'care_required',
+          label: 'Care required',
+          predicate: (animal) => animal.isDangerous || animal.flags.isNotEmpty,
+        ),
+        GlobalFilterOption<Animal>(
+          id: 'in_treatment',
+          label: 'In treatment',
+          predicate: (animal) => animal.isInTreatment,
+        ),
+      ],
+    )..addListener(_onSearchFilterChanged);
     _loadAnimals();
+  }
+
+  @override
+  void dispose() {
+    _searchFilterController
+      ..reset(notify: false)
+      ..removeListener(_onSearchFilterChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onSearchFilterChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _loadAnimals() async {
@@ -60,8 +97,8 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
       final auth = context.read<AuthStore>();
       final animals = await _animalsService.getAnimals(
         species: widget.species,
-        filter: _activeFilter,
-        search: _query,
+        filter: AnimalFilter.all,
+        search: '',
         token: auth.accessToken,
       );
       if (!mounted) return;
@@ -85,9 +122,56 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStore>();
     final isStaff = auth.isStaff;
-    final showCautionIcon = _activeFilter == AnimalFilter.all;
+    final visibleAnimals = _searchFilterController.apply(_animals);
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: buildGlobalSearchFilterActions<Animal>(
+          context: context,
+          title: widget.title.toLowerCase(),
+          items: _animals,
+          controller: _searchFilterController,
+          searchResultBuilder: (context, animal, onTap) => Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+            child: Card(
+              child: ListTile(
+                onTap: onTap,
+                leading: CircleAvatar(
+                  backgroundColor: widget.accentSoft,
+                  backgroundImage: animal.photoBytes != null
+                      ? MemoryImage(animal.photoBytes!)
+                      : null,
+                  child: animal.photoBytes == null
+                      ? Icon(Icons.pets, color: widget.accentColor)
+                      : null,
+                ),
+                title: Text(animal.name),
+                subtitle: Text(
+                  [
+                    animal.breed,
+                    animal.age,
+                    animal.zone,
+                    if (animal.flags.isNotEmpty) '${animal.flags.length} flags',
+                  ].where((v) => v.trim().isNotEmpty).join(' - '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: const Icon(Icons.chevron_right),
+              ),
+            ),
+          ),
+          onItemSelected: (animal) async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AnimalDetailScreen(animal: animal),
+              ),
+            );
+            await _loadAnimals();
+          },
+        ),
+      ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: isStaff
           ? FloatingActionButton(
@@ -111,28 +195,6 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
         child: Column(
           children: [
             const OfflineBanner(),
-            _buildHeader(context),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: SearchField(
-                onChanged: (value) {
-                  setState(() => _query = value);
-                  _loadAnimals();
-                },
-                hintText: 'Search by name',
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: AnimalFilterRow(
-                activeFilter: _activeFilter,
-                onChanged: (value) {
-                  setState(() => _activeFilter = value);
-                  _loadAnimals();
-                },
-                onMoreFilters: () {},
-              ),
-            ),
             Expanded(
               child: Stack(
                 children: [
@@ -145,10 +207,10 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
                     )
                   else
                     AnimalGrid(
-                      animals: _animals,
+                      animals: visibleAnimals,
                       accentColor: widget.accentColor,
                       accentSoft: widget.accentSoft,
-                      showCautionIcons: showCautionIcon,
+                      showCautionIcons: true,
                       needsCaution: _needsCaution,
                       onTap: (animal) async {
                         await Navigator.push(
@@ -160,7 +222,9 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
                         await _loadAnimals();
                       },
                     ),
-                  if (!_isLoading && _loadError == null && _animals.isEmpty)
+                  if (!_isLoading &&
+                      _loadError == null &&
+                      visibleAnimals.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _buildEmptyState(),
@@ -226,36 +290,8 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              widget.emptyText,
+              '${widget.emptyText} Try adjusting search or filters.',
               style: const TextStyle(color: ARAColors.subInk),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-            style: IconButton.styleFrom(backgroundColor: ARAColors.cardBg),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.title,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 2),
-              ],
             ),
           ),
         ],
