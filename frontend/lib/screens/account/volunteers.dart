@@ -414,38 +414,45 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: ARAColors.cardBg,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: TabBar(
-                        indicatorSize: TabBarIndicatorSize.label,
-                        dividerColor: Colors.transparent,
-                        indicatorColor: ARAColors.brand,
-                        indicatorWeight: 3,
-                        labelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isNarrow = constraints.maxWidth < 380;
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: ARAColors.cardBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
                             ),
-                        unselectedLabelStyle:
-                            Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w500,
+                          ),
+                          child: TabBar(
+                            isScrollable: isNarrow,
+                            indicatorSize: TabBarIndicatorSize.label,
+                            dividerColor: Colors.transparent,
+                            indicatorColor: ARAColors.brand,
+                            indicatorWeight: 3,
+                            labelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 15,
                                 ),
-                        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                        labelColor: ARAColors.inkStrong,
-                        unselectedLabelColor: ARAColors.subInk,
-                        tabs: [
-                          Tab(height: 48, text: 'Pending (${pending.length})'),
-                          const Tab(height: 48, text: 'Upcoming'),
-                          const Tab(height: 48, text: 'Active now'),
-                          const Tab(height: 48, text: 'Past'),
-                        ],
-                      ),
+                            unselectedLabelStyle:
+                                Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15,
+                                    ),
+                            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                            labelColor: ARAColors.inkStrong,
+                            unselectedLabelColor: ARAColors.subInk,
+                            tabs: [
+                              Tab(height: 48, text: 'Pending (${pending.length})'),
+                              const Tab(height: 48, text: 'Upcoming'),
+                              const Tab(height: 48, text: 'Active now'),
+                              const Tab(height: 48, text: 'Past'),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                   Expanded(
@@ -597,113 +604,163 @@ class _VolunteerStayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasActions = onPrimaryAction != null || onSecondaryAction != null;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
-        boxShadow: [
-          BoxShadow(
-            color: ARAColors.ink.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 380;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Theme.of(context).dividerColor),
+            boxShadow: [
+              BoxShadow(
+                color: ARAColors.ink.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: ARAColors.surfaceCoolSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.person, color: ARAColors.brandDark),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        volunteer.fullName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: ARAColors.ink,
-                              fontWeight: FontWeight.w700,
-                            ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: ARAColors.surfaceCoolSoft,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        volunteer.email,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: ARAColors.subInk,
-                            ),
+                      child: const Icon(Icons.person, color: ARAColors.brandDark),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            volunteer.fullName,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: ARAColors.ink,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            volunteer.email,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: ARAColors.subInk,
+                                ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _InfoPill(
+                const SizedBox(height: 14),
+                if (isNarrow) ...[
+                  _InfoPill(
                     icon: Icons.calendar_today,
                     label: 'Requested ${volunteer.requestedAtLabel}',
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _InfoPill(
+                  const SizedBox(height: 8),
+                  _InfoPill(
                     icon: Icons.event_available,
                     label: volunteer.stayLabel,
                   ),
-                ),
-              ],
-            ),
-            if (hasActions) ...[
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  if (onSecondaryAction != null)
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: onSecondaryAction,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ARAColors.danger,
-                          side: const BorderSide(color: ARAColors.dangerLight),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                ] else
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _InfoPill(
+                            icon: Icons.calendar_today,
+                            label: 'Requested ${volunteer.requestedAtLabel}',
+                          ),
                         ),
-                        child: Text(secondaryActionLabel ?? 'Action'),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _InfoPill(
+                            icon: Icons.event_available,
+                            label: volunteer.stayLabel,
+                          ),
+                        ),
+                      ],
                     ),
-                  if (onSecondaryAction != null && onPrimaryAction != null)
-                    const SizedBox(width: 10),
-                  if (onPrimaryAction != null)
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: onPrimaryAction,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ARAColors.brand,
-                          foregroundColor: ARAColors.ink,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                if (hasActions) ...[
+                  const SizedBox(height: 14),
+                  if (isNarrow) ...[
+                    if (onPrimaryAction != null)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: onPrimaryAction,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: ARAColors.brand,
+                            foregroundColor: ARAColors.ink,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(primaryActionLabel ?? 'Action'),
                         ),
-                        child: Text(primaryActionLabel ?? 'Action'),
                       ),
+                    if (onPrimaryAction != null && onSecondaryAction != null)
+                      const SizedBox(height: 10),
+                    if (onSecondaryAction != null)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: onSecondaryAction,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ARAColors.danger,
+                            side: const BorderSide(color: ARAColors.dangerLight),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(secondaryActionLabel ?? 'Action'),
+                        ),
+                      ),
+                  ] else
+                    Row(
+                      children: [
+                        if (onSecondaryAction != null)
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: onSecondaryAction,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: ARAColors.danger,
+                                side: const BorderSide(color: ARAColors.dangerLight),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: Text(secondaryActionLabel ?? 'Action'),
+                            ),
+                          ),
+                        if (onSecondaryAction != null && onPrimaryAction != null)
+                          const SizedBox(width: 10),
+                        if (onPrimaryAction != null)
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: onPrimaryAction,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: ARAColors.brand,
+                                foregroundColor: ARAColors.ink,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: Text(primaryActionLabel ?? 'Action'),
+                            ),
+                          ),
+                      ],
                     ),
                 ],
-              ),
-            ],
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -726,14 +783,14 @@ class _InfoPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 16, color: ARAColors.brandDark),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              softWrap: true,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: ARAColors.ink,
                     fontWeight: FontWeight.w600,
