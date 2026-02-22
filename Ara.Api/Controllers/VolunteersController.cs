@@ -1,4 +1,5 @@
 using Ara.Api.Data;
+using Ara.Api.Dtos;
 using Ara.Api.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,35 @@ namespace Ara.Api.Controllers;
 [ApiController]
 public class VolunteersController(ARADbContext db) : ControllerBase
 {
+    [HttpGet("stays")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> GetVolunteerStays()
+    {
+        var volunteers = await db
+            .Users.Where(u =>
+                u.Role == Role.Volunteer
+                && (u.Status == VolunteerStatus.Pending || u.Status == VolunteerStatus.Approved)
+            )
+            .OrderBy(u => u.Status)
+            .ThenBy(u => u.VolunteerFrom == null)
+            .ThenBy(u => u.VolunteerFrom)
+            .ThenBy(u => u.CreatedAt)
+            .Select(u => new
+            {
+                u.Id,
+                u.FirstName,
+                u.LastName,
+                u.Email,
+                status = u.Status.ToString().ToLowerInvariant(),
+                u.CreatedAt,
+                u.VolunteerFrom,
+                u.VolunteerTo
+            })
+            .ToListAsync();
+
+        return Ok(volunteers);
+    }
+
     // Get /api/volunteers/pending
     [HttpGet("pending")]
     [Authorize(Roles = "Staff")]
@@ -62,8 +92,65 @@ public class VolunteersController(ARADbContext db) : ControllerBase
         return Ok(new { message = "Volunteer declined" });
     }
 
+    [HttpPut("{id:Guid}/stay")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> UpdateVolunteerStay(
+        Guid id,
+        [FromBody] UpdateVolunteerStayRequest request
+    )
+    {
+        if (request.VolunteerTo < request.VolunteerFrom)
+        {
+            return BadRequest(new { error = "VolunteerTo must be on or after VolunteerFrom" });
+        }
+
+        var volunteer = await db.Users.SingleOrDefaultAsync(u =>
+            u.Id == id && u.Role == Role.Volunteer
+        );
+        if (volunteer is null)
+        {
+            return NotFound(new { error = "Volunteer not found" });
+        }
+
+        if (volunteer.Status != VolunteerStatus.Approved)
+        {
+            return BadRequest(
+                new { error = "Only approved volunteers can have stay dates updated" }
+            );
+        }
+
+        volunteer.VolunteerFrom = request.VolunteerFrom;
+        volunteer.VolunteerTo = request.VolunteerTo;
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Volunteer stay updated" });
+    }
+
+    [HttpPut("{id:Guid}/cancel")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> CancelVolunteerStay(Guid id)
+    {
+        var rows = await db
+            .Users.Where(u =>
+                u.Id == id && u.Role == Role.Volunteer && u.Status == VolunteerStatus.Approved
+            )
+            .ExecuteUpdateAsync(s =>
+                s.SetProperty(u => u.Status, VolunteerStatus.Declined)
+                    .SetProperty(u => u.VolunteerFrom, (DateOnly?)null)
+                    .SetProperty(u => u.VolunteerTo, (DateOnly?)null)
+            );
+
+        if (rows == 0)
+        {
+            return NotFound(new { error = "Approved volunteer not found" });
+        }
+
+        return Ok(new { message = "Volunteer stay cancelled" });
+    }
+
     // GET /api/volunteers?status=pending|approved|declined
     [HttpGet]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> ListVolunteers([FromQuery] VolunteerStatus? status = null)
     {
         var q = db.Users.Where(u => u.Role == Role.Volunteer);

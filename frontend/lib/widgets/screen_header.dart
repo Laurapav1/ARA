@@ -5,6 +5,7 @@ class ScreenHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final IconData? icon;
+  final Widget? trailing;
   final EdgeInsetsGeometry padding;
 
   const ScreenHeader({
@@ -12,6 +13,7 @@ class ScreenHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.icon,
+    this.trailing,
     this.padding = const EdgeInsets.all(24),
   });
 
@@ -64,6 +66,10 @@ class ScreenHeader extends StatelessWidget {
               ],
             ),
           ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
         ],
       ),
     );
