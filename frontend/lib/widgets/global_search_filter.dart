@@ -315,10 +315,10 @@ class _GlobalSearchViewState<T> extends State<_GlobalSearchView<T>> {
                     itemCount: visibleItems.length,
                     itemBuilder: (context, index) {
                       final item = visibleItems[index];
-                      final onTap = () {
+                      void onTap() {
                         Navigator.of(context).pop();
                         widget.onItemSelected(item);
-                      };
+                      }
                       if (widget.searchResultBuilder != null) {
                         return widget.searchResultBuilder!(context, item, onTap);
                       }

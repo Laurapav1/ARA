@@ -120,7 +120,8 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
     final list = _volunteers.where((v) {
       if (!v.isApproved) return false;
       final start = _parseDateOnly(v.volunteerFrom);
-      return start != null && start.isAfter(today);
+      if (start == null) return true;
+      return start.isAfter(today);
     }).toList();
 
     list.sort((a, b) {
@@ -472,7 +473,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                                     volunteers: upcoming,
                                     emptyTitle: 'No upcoming stays',
                                     emptySubtitle:
-                                        'Approved volunteers with future dates show here.',
+                                        'Approved volunteers starting today or later show here.',
                                     onRefresh: _loadVolunteers,
                                     itemBuilder: (v) => _VolunteerStayCard(
                                       volunteer: v,

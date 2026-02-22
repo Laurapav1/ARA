@@ -305,7 +305,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
                           if (!_isDangerous) _flags = <HandlingFlag>{};
                         }),
                         title: const Text('Requires extra caution'),
-                        activeColor: ARAColors.brand,
+                        activeThumbColor: ARAColors.brand,
                       ),
                     ),
                     if (_isDangerous) ...[
