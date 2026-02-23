@@ -76,23 +76,9 @@ class _CleaningPanelScreen extends StatelessWidget {
             const OfflineBanner(),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 16, 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      panel.title,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: ARAColors.ink,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                  ),
-                ],
+              child: _BackTitleHeader(
+                title: panel.title,
+                onBack: () => Navigator.pop(context),
               ),
             ),
             Expanded(

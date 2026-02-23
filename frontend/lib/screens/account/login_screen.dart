@@ -4,6 +4,7 @@ import '../../services/auth_store.dart';
 import '../../services/api_client.dart';
 import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
+import '../common/page_back_app_bar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -86,12 +87,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        surfaceTintColor: ARAColors.transparent,
-      ),
+      appBar: const PageBackAppBar(),
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
           child: Align(

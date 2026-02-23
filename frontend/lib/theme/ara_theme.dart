@@ -121,6 +121,8 @@ class ARATheme {
         elevation: 0,
         centerTitle: false,
         surfaceTintColor: Colors.transparent,
+        titleTextStyle: ARATypography.backNavTitle,
+        iconTheme: IconThemeData(color: ARATypography.backNavTone),
       ),
       cardTheme: CardThemeData(
         color: ARAColors.cardBg,
@@ -195,4 +197,20 @@ class ARATheme {
       ),
     );
   }
+}
+
+class ARATypography {
+  static const Color backNavTone = ARAColors.inkSoft;
+  static const TextStyle backNavTitle = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.2,
+    color: backNavTone,
+  );
+  static const TextStyle detailNavTitle = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.2,
+    color: backNavTone,
+  );
 }

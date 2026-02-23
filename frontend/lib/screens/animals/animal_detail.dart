@@ -86,7 +86,10 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text(_animal.name)),
+      appBar: AppBar(
+        title: Text(_animal.name),
+        titleTextStyle: ARATypography.detailNavTitle,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _loadError != null
