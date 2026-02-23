@@ -356,64 +356,60 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMorningShift = widget.shiftType == 'Morning';
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.shiftType} Shift'),
-        actions: isMorningShift
-            ? null
-            : [
-                ...buildGlobalSearchFilterActions<Zone>(
-                  context: context,
-                  title: 'tasks',
-                  items:
-                      _currentShift == null ? <Zone>[] : _toZones(_currentShift!),
-                  controller: _searchFilterController,
-                  showFilter: false,
-                  searchResultBuilder: (context, zone, onTap) => Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-                    child: Card(
-                      child: ListTile(
-                        onTap: onTap,
-                        leading: CircleAvatar(
-                          backgroundColor: zone.progress >= 1.0
-                              ? ARAColors.successSoft
-                              : ARAColors.surfaceWarm,
-                          child: Icon(
-                            zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
-                            color: ARAColors.ink,
-                          ),
-                        ),
-                        title: Text(zone.name),
-                        subtitle: Text(
-                          [
-                            if (zone.category.trim().toLowerCase() != 'general')
-                              zone.category,
-                            if ((zone.startTime ?? '').isNotEmpty) zone.startTime!,
-                            '${zone.taskCount ?? zone.tasks.length} task(s)',
-                          ].join(' - '),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                      ),
+        actions: [
+          ...buildGlobalSearchFilterActions<Zone>(
+            context: context,
+            title: 'tasks',
+            items: _currentShift == null ? <Zone>[] : _toZones(_currentShift!),
+            controller: _searchFilterController,
+            showFilter: false,
+            searchResultBuilder: (context, zone, onTap) => Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+              child: Card(
+                child: ListTile(
+                  onTap: onTap,
+                  leading: CircleAvatar(
+                    backgroundColor: zone.progress >= 1.0
+                        ? ARAColors.successSoft
+                        : ARAColors.surfaceWarm,
+                    child: Icon(
+                      zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
+                      color: ARAColors.ink,
                     ),
                   ),
-                  onItemSelected: (zone) {
-                    _searchFilterController.updateQuery(zone.name);
-                    setState(() {
-                      _focusedZoneName = zone.name;
-                      _focusRequestId++;
-                    });
-                  },
-                ),
-                if (_searchFilterController.query.trim().isNotEmpty)
-                  IconButton(
-                    tooltip: 'Clear search',
-                    icon: const Icon(Icons.close),
-                    onPressed: _searchFilterController.clearQuery,
+                  title: Text(zone.name),
+                  subtitle: Text(
+                    [
+                      if (zone.category.trim().toLowerCase() != 'general')
+                        zone.category,
+                      if ((zone.startTime ?? '').isNotEmpty) zone.startTime!,
+                      '${zone.taskCount ?? zone.tasks.length} task(s)',
+                    ].join(' - '),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  trailing: const Icon(Icons.chevron_right),
+                ),
+              ),
+            ),
+            onItemSelected: (zone) {
+              _searchFilterController.updateQuery(zone.name);
+              setState(() {
+                _focusedZoneName = zone.name;
+                _focusRequestId++;
+              });
+            },
+          ),
+          if (_searchFilterController.query.trim().isNotEmpty)
+            IconButton(
+              tooltip: 'Clear search',
+              icon: const Icon(Icons.close),
+              onPressed: _searchFilterController.clearQuery,
+            ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -437,12 +433,8 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
 
                   final shift = _currentShift!;
                   final zones = _toZones(shift);
-                  final visibleZones = isMorningShift
-                      ? zones
-                      : () {
-                          _searchFilterController.setFilterOptions(const []);
-                          return _searchFilterController.apply(zones);
-                        }();
+                  _searchFilterController.setFilterOptions(const []);
+                  final visibleZones = _searchFilterController.apply(zones);
                   return Stack(
                     children: [
                       ZoneListScreen(
