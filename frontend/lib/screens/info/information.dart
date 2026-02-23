@@ -138,24 +138,9 @@ class _InformationSectionScreen extends StatelessWidget {
             const OfflineBanner(),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 16, 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: ARAColors.ink,
-                                fontWeight: FontWeight.w700,
-                              ),
-                    ),
-                  ),
-                ],
+              child: _BackTitleHeader(
+                title: title,
+                onBack: () => Navigator.pop(context),
               ),
             ),
             Expanded(child: child),
@@ -198,6 +183,38 @@ class _SectionCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BackTitleHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback onBack;
+
+  const _BackTitleHeader({
+    required this.title,
+    required this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: onBack,
+          icon: const Icon(
+            Icons.arrow_back,
+            color: ARATypography.backNavTone,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            title,
+            style: ARATypography.backNavTitle,
+          ),
+        ),
+      ],
     );
   }
 }
