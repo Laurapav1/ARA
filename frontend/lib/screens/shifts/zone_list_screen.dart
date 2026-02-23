@@ -13,6 +13,8 @@ class ZoneListScreen extends StatefulWidget {
   final VoidCallback? onReload;
   final String? focusedZoneName;
   final int focusRequestId;
+  final List<String> initialPinnedZoneIdentities;
+  final ValueChanged<List<String>>? onPinnedZonesChanged;
 
   const ZoneListScreen({
     super.key,
@@ -22,6 +24,8 @@ class ZoneListScreen extends StatefulWidget {
     this.onReload,
     this.focusedZoneName,
     this.focusRequestId = 0,
+    this.initialPinnedZoneIdentities = const <String>[],
+    this.onPinnedZonesChanged,
   });
 
   @override
@@ -36,13 +40,16 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   final ScrollController _scrollController = ScrollController();
   final _service = ShiftsService();
   int _lastHandledFocusRequestId = -1;
+  List<String> _pinnedZoneIdentities = <String>[];
 
   @override
   void initState() {
     super.initState();
     _zones = widget.zones.map((z) => z.copy()).toList();
-    _signedUp = List<bool>.filled(_zones.length, false);
+    _signedUp = List<bool>.filled(_zones.length, false, growable: true);
     _signedUpTasks.clear();
+    _pinnedZoneIdentities = List<String>.from(widget.initialPinnedZoneIdentities);
+    _promotePinnedZonesIfPresent();
     _scheduleFocusIfNeeded();
   }
 
@@ -51,8 +58,13 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.zones != widget.zones) {
       _zones = widget.zones.map((z) => z.copy()).toList();
-      _signedUp = List<bool>.filled(_zones.length, false);
+      _signedUp = List<bool>.filled(_zones.length, false, growable: true);
       _signedUpTasks.clear();
+      _promotePinnedZonesIfPresent();
+    }
+    if (oldWidget.initialPinnedZoneIdentities != widget.initialPinnedZoneIdentities) {
+      _pinnedZoneIdentities = List<String>.from(widget.initialPinnedZoneIdentities);
+      _promotePinnedZonesIfPresent();
     }
     _scheduleFocusIfNeeded();
   }
@@ -73,6 +85,78 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   GlobalKey _zoneCardKey(Zone zone) {
     final id = _zoneIdentity(zone);
     return _zoneCardKeys.putIfAbsent(id, GlobalKey.new);
+  }
+
+  void _scrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  void _promotePinnedZonesIfPresent() {
+    if (_pinnedZoneIdentities.isEmpty) return;
+    // Rebuild top order to match recency list, preserving order for non-pinned zones.
+    final originalZones = List<Zone>.from(_zones);
+    final originalSigned = List<bool>.from(_signedUp);
+    final indexById = <String, int>{};
+    for (var i = 0; i < originalZones.length; i++) {
+      indexById[_zoneIdentity(originalZones[i])] = i;
+    }
+
+    final newZones = <Zone>[];
+    final newSigned = <bool>[];
+    final usedIds = <String>{};
+
+    for (final id in _pinnedZoneIdentities) {
+      final idx = indexById[id];
+      if (idx == null || usedIds.contains(id)) continue;
+      newZones.add(originalZones[idx]);
+      newSigned.add(originalSigned[idx]);
+      usedIds.add(id);
+    }
+
+    for (var i = 0; i < originalZones.length; i++) {
+      final id = _zoneIdentity(originalZones[i]);
+      if (usedIds.contains(id)) continue;
+      newZones.add(originalZones[i]);
+      newSigned.add(originalSigned[i]);
+    }
+
+    _zones = newZones;
+    _signedUp = newSigned;
+  }
+
+  int _pinAndPromoteZone(Zone zone) {
+    final pinned = _zoneIdentity(zone);
+    _pinnedZoneIdentities.removeWhere((id) => id == pinned);
+    _pinnedZoneIdentities.insert(0, pinned);
+    const maxPinned = 8;
+    if (_pinnedZoneIdentities.length > maxPinned) {
+      _pinnedZoneIdentities = _pinnedZoneIdentities.take(maxPinned).toList();
+    }
+    widget.onPinnedZonesChanged?.call(List<String>.from(_pinnedZoneIdentities));
+    final idx = _zones.indexWhere((z) => _zoneIdentity(z) == pinned);
+    if (idx < 0) {
+      return -1;
+    }
+    if (idx == 0) {
+      _scrollToTop();
+      return 0;
+    }
+
+    setState(() {
+      final moved = _zones.removeAt(idx);
+      _zones.insert(0, moved);
+      final signed = _signedUp.removeAt(idx);
+      _signedUp.insert(0, signed);
+    });
+    _scrollToTop();
+    return 0;
   }
 
   void _scheduleFocusIfNeeded() {
@@ -540,6 +624,8 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       isDone: done,
       isAssigned: isAssigned,
       onTap: () {
+        final currentIndex = _pinAndPromoteZone(zone);
+        if (currentIndex < 0) return;
         if (!canJoin) {
           _showJoinBlocked(auth);
           return;
@@ -552,9 +638,11 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
           }
           return;
         }
-        setState(() => _signedUp[index] = !_signedUp[index]);
+        setState(() => _signedUp[currentIndex] = !_signedUp[currentIndex]);
       },
       onComplete: () {
+        final currentIndex = _pinAndPromoteZone(zone);
+        if (currentIndex < 0) return;
         if (!canJoin) {
           _showJoinBlocked(auth);
           return;
@@ -563,14 +651,18 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
           _completeBackend(zone, auth);
           return;
         }
-        setState(() => _zones[index] = zone.copyWith(progress: 1.0));
+        final current = _zones[currentIndex];
+        setState(() => _zones[currentIndex] = current.copyWith(progress: 1.0));
       },
       onReopen: () {
+        final currentIndex = _pinAndPromoteZone(zone);
+        if (currentIndex < 0) return;
         if (zone.taskId != null && widget.shiftId != null) {
           _reopenBackend(zone, auth);
           return;
         }
-        setState(() => _zones[index] = zone.copyWith(progress: 0.0));
+        final current = _zones[currentIndex];
+        setState(() => _zones[currentIndex] = current.copyWith(progress: 0.0));
       },
     );
   }
@@ -661,6 +753,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () {
+          _pinAndPromoteZone(zone);
           if (!canJoin) {
             _showJoinBlocked(auth);
             return;
@@ -705,6 +798,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                   icon: const Icon(Icons.check),
                   color: pal.primary,
                   onPressed: () {
+                    _pinAndPromoteZone(zone);
                     if (!canJoin) {
                       _showJoinBlocked(auth);
                       return;
@@ -724,6 +818,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                   icon: const Icon(Icons.replay),
                   color: pal.primary,
                   onPressed: () {
+                    _pinAndPromoteZone(zone);
                     if (task.id != null && widget.shiftId != null) {
                       _reopenBackendTask(task, auth);
                       return;

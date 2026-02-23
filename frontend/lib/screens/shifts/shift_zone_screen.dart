@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/zone.dart';
 import '../../models/shift_view.dart';
 import '../../services/auth_store.dart';
@@ -33,6 +34,7 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   Timer? _midnightTimer;
   late final GlobalSearchFilterController<Zone> _searchFilterController;
   String? _focusedZoneName;
+  List<String> _pinnedZoneIdentities = <String>[];
   int _focusRequestId = 0;
 
   @override
@@ -62,7 +64,29 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
     }).catchError((_) {
       // Error handling stays in FutureBuilder.
     });
+    unawaited(_loadPinnedZoneIdentity());
     _scheduleMidnightRefresh();
+  }
+
+  String get _pinnedZoneKey =>
+      'pinned_zones_${widget.shiftType.toLowerCase()}_${_fmtIso(widget.date)}';
+
+  Future<void> _loadPinnedZoneIdentity() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pinned = prefs.getStringList(_pinnedZoneKey) ?? const <String>[];
+    if (!mounted) return;
+    setState(() {
+      _pinnedZoneIdentities = pinned.where((x) => x.trim().isNotEmpty).toList();
+    });
+  }
+
+  Future<void> _savePinnedZoneIdentity(List<String> pinned) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (pinned.isEmpty) {
+      await prefs.remove(_pinnedZoneKey);
+      return;
+    }
+    await prefs.setStringList(_pinnedZoneKey, pinned);
   }
 
   void _scheduleMidnightRefresh() {
@@ -443,6 +467,11 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
                         zones: visibleZones,
                         shiftId: shift.shiftId,
                         onReload: _reload,
+                        initialPinnedZoneIdentities: _pinnedZoneIdentities,
+                        onPinnedZonesChanged: (pinned) {
+                          _pinnedZoneIdentities = List<String>.from(pinned);
+                          unawaited(_savePinnedZoneIdentity(pinned));
+                        },
                         focusedZoneName: _focusedZoneName,
                         focusRequestId: _focusRequestId,
                       ),

@@ -233,6 +233,8 @@ class _SettingsTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        splashFactory: NoSplash.splashFactory,
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(16),
