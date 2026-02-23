@@ -4,7 +4,7 @@ import '../../services/auth_store.dart';
 import '../../services/api_client.dart';
 import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
-import '../common/page_back_app_bar.dart';
+import 'widgets/auth_form_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -85,119 +85,82 @@ class _LoginScreenState extends State<LoginScreen> {
       borderSide: const BorderSide(color: ARAColors.brand, width: 2),
     );
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: const PageBackAppBar(),
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Welcome back',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: ARAColors.ink,
-                          fontWeight: FontWeight.w700,
-                        ),
+    return AuthFormShell(
+      title: 'Welcome back',
+      subtitle: 'Use your approved account to access shifts and updates.',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FormFieldCard(
+              child: TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'Enter your email',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  filled: true,
+                  fillColor: fieldFill,
+                  floatingLabelBehavior: FloatingLabelBehavior.auto,
+                  labelStyle: const TextStyle(
+                    color: ARAColors.subInk,
+                    fontSize: 14,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Use your approved account to access shifts and updates.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: ARAColors.subInk),
+                  floatingLabelStyle: const TextStyle(
+                    color: ARAColors.subInk,
+                    fontSize: 12,
                   ),
-                  const SizedBox(height: 20),
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        FormFieldCard(
-                          child: TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              hintText: 'Enter your email',
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              filled: true,
-                              fillColor: fieldFill,
-                              floatingLabelBehavior:
-                                  FloatingLabelBehavior.auto,
-                              labelStyle: const TextStyle(
-                                color: ARAColors.subInk,
-                                fontSize: 14,
-                              ),
-                              floatingLabelStyle: const TextStyle(
-                                color: ARAColors.subInk,
-                                fontSize: 12,
-                              ),
-                              border: fieldBorder,
-                              enabledBorder: fieldBorder,
-                              focusedBorder: focusedBorder,
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? 'Please enter your email'
-                                    : null,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        FormFieldCard(
-                          child: TextFormField(
-                            controller: _passwordController,
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              hintText: 'Enter your password',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              filled: true,
-                              fillColor: fieldFill,
-                              floatingLabelBehavior:
-                                  FloatingLabelBehavior.auto,
-                              labelStyle: const TextStyle(
-                                color: ARAColors.subInk,
-                                fontSize: 14,
-                              ),
-                              floatingLabelStyle: const TextStyle(
-                                color: ARAColors.subInk,
-                                fontSize: 12,
-                              ),
-                              border: fieldBorder,
-                              enabledBorder: fieldBorder,
-                              focusedBorder: focusedBorder,
-                            ),
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? 'Please enter your password'
-                                    : null,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        FilledButton(
-                          onPressed: _signIn,
-                          child: const Text('Sign in'),
-                        ),
-                        const SizedBox(height: 10),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Need access? Request approval'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  border: fieldBorder,
+                  enabledBorder: fieldBorder,
+                  focusedBorder: focusedBorder,
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Please enter your email'
+                    : null,
               ),
             ),
-          ),
+            const SizedBox(height: 14),
+            FormFieldCard(
+              child: TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  hintText: 'Enter your password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  filled: true,
+                  fillColor: fieldFill,
+                  floatingLabelBehavior: FloatingLabelBehavior.auto,
+                  labelStyle: const TextStyle(
+                    color: ARAColors.subInk,
+                    fontSize: 14,
+                  ),
+                  floatingLabelStyle: const TextStyle(
+                    color: ARAColors.subInk,
+                    fontSize: 12,
+                  ),
+                  border: fieldBorder,
+                  enabledBorder: fieldBorder,
+                  focusedBorder: focusedBorder,
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Please enter your password'
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: _signIn,
+              child: const Text('Sign in'),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Need access? Request approval'),
+            ),
+          ],
         ),
       ),
     );

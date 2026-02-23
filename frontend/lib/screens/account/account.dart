@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_store.dart';
 import '../../services/api_client.dart';
-import '../../widgets/offline_banner.dart';
 import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
 import 'login_screen.dart';
-import '../common/page_back_app_bar.dart';
+import 'widgets/auth_form_shell.dart';
 
 class RequestAccessScreen extends StatefulWidget {
   const RequestAccessScreen({super.key});
@@ -261,48 +260,15 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
       borderSide: const BorderSide(color: ARAColors.brand, width: 2),
     );
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: const PageBackAppBar(),
-      body: SafeArea(
-        top: false,
+    return AuthFormShell(
+      title: 'Create account & request access',
+      subtitle: 'Share your details and stay dates so we can approve access.',
+      showOfflineBanner: true,
+      child: Form(
+        key: _formKey,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const OfflineBanner(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 520),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Create account & request access',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(
-                                color: ARAColors.ink,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Share your details and stay dates so we can approve access.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: ARAColors.subInk),
-                        ),
-                        const SizedBox(height: 20),
-                        Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
                               FormFieldCard(
                                 child: TextFormField(
                                   controller: _nameController,
@@ -533,15 +499,6 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                                   child: const Text('Sign in'),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
