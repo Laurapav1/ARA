@@ -343,7 +343,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
               backgroundColor: ARAColors.danger,
               foregroundColor: ARAColors.cardBg,
             ),
-            child: const Text('Decline'),
+            child: const Text('Decline request'),
           ),
         ],
       ),
@@ -471,7 +471,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                                     itemBuilder: (v) => _VolunteerStayCard(
                                       volunteer: v,
                                       primaryActionLabel: 'Accept',
-                                      secondaryActionLabel: 'Decline',
+                                      secondaryActionLabel: 'Decline request',
                                       onPrimaryAction: () => _approve(v),
                                       onSecondaryAction: () => _showDeclineDialog(v),
                                     ),
