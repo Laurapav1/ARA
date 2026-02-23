@@ -354,104 +354,6 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
     setState(() {});
   }
 
-  List<GlobalFilterOption<Zone>> _zoneFilters(List<Zone> zones) {
-    if (widget.shiftType == 'Evening') {
-      return [
-        GlobalFilterOption<Zone>(
-          id: 'evening_parks',
-          label: 'Parks',
-          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.parks,
-        ),
-        GlobalFilterOption<Zone>(
-          id: 'evening_zones',
-          label: 'Zones',
-          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.zones,
-        ),
-        GlobalFilterOption<Zone>(
-          id: 'evening_extra',
-          label: 'Extra tasks',
-          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.extra,
-        ),
-      ];
-    }
-
-    final options = <GlobalFilterOption<Zone>>[
-      GlobalFilterOption<Zone>(
-        id: 'status_done',
-        label: 'Done',
-        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.done,
-      ),
-      GlobalFilterOption<Zone>(
-        id: 'status_in_progress',
-        label: 'In progress',
-        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.inProgress,
-      ),
-      GlobalFilterOption<Zone>(
-        id: 'status_unassigned',
-        label: 'Unassigned',
-        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.unassigned,
-      ),
-    ];
-
-    final categories = zones
-        .map((zone) => zone.category.trim())
-        .where((category) => category.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
-    for (final category in categories) {
-      options.add(
-        GlobalFilterOption<Zone>(
-          id: 'category_${category.toLowerCase()}',
-          label: category,
-          predicate: (zone) =>
-              zone.category.toLowerCase() == category.toLowerCase(),
-        ),
-      );
-    }
-    return options;
-  }
-
-  _ZoneStatus _zoneStatus(Zone zone) {
-    if (zone.subtasks.isNotEmpty) {
-      if (zone.subtasks.every((task) => task.progress >= 1.0)) {
-        return _ZoneStatus.done;
-      }
-      if (zone.subtasks.any((task) => task.progress > 0 || task.volunteers > 0)) {
-        return _ZoneStatus.inProgress;
-      }
-      return _ZoneStatus.unassigned;
-    }
-
-    if (zone.progress >= 1.0) return _ZoneStatus.done;
-    if (zone.progress > 0 || zone.volunteers > 0) return _ZoneStatus.inProgress;
-    return _ZoneStatus.unassigned;
-  }
-
-  _EveningGroup _eveningGroupFor(Zone zone) {
-    final category = zone.category.toLowerCase();
-    final name = zone.name.toLowerCase();
-
-    if (_isEveningSpecialTask(name)) {
-      return _EveningGroup.extra;
-    }
-
-    // Zone/kennel matching must win over generic category labels.
-    if (name.contains('zone') ||
-        name.contains('kennel') ||
-        category.contains('zone') ||
-        category.contains('kennel')) {
-      return _EveningGroup.zones;
-    }
-
-    if (name.contains('park') || category.contains('park')) {
-      return _EveningGroup.parks;
-    }
-
-    // In evening shifts, non-park/non-special work is zone-related by default.
-    return _EveningGroup.zones;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isMorningShift = widget.shiftType == 'Morning';
@@ -467,6 +369,7 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
                   items:
                       _currentShift == null ? <Zone>[] : _toZones(_currentShift!),
                   controller: _searchFilterController,
+                  showFilter: false,
                   searchResultBuilder: (context, zone, onTap) => Padding(
                     padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
                     child: Card(
@@ -537,9 +440,7 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
                   final visibleZones = isMorningShift
                       ? zones
                       : () {
-                          _searchFilterController.setFilterOptions(
-                            _zoneFilters(zones),
-                          );
+                          _searchFilterController.setFilterOptions(const []);
                           return _searchFilterController.apply(zones);
                         }();
                   return Stack(
@@ -585,9 +486,6 @@ class _TaskGrouping {
 
   const _TaskGrouping(this.groupName, this.subLabel);
 }
-
-enum _ZoneStatus { done, inProgress, unassigned }
-enum _EveningGroup { parks, zones, extra }
 
 class _ErrorState extends StatelessWidget {
   final String message;
