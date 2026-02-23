@@ -6,6 +6,7 @@ import '../../widgets/offline_banner.dart';
 import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
 import 'login_screen.dart';
+import '../common/page_back_app_bar.dart';
 
 class RequestAccessScreen extends StatefulWidget {
   const RequestAccessScreen({super.key});
@@ -262,13 +263,15 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: const PageBackAppBar(),
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
             const OfflineBanner(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
                 child: Align(
                   alignment: Alignment.topCenter,
                   child: ConstrainedBox(
