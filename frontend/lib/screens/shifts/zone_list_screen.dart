@@ -15,14 +15,14 @@ class ZoneListScreen extends StatefulWidget {
   final int focusRequestId;
 
   const ZoneListScreen({
-    Key? key,
+    super.key,
     required this.shiftType,
     required this.zones,
     this.shiftId,
     this.onReload,
     this.focusedZoneName,
     this.focusRequestId = 0,
-  }) : super(key: key);
+  });
 
   @override
   State<ZoneListScreen> createState() => _ZoneListScreenState();
@@ -829,7 +829,7 @@ class _ZoneCardState extends State<_ZoneCard> {
     final pal = widget.palette;
     final taskCount = widget.zone.taskCount ?? widget.zone.tasks.length;
     final startTime = widget.zone.startTime;
-    final taskLabel = '${taskCount} task${taskCount == 1 ? '' : 's'}';
+    final taskLabel = '$taskCount task${taskCount == 1 ? '' : 's'}';
     final subtitle =
         startTime == null || startTime.isEmpty ? taskLabel : '$startTime • $taskLabel';
 

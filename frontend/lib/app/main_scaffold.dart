@@ -82,14 +82,14 @@ class _MainScaffoldState extends State<MainScaffold> {
           icon: Badge(
             isLabelVisible: auth.pendingRequestsCount > 0,
             label: Text('${auth.pendingRequestsCount}'),
-            child: const Icon(Icons.person_add_alt_1_outlined),
+            child: const Icon(Icons.groups_outlined),
           ),
           selectedIcon: Badge(
             isLabelVisible: auth.pendingRequestsCount > 0,
             label: Text('${auth.pendingRequestsCount}'),
-            child: const Icon(Icons.person_add_alt_1),
+            child: const Icon(Icons.groups),
           ),
-          label: 'Requests',
+          label: 'Volunteers',
         ),
       if (isStaff)
         const NavigationDestination(

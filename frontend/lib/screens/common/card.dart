@@ -9,7 +9,7 @@ class AraCard extends StatelessWidget {
   final String? image;
   final VoidCallback onTap;
 
-  const AraCard({
+  const AraCard({super.key, 
     //super.key,
     required this.title,
     required this.description,
