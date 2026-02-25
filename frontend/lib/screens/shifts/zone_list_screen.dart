@@ -303,10 +303,17 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Cannot join task'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsAlignment: MainAxisAlignment.end,
+        actionsOverflowButtonSpacing: 10,
         content: Text(_joinBlockReason(auth)),
         actions: [
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(ctx),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(100, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
             child: const Text('OK'),
           ),
         ],
@@ -457,10 +464,17 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(title),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsAlignment: MainAxisAlignment.end,
+        actionsOverflowButtonSpacing: 10,
         content: Text(message),
         actions: [
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(ctx),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(100, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
             child: const Text('OK'),
           ),
         ],
