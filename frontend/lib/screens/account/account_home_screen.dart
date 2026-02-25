@@ -65,7 +65,11 @@ class AccountScreen extends StatelessWidget {
                                     builder: (_) => const LoginScreen(),
                                   ),
                                 ),
-                                child: const Text('Sign In'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: ARAColors.brand,
+                                  foregroundColor: ARAColors.ink,
+                                ),
+                                child: const Text('Sign in'),
                               ),
                             ),
                           ),

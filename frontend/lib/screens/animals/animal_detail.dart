@@ -121,17 +121,21 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                         child: const Text('Edit details'),
                       ),
                       const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () => showAnimalStatusDialog(
-                          context,
-                          _animal,
-                          _deleteAnimal,
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () => showAnimalStatusDialog(
+                            context,
+                            _animal,
+                            _deleteAnimal,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ARAColors.danger,
+                            side: const BorderSide(color: ARAColors.dangerLight),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Change status'),
                         ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ARAColors.danger,
-                          side: const BorderSide(color: Color(0xFFE47070)),
-                        ),
-                        child: const Text('Change status'),
                       ),
                     ],
                   ],
