@@ -113,7 +113,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => AnimalEditorScreen(animal: _animal),
+                              builder: (_) =>
+                                  AnimalEditorScreen(animal: _animal),
                             ),
                           );
                           await _loadDetails();
@@ -131,7 +132,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ARAColors.danger,
-                            side: const BorderSide(color: ARAColors.dangerLight),
+                            side:
+                                const BorderSide(color: ARAColors.dangerLight),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: const Text('Change status'),
@@ -155,7 +157,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
         children: [
           const Positioned.fill(
             child: DecoratedBox(
-              decoration: BoxDecoration(gradient: ARAColors.softBackgroundGradient),
+              decoration:
+                  BoxDecoration(gradient: ARAColors.softBackgroundGradient),
               child: Center(
                 child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
               ),
@@ -192,7 +195,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   }
 
   Widget _buildInfoRow(Animal a) {
-    final needsCaution = a.isDangerous || a.flags.isNotEmpty;
+    final needsCaution = a.isDangerous;
     final location = _buildLocationLabel(a);
 
     return Column(
@@ -201,8 +204,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
           children: [
             Expanded(
               child: _InfoTile(
-                label: 'Handling',
-                value: needsCaution ? 'Use caution' : 'No special notes',
+                label: 'Safety Status',
+                value: needsCaution ? 'Use caution' : 'Friendly',
                 isWarning: needsCaution,
               ),
             ),
@@ -355,7 +358,8 @@ class _InfoTile extends StatelessWidget {
         color: isWarning ? ARAColors.cautionSurface : ARAColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isWarning ? ARAColors.cautionBorder : ARAColors.surfaceWarmTint,
+          color:
+              isWarning ? ARAColors.cautionBorder : ARAColors.surfaceWarmTint,
         ),
       ),
       child: Column(

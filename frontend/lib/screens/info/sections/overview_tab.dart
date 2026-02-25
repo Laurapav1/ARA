@@ -35,11 +35,6 @@ class _OverviewTabState extends State<_OverviewTab> {
               title: 'Zone basics',
               child: InfoSectionList(items: _overviewStructureBullets),
             ),
-            ExpandableSectionItem(
-              id: 'who_is_who',
-              title: 'Who\'s who',
-              child: InfoSectionList(items: _overviewWhoIsWhoBullets),
-            ),
           ],
         ),
       ],

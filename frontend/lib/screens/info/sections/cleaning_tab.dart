@@ -8,7 +8,7 @@ class _CleaningTab extends StatelessWidget {
     final panels = _cleaningPanels();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       children: [
         Align(
           alignment: Alignment.topCenter,
@@ -83,12 +83,15 @@ class _CleaningPanelScreen extends StatelessWidget {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 children: [
                   _CleaningPanelBody(
                     doItems: panel.doItems,
                     doNotItems: panel.doNotItems,
                     doneWhenItems: panel.doneWhenItems,
+                    doTitle: panel.doTitle,
+                    doNotTitle: panel.doNotTitle,
+                    doneWhenTitle: panel.doneWhenTitle,
                   ),
                 ],
               ),
@@ -203,13 +206,15 @@ List<_CleaningPanelData> _cleaningPanels() {
       iconBgColor: ARAColors.infoSectionSafetyBg,
       iconColor: ARAColors.infoSectionSafetyIcon,
       doItems: content.trashTasks,
+      doTitle: 'How to do it',
+      doNotTitle: 'Do not forget',
+      doneWhenTitle: 'Done when',
       doNotItems: const [
-        'Do not leave full bags in working areas.',
-        'Do not leave bins without liners.',
+        'Do not change the bag if it is almost empty.',
       ],
       doneWhenItems: const [
-        'Full bags are removed.',
-        'Fresh liners are placed.',
+        'Full bags are removed and new bags are in place.',
+        'Trash is left at the correct drop points.',
       ],
     ),
     _CleaningPanelData(

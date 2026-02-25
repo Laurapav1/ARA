@@ -128,7 +128,7 @@ class AnimalsService {
       'gender': _genderToApi(animal.gender),
       'handlingLevel': _handlingLevelToApi(animal),
       'handlingFlags': _flagsToMask(animal.flags),
-      'requiresCare': animal.isDangerous || animal.flags.isNotEmpty,
+      'requiresCare': animal.isDangerous,
       'inTreatment': animal.isInTreatment,
       'dogZone': species == 0 ? _dogZoneToApi(animal.zone) : null,
       'catZone': species == 1 ? _catZoneToApi(animal.zone) : null,
@@ -147,7 +147,7 @@ class AnimalsService {
       'gender': _genderToApi(animal.gender),
       'handlingLevel': _handlingLevelToApi(animal),
       'handlingFlags': _flagsToMask(animal.flags),
-      'requiresCare': animal.isDangerous || animal.flags.isNotEmpty,
+      'requiresCare': animal.isDangerous,
       'inTreatment': animal.isInTreatment,
       'dogZone': species == 0 ? _dogZoneToApi(animal.zone) : null,
       'catZone': species == 1 ? _catZoneToApi(animal.zone) : null,
@@ -235,7 +235,6 @@ class AnimalsService {
   }
 
   int _handlingLevelToApi(Animal animal) {
-    if (animal.flags.isNotEmpty) return 1;
     if (animal.isDangerous) return 1;
     return 0;
   }

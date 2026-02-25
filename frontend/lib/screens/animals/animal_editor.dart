@@ -295,6 +295,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
               const SizedBox(height: 8),
               _SectionCard(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _OutlineBox(
                       child: SwitchListTile(
@@ -302,58 +303,71 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
                         contentPadding: EdgeInsets.zero,
                         onChanged: (value) => setState(() {
                           _isDangerous = value;
-                          if (!_isDangerous) _flags = <HandlingFlag>{};
                         }),
                         title: const Text('Requires extra caution'),
                         activeThumbColor: ARAColors.brand,
                       ),
                     ),
-                    if (_isDangerous) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'Handling flags',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      _OutlineBox(
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                    const SizedBox(height: 12),
+                    Text(
+                      'Handling flags',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: _OutlineBox(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: HandlingFlag.values.map((flag) {
                             final selected = _flags.contains(flag);
-                            return FilterChip(
-                              selected: selected,
-                              showCheckmark: false,
-                              avatar: Icon(
-                                flag.icon,
-                                size: 16,
-                                color: flag.color,
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  alignment: Alignment.centerLeft,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
+                                  backgroundColor: selected
+                                      ? flag.color.withValues(alpha: 0.16)
+                                      : ARAColors.surfaceWarm,
+                                  side: BorderSide(
+                                    color: selected
+                                        ? flag.color.withValues(alpha: 0.6)
+                                        : ARAColors.surfaceWarmTint,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                onPressed: () => setState(() {
+                                  selected
+                                      ? _flags.remove(flag)
+                                      : _flags.add(flag);
+                                }),
+                                icon: Icon(
+                                  flag.icon,
+                                  size: 16,
+                                  color: flag.color,
+                                ),
+                                label: Text(
+                                  flag.label,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: selected
+                                        ? ARAColors.ink
+                                        : ARAColors.subInk,
+                                  ),
+                                ),
                               ),
-                              label: Text(flag.label),
-                              labelStyle: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    selected ? ARAColors.ink : ARAColors.subInk,
-                              ),
-                              backgroundColor: ARAColors.surfaceWarm,
-                              selectedColor: flag.color.withValues(alpha: 0.16),
-                              side: BorderSide(
-                                color: selected
-                                    ? flag.color.withValues(alpha: 0.6)
-                                    : ARAColors.surfaceWarmTint,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              onSelected: (value) => setState(() {
-                                value ? _flags.add(flag) : _flags.remove(flag);
-                              }),
                             );
                           }).toList(),
                         ),
                       ),
-                    ],
+                    ),
                     const SizedBox(height: 12),
                     _FieldCard(
                       child: TextFormField(

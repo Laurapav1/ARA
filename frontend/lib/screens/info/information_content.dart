@@ -40,6 +40,9 @@ class _CleaningPanelData {
   final List<String> doItems;
   final List<String> doNotItems;
   final List<String> doneWhenItems;
+  final String doTitle;
+  final String doNotTitle;
+  final String doneWhenTitle;
 
   const _CleaningPanelData({
     required this.id,
@@ -51,6 +54,9 @@ class _CleaningPanelData {
     required this.doItems,
     required this.doNotItems,
     required this.doneWhenItems,
+    this.doTitle = 'How to clean correctly',
+    this.doNotTitle = 'Do not forget',
+    this.doneWhenTitle = 'Done when',
   });
 }
 
@@ -206,10 +212,12 @@ _ZoneInfoContent _zoneContent() {
       'you will find all the cleaning products in the house/trailer. if nit, there is more in the storage room',
     ],
     trashTasks: [
-      'Use small bags for cattery waste and move full bags to big containers.',
-      'Empty full trash bags from work areas.',
-      'Replace bag liners after emptying bins.',
-      'Report overflow or missing bags to coordinator.',
+      'Take full trash bags out of containers and put in a new trash bag.',
+      'Do in: Zone A containers, A cattery bin, Zone B container.',
+      'Drop these in Zone A in front of the containers.',
+      'Do in: Volunteer House containers, Staff House containers, Adult cattery bin.',
+      'Drop these in front of the Staff House.',
+      'Two volunteers go with a staff member to drop trash in the city.',
     ],
     doNotForget: [
       'Coordinate cleaning between volunteers so no area is missed.',
@@ -236,14 +244,6 @@ const List<String> _overviewStructureBullets = [
   'Evening shift focuses on refresh, clean-up and close-out checks.',
   'Most volunteers start at Reception to confirm the task board.',
   'If unsure where to begin, ask the shift coordinator first.',
-];
-
-const List<String> _overviewWhoIsWhoBullets = [
-  'Coordinator: assigns priorities and answers task questions during shift.',
-  'Vet: handles health concerns and approves medical-related actions.',
-  'Manager: handles operational issues and final decisions when needed.',
-  'During your shift, contact the Coordinator first for guidance.',
-  'Use the shelter phone/WhatsApp group for urgent updates if requested.',
 ];
 
 const List<String> _safetyRules = [
