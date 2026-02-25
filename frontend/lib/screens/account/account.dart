@@ -384,10 +384,16 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                                     enabledBorder: fieldBorder,
                                     focusedBorder: focusedBorder,
                                   ),
-                                  validator: (value) =>
-                                      (value == null || value.isEmpty)
-                                          ? 'Please enter a password'
-                                          : null,
+                                  validator: (value) {
+                                    final password = value?.trim() ?? '';
+                                    if (password.isEmpty) {
+                                      return 'Please enter a password';
+                                    }
+                                    if (password.length < 6) {
+                                      return 'Password must be at least 6 characters';
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ),
                               const SizedBox(height: 6),
