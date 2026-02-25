@@ -487,7 +487,7 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                               const SizedBox(height: 10),
                               Center(
                                 child: TextButton(
-                                  onPressed: () => Navigator.push(
+                                  onPressed: () => Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => const LoginScreen(),

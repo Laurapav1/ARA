@@ -4,6 +4,7 @@ import '../../services/auth_store.dart';
 import '../../services/api_client.dart';
 import '../../widgets/form_field_card.dart';
 import '../../theme/ara_theme.dart';
+import 'account.dart';
 import 'widgets/auth_form_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -157,7 +158,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 10),
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const RequestAccessScreen()),
+              ),
               child: const Text('Need access? Request approval'),
             ),
           ],
