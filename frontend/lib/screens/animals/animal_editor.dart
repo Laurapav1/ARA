@@ -45,6 +45,18 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
   late Set<HandlingFlag> _flags;
   Uint8List? _photoBytes;
 
+  List<HandlingFlag> get _availableHandlingFlags {
+    if (_species == 'cat') {
+      return const [HandlingFlag.quarantine];
+    }
+    return HandlingFlag.values;
+  }
+
+  void _normalizeFlagsForSpecies() {
+    final allowed = _availableHandlingFlags.toSet();
+    _flags = _flags.where(allowed.contains).toSet();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +73,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
     _isDangerous = a?.isDangerous ?? false;
     _isInTreatment = a?.isInTreatment ?? false;
     _flags = Set<HandlingFlag>.from(a?.flags ?? const {});
+    _normalizeFlagsForSpecies();
     _photoBytes = a?.photoBytes;
   }
 
@@ -96,6 +109,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
 
     final existing = widget.animal;
     final id = existing?.id ?? 'a${DateTime.now().millisecondsSinceEpoch}';
+    _normalizeFlagsForSpecies();
 
     final updated = Animal(
       id: id,
@@ -372,7 +386,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
                       child: _OutlineBox(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: HandlingFlag.values.map((flag) {
+                          children: _availableHandlingFlags.map((flag) {
                             final selected = _flags.contains(flag);
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
