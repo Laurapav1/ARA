@@ -7,44 +7,51 @@ class _BeforeYouArriveTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      children: const [
-        ExpandableSectionGroup(
-          initiallyExpandedId: '',
-          sections: [
-            ExpandableSectionItem(
+      children: [
+        _EditableInfoSections(
+          storageKey: 'info_before_you_arrive',
+          initialSections: [
+            _EditableInfoSectionModel(
               id: 'arrival_check_in',
               title: 'Arrival & Check-In',
-              child: InfoSectionList(items: _beforeYouArriveArrivalCheckIn),
+              style: InfoSectionListStyle.bullet,
+              items: _beforeYouArriveArrivalCheckIn,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'how_to_get_here',
               title: 'How to Get Here',
-              child: InfoSectionList(items: _beforeYouArriveHowToGetHere),
+              style: InfoSectionListStyle.bullet,
+              items: _beforeYouArriveHowToGetHere,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'what_to_bring',
               title: 'What to Bring',
-              child: InfoSectionList(items: _beforeYouArriveWhatToBring),
+              style: InfoSectionListStyle.bullet,
+              items: _beforeYouArriveWhatToBring,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'summer_preparation',
               title: 'Summer Preparation',
-              child: InfoSectionList(items: _beforeYouArriveSummerPreparation),
+              style: InfoSectionListStyle.bullet,
+              items: _beforeYouArriveSummerPreparation,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'winter_preparation',
               title: 'Winter Preparation',
-              child: InfoSectionList(items: _beforeYouArriveWinterPreparation),
+              style: InfoSectionListStyle.bullet,
+              items: _beforeYouArriveWinterPreparation,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'important_information',
               title: 'Important Information',
-              child: InfoSectionList(items: _beforeYouArriveImportantInfo),
+              style: InfoSectionListStyle.bullet,
+              items: _beforeYouArriveImportantInfo,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'climate_preparation',
               title: 'Climate & Preparation',
-              child: InfoSectionList(items: _beforeYouArriveClimatePrep),
+              style: InfoSectionListStyle.bullet,
+              items: _beforeYouArriveClimatePrep,
             ),
           ],
         ),

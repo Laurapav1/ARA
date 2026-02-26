@@ -27,13 +27,14 @@ class _OverviewTabState extends State<_OverviewTab> {
           ),
         ),
         const SizedBox(height: 12),
-        const ExpandableSectionGroup(
-          initiallyExpandedId: '',
-          sections: [
-            ExpandableSectionItem(
+        _EditableInfoSections(
+          storageKey: 'info_overview_zone_basics',
+          initialSections: [
+            _EditableInfoSectionModel(
               id: 'zone_basics',
               title: 'Zone basics',
-              child: InfoSectionList(items: _overviewStructureBullets),
+              style: InfoSectionListStyle.bullet,
+              items: _overviewStructureBullets,
             ),
           ],
         ),

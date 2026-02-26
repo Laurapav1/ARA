@@ -18,7 +18,8 @@ namespace Ara.Api.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(500)",
                 oldMaxLength: 500,
-                oldNullable: true);
+                oldNullable: true
+            );
         }
 
         /// <inheritdoc />
@@ -32,7 +33,8 @@ namespace Ara.Api.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "text",
-                oldNullable: true);
+                oldNullable: true
+            );
         }
     }
 }

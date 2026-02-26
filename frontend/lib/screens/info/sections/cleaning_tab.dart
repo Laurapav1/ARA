@@ -86,6 +86,7 @@ class _CleaningPanelScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 children: [
                   _CleaningPanelBody(
+                    storageKey: 'info_cleaning_${panel.id}',
                     doItems: panel.doItems,
                     doNotItems: panel.doNotItems,
                     doneWhenItems: panel.doneWhenItems,

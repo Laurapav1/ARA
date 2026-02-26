@@ -7,24 +7,27 @@ class _LivingInfoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      children: const [
-        ExpandableSectionGroup(
-          initiallyExpandedId: '',
-          sections: [
-            ExpandableSectionItem(
+      children: [
+        _EditableInfoSections(
+          storageKey: 'info_living_info',
+          initialSections: [
+            _EditableInfoSectionModel(
               id: 'accommodation',
               title: 'Accommodation',
-              child: InfoSectionList(items: _livingInfoAccommodation),
+              style: InfoSectionListStyle.bullet,
+              items: _livingInfoAccommodation,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'facilities',
               title: 'Facilities',
-              child: InfoSectionList(items: _livingInfoFacilities),
+              style: InfoSectionListStyle.bullet,
+              items: _livingInfoFacilities,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'local_area',
               title: 'Local Area',
-              child: InfoSectionList(items: _livingInfoLocalArea),
+              style: InfoSectionListStyle.bullet,
+              items: _livingInfoLocalArea,
             ),
           ],
         ),
