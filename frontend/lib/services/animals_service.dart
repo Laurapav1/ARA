@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import '../models/animal.dart';
 import '../models/handling_flag.dart';
 import '../widgets/animal_grid.dart';
@@ -85,6 +88,7 @@ class AnimalsService {
       personality: '',
       isDangerous: requiresCare,
       isInTreatment: inTreatment,
+      photoBytes: _pictureToBytes(json['picture']),
       age: '',
       breed: '',
       gender: '',
@@ -109,6 +113,7 @@ class AnimalsService {
       personality: '',
       isDangerous: _asBool(json['requiresCare']),
       isInTreatment: _asBool(json['inTreatment']),
+      photoBytes: _pictureToBytes(json['picture']),
       age: _intToString(json['age']),
       breed: json['breed']?.toString() ?? '',
       gender: _genderToUi(json['gender']),
@@ -132,7 +137,7 @@ class AnimalsService {
       'inTreatment': animal.isInTreatment,
       'dogZone': species == 0 ? _dogZoneToApi(animal.zone) : null,
       'catZone': species == 1 ? _catZoneToApi(animal.zone) : null,
-      'picture': null,
+      'picture': _pictureToApi(animal.photoBytes),
       'age': _ageToApi(animal.age),
       'breed': _nullableText(animal.breed),
       'history': _nullableText(animal.history),
@@ -151,7 +156,7 @@ class AnimalsService {
       'inTreatment': animal.isInTreatment,
       'dogZone': species == 0 ? _dogZoneToApi(animal.zone) : null,
       'catZone': species == 1 ? _catZoneToApi(animal.zone) : null,
-      'picture': null,
+      'picture': _pictureToApi(animal.photoBytes),
       'age': _ageToApi(animal.age),
       'breed': _nullableText(animal.breed),
       'history': _nullableText(animal.history),
@@ -232,6 +237,29 @@ class AnimalsService {
   String? _nullableText(String value) {
     final trimmed = value.trim();
     return trimmed.isEmpty ? null : trimmed;
+  }
+
+  String? _pictureToApi(Uint8List? bytes) {
+    if (bytes == null || bytes.isEmpty) return null;
+    return base64Encode(bytes);
+  }
+
+  Uint8List? _pictureToBytes(dynamic raw) {
+    if (raw is! String) return null;
+    var value = raw.trim();
+    if (value.isEmpty) return null;
+
+    final marker = 'base64,';
+    final markerIndex = value.indexOf(marker);
+    if (markerIndex >= 0) {
+      value = value.substring(markerIndex + marker.length);
+    }
+
+    try {
+      return base64Decode(value);
+    } on FormatException {
+      return null;
+    }
   }
 
   int _handlingLevelToApi(Animal animal) {

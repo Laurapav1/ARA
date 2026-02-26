@@ -146,8 +146,20 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   }
 
   Widget _buildHero(Animal a) {
+    final heroMedia = a.photoBytes == null
+        ? const DecoratedBox(
+            decoration: BoxDecoration(gradient: ARAColors.softBackgroundGradient),
+            child: Center(
+              child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
+            ),
+          )
+        : Image.memory(
+            a.photoBytes!,
+            fit: BoxFit.cover,
+          );
+
     return Container(
-      height: 220,
+      height: 270,
       decoration: BoxDecoration(
         color: ARAColors.surfaceWarm,
         borderRadius: BorderRadius.circular(20),
@@ -155,13 +167,10 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       ),
       child: Stack(
         children: [
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration:
-                  BoxDecoration(gradient: ARAColors.softBackgroundGradient),
-              child: Center(
-                child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
-              ),
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: heroMedia,
             ),
           ),
           if (a.flags.isNotEmpty)

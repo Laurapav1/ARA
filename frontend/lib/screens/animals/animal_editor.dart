@@ -27,6 +27,7 @@ class AnimalEditorScreen extends StatefulWidget {
 }
 
 class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
+  static const int _maxPhotoBytes = 2 * 1024 * 1024;
   final _formKey = GlobalKey<FormState>();
   late final AnimalsService _animalsService;
 
@@ -133,10 +134,65 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
     final picked = await picker.pickImage(
       source: source,
       maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 70,
     );
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
+    if (bytes.lengthInBytes > _maxPhotoBytes) {
+      _showMessage('Photo is too large. Please choose a smaller image.');
+      return;
+    }
     setState(() => _photoBytes = bytes);
+  }
+
+  Future<void> _openPhotoActions() async {
+    final action = await showModalBottomSheet<_PhotoAction>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final hasPhoto = _photoBytes != null;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('Camera'),
+                onTap: () => Navigator.pop(context, _PhotoAction.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.pop(context, _PhotoAction.gallery),
+              ),
+              if (hasPhoto)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: ARAColors.danger),
+                  title: const Text('Delete photo'),
+                  textColor: ARAColors.danger,
+                  onTap: () => Navigator.pop(context, _PhotoAction.remove),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (action == null) return;
+    if (action == _PhotoAction.camera) {
+      await _pickPhoto(ImageSource.camera);
+      return;
+    }
+    if (action == _PhotoAction.gallery) {
+      await _pickPhoto(ImageSource.gallery);
+      return;
+    }
+    if (action == _PhotoAction.remove) {
+      setState(() => _photoBytes = null);
+    }
   }
 
   void _showMessage(String message) {
@@ -233,10 +289,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
                     _FieldCard(
                       child: _PhotoPicker(
                         photoBytes: _photoBytes,
-                        onPickCamera: () async =>
-                            _pickPhoto(ImageSource.camera),
-                        onPickGallery: () async =>
-                            _pickPhoto(ImageSource.gallery),
+                        onManagePhoto: _openPhotoActions,
                       ),
                     ),
                   ],
@@ -412,15 +465,15 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
   }
 }
 
+enum _PhotoAction { camera, gallery, remove }
+
 class _PhotoPicker extends StatelessWidget {
   final Uint8List? photoBytes;
-  final VoidCallback onPickCamera;
-  final VoidCallback onPickGallery;
+  final VoidCallback onManagePhoto;
 
   const _PhotoPicker({
     required this.photoBytes,
-    required this.onPickCamera,
-    required this.onPickGallery,
+    required this.onManagePhoto,
   });
 
   @override
@@ -451,28 +504,27 @@ class _PhotoPicker extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              photoBytes == null ? 'Add photo' : 'Change photo',
+              photoBytes == null ? 'No photo yet' : 'Photo selected',
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: ARAColors.ink,
               ),
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FilledButton.icon(
-                onPressed: onPickCamera,
-                icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                label: const Text('Camera'),
+          OutlinedButton.icon(
+            onPressed: onManagePhoto,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: ARAColors.subInk,
+              backgroundColor: ARAColors.surfaceWarm,
+              side: const BorderSide(color: ARAColors.surfaceWarmTint),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: onPickGallery,
-                icon: const Icon(Icons.photo_library_outlined, size: 18),
-                label: const Text('Gallery'),
-              ),
-            ],
+            ),
+            icon: const Icon(Icons.add_a_photo_outlined, size: 16),
+            label: Text(photoBytes == null ? 'Add photo' : 'Edit photo'),
           ),
         ],
       ),

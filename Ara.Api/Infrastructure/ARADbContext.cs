@@ -135,7 +135,8 @@ public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(op
             e.Property(x => x.AnimalStatus).HasConversion<string>().IsRequired();
             e.Property(x => x.DogZone).HasConversion<string>().IsRequired(false);
             e.Property(x => x.CatZone).HasConversion<string>().IsRequired(false);
-            e.Property(x => x.Picture).HasMaxLength(500);
+            // Picture stores Base64 image payload, so it must not be varchar(500).
+            e.Property(x => x.Picture);
             e.Property(x => x.Breed).HasMaxLength(200);
             e.Property(x => x.History).HasMaxLength(500);
             e.Property(x => x.RequiresCare).IsRequired();
