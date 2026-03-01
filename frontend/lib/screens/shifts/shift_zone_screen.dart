@@ -516,7 +516,7 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
                   onTap: onTap,
                   leading: CircleAvatar(
                     backgroundColor: zone.progress >= 1.0
-                        ? ARAColors.successDark
+                        ? ARAColors.successSoft
                         : ARAColors.surfaceWarm,
                     child: Icon(
                       zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
