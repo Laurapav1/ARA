@@ -10,8 +10,6 @@ ButtonStyle _editorPrimaryButtonStyle() {
 ButtonStyle _editorOutlineButtonStyle() {
   return OutlinedButton.styleFrom(
     foregroundColor: ARAColors.brandDark,
-    backgroundColor: Colors.transparent,
-    overlayColor: Colors.transparent,
     side: const BorderSide(color: ARAColors.surfaceWarmTint),
   );
 }
@@ -37,6 +35,34 @@ class _EditableInfoSectionModel {
       items: items,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'style': style.name,
+      'items': List<String>.from(items),
+    };
+  }
+
+  static _EditableInfoSectionModel? fromJson(dynamic raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final styleName =
+        raw['style']?.toString() ?? InfoSectionListStyle.bullet.name;
+    final style = InfoSectionListStyle.values.firstWhere(
+      (value) => value.name == styleName,
+      orElse: () => InfoSectionListStyle.bullet,
+    );
+    final items = raw['items'] is List
+        ? (raw['items'] as List).map((item) => item.toString()).toList()
+        : <String>[];
+    return _EditableInfoSectionModel(
+      id: raw['id']?.toString() ?? '',
+      title: raw['title']?.toString() ?? '',
+      style: style,
+      items: items,
+    );
+  }
 }
 
 class _EditableInfoSections extends StatefulWidget {
@@ -54,21 +80,53 @@ class _EditableInfoSections extends StatefulWidget {
 
 class _EditableInfoSectionsState extends State<_EditableInfoSections> {
   late final List<_EditableInfoSectionModel> _sections;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    final stored = _editableSectionsStore[widget.storageKey];
-    if (stored != null) {
-      _sections = stored.map((s) => s.copy()).toList();
-    } else {
-      _sections = widget.initialSections.map((s) => s.copy()).toList();
+    _sections = widget.initialSections.map((s) => s.copy()).toList();
+    _loadSections();
+  }
+
+  Future<void> _loadSections() async {
+    try {
+      final auth = context.read<AuthStore>();
+      final data = await _informationService.getDocument(
+        widget.storageKey,
+        token: auth.accessToken,
+      );
+      if (!mounted) return;
+      if (data is List) {
+        final loaded = <_EditableInfoSectionModel>[];
+        for (final row in data) {
+          final section = _EditableInfoSectionModel.fromJson(row);
+          if (section != null) loaded.add(section);
+        }
+        if (loaded.isNotEmpty) {
+          _sections
+            ..clear()
+            ..addAll(loaded);
+        }
+      }
+    } catch (_) {
+      // Keep defaults if backend load fails.
+    } finally {
+      if (!mounted) return;
+      setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isStaff = context.watch<AuthStore>().isStaff;
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Column(
       children: [
         ExpandableSectionGroup(
@@ -235,7 +293,8 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: ARAColors.danger),
+              leading:
+                  const Icon(Icons.delete_outline, color: ARAColors.danger),
               title: const Text(
                 'Delete section',
                 style: TextStyle(color: ARAColors.danger),
@@ -253,8 +312,24 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
   }
 
   void _saveChanges() {
-    _editableSectionsStore[widget.storageKey] =
-        _sections.map((section) => section.copy()).toList();
+    _saveChangesAsync();
+  }
+
+  Future<void> _saveChangesAsync() async {
+    final auth = context.read<AuthStore>();
+    final token = auth.accessToken;
+    if (!auth.isStaff || token == null || token.isEmpty) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(content: Text('Staff login required.')));
+      return;
+    }
+
+    await _informationService.saveDocument(
+      widget.storageKey,
+      _sections.map((section) => section.toJson()).toList(growable: false),
+      token: token,
+    );
+
     if (!mounted) return;
     ScaffoldMessenger.maybeOf(context)
         ?.showSnackBar(const SnackBar(content: Text('Changes saved')));
@@ -380,10 +455,9 @@ class _EditableInfoSectionBody extends StatelessWidget {
             icon: const Icon(Icons.edit_outlined),
             label: const Text('Edit section'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: ARAColors.inkStrong,
+              foregroundColor: ARAColors.subInk,
               side: const BorderSide(color: ARAColors.surfaceWarmTint),
               backgroundColor: Colors.transparent,
-              overlayColor: Colors.transparent,
             ),
           ),
         ),

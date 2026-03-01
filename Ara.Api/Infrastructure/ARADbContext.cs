@@ -1,5 +1,6 @@
 using Ara.Api.Enums;
 using Ara.Domain.Models;
+using Ara.Domain.Models.Information;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ara.Api.Data;
@@ -13,6 +14,7 @@ public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(op
     public DbSet<TaskInstance> TaskInstances => Set<TaskInstance>();
     public DbSet<TaskAssignment> TaskAssignments => Set<TaskAssignment>();
     public DbSet<Animal> Animals => Set<Animal>();
+    public DbSet<InformationBlob> InformationBlobs => Set<InformationBlob>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -142,6 +144,14 @@ public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(op
             e.Property(x => x.RequiresCare).IsRequired();
             e.Property(x => x.InTreatment).IsRequired();
             e.Ignore(x => x.TrainingLinks);
+        });
+
+        b.Entity<InformationBlob>(e =>
+        {
+            e.HasKey(x => x.Key);
+            e.Property(x => x.Key).HasMaxLength(120);
+            e.Property(x => x.Json).IsRequired();
+            e.Property(x => x.UpdatedAt).IsRequired();
         });
     }
 

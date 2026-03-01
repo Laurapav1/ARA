@@ -1,7 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../services/api_client.dart';
+import '../../services/api_config.dart';
 import '../../services/auth_store.dart';
+import '../../services/information_service.dart';
 import '../../theme/ara_theme.dart';
 import '../../widgets/expandable_section_group.dart';
 import '../../widgets/info_section_list.dart';
@@ -24,9 +27,8 @@ part 'widgets/editable_info_sections.dart';
 part 'widgets/info_card_dialogs.dart';
 part 'widgets/info_card_screens.dart';
 
-final Map<String, List<_EditableInfoSectionModel>> _editableSectionsStore =
-    <String, List<_EditableInfoSectionModel>>{};
-List<_InformationCardModel>? _informationCardsStore;
+final InformationService _informationService =
+    InformationService(ApiClient(ApiConfig.baseUrl));
 
 class InformationScreen extends StatefulWidget {
   const InformationScreen({super.key});
@@ -36,16 +38,17 @@ class InformationScreen extends StatefulWidget {
 }
 
 class _InformationScreenState extends State<InformationScreen> {
-  late final List<_InformationCardModel> _cards;
+  List<_InformationCardModel> _cards = const [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    if (_informationCardsStore != null) {
-      _cards = _informationCardsStore!.map((card) => card.copy()).toList();
-      return;
-    }
-    _cards = _InfoSection.values
+    _loadCards();
+  }
+
+  Future<void> _loadCards() async {
+    final defaults = _InfoSection.values
         .map(
           (section) => _InformationCardModel(
             id: section.name,
@@ -57,7 +60,40 @@ class _InformationScreenState extends State<InformationScreen> {
           ),
         )
         .toList();
-    _persistCards();
+
+    try {
+      final auth = context.read<AuthStore>();
+      final data = await _informationService.getDocument(
+        'cards',
+        token: auth.accessToken,
+      );
+
+      final loaded = <_InformationCardModel>[];
+      if (data is List) {
+        for (final row in data) {
+          final card = _InformationCardModel.fromJson(row);
+          if (card != null) loaded.add(card);
+        }
+      }
+
+      _cards = loaded.isEmpty ? defaults : loaded;
+    } catch (_) {
+      _cards = defaults;
+    }
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _saveCardsToBackend() async {
+    final auth = context.read<AuthStore>();
+    final token = auth.accessToken;
+    if (!auth.isStaff || token == null || token.isEmpty) return;
+    await _informationService.saveDocument(
+      'cards',
+      _cards.map((card) => card.toJson()).toList(growable: false),
+      token: token,
+    );
   }
 
   @override
@@ -85,47 +121,49 @@ class _InformationScreenState extends State<InformationScreen> {
               subtitle: 'Everything you need to know',
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                children: [
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 460),
-                      child: GridView.count(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 14,
-                        mainAxisSpacing: 14,
-                        childAspectRatio: 1.28,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: visibleCards.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final card = entry.value;
-                          final isTopRow = index < 2;
-                          return InfoTileCard(
-                            title: card.title,
-                            subtitle: card.subtitle,
-                            backgroundGradient:
-                                _sectionGradient(card.iconColor),
-                            textColor: ARAColors.cardBg,
-                            showArrow: true,
-                            backgroundIcon: card.icon,
-                            backgroundIconColor: ARAColors.cardBg,
-                            backgroundIconSize: isTopRow ? 112 : 106,
-                            backgroundIconOpacity: 0.14,
-                            backgroundIconRight: isTopRow ? -12 : -8,
-                            backgroundIconTop: isTopRow ? -14 : -6,
-                            backgroundIconAngle: isTopRow ? 0.05 : -0.04,
-                            pinTitleToBottom: true,
-                            onTap: () => _openCard(card, isStaff: isStaff),
-                          );
-                        }).toList(),
-                      ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      children: [
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 460),
+                            child: GridView.count(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 14,
+                              mainAxisSpacing: 14,
+                              childAspectRatio: 1.28,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: visibleCards.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final card = entry.value;
+                                final isTopRow = index < 2;
+                                return InfoTileCard(
+                                  title: card.title,
+                                  subtitle: card.subtitle,
+                                  backgroundGradient:
+                                      _sectionGradient(card.iconColor),
+                                  textColor: ARAColors.cardBg,
+                                  showArrow: true,
+                                  backgroundIcon: card.icon,
+                                  backgroundIconColor: ARAColors.cardBg,
+                                  backgroundIconSize: isTopRow ? 112 : 106,
+                                  backgroundIconOpacity: 0.14,
+                                  backgroundIconRight: isTopRow ? -12 : -8,
+                                  backgroundIconTop: isTopRow ? -14 : -6,
+                                  backgroundIconAngle: isTopRow ? 0.05 : -0.04,
+                                  pinTitleToBottom: true,
+                                  onTap: () => _openCard(card, isStaff: isStaff),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -153,8 +191,9 @@ class _InformationScreenState extends State<InformationScreen> {
           iconColor: result.iconColor,
         ),
       );
-      _persistCards();
     });
+
+    await _saveCardsToBackend();
   }
 
   Future<void> _openCard(
@@ -188,6 +227,7 @@ class _InformationScreenState extends State<InformationScreen> {
       setState(() {
         _cards.removeWhere((existing) => existing.deleted);
       });
+      await _saveCardsToBackend();
       return;
     }
 
@@ -204,8 +244,8 @@ class _InformationScreenState extends State<InformationScreen> {
     if (!mounted) return;
     setState(() {
       _cards.removeWhere((existing) => existing.deleted);
-      _persistCards();
     });
+    await _saveCardsToBackend();
   }
 
   Gradient _sectionGradient(Color iconColor) {
@@ -216,9 +256,5 @@ class _InformationScreenState extends State<InformationScreen> {
       end: Alignment.bottomRight,
       colors: [start, end],
     );
-  }
-
-  void _persistCards() {
-    _informationCardsStore = _cards.map((card) => card.copy()).toList();
   }
 }

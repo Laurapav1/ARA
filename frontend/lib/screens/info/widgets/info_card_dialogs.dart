@@ -111,7 +111,8 @@ Future<_CardEditorResult?> _showCardEditorDialog({
                 spacing: 10,
                 runSpacing: 10,
                 children: _cardColorOptions.map((color) {
-                  final isSelected = color.value == selectedColor.value;
+                  final isSelected =
+                      color.toARGB32() == selectedColor.toARGB32();
                   return GestureDetector(
                     onTap: () => setDialogState(() => selectedColor = color),
                     child: Container(

@@ -34,6 +34,62 @@ class _InformationCardModel {
       deleted: deleted,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'subtitle': subtitle,
+      'icon': {
+        'codePoint': icon.codePoint,
+        'fontFamily': icon.fontFamily,
+        'fontPackage': icon.fontPackage,
+        'matchTextDirection': icon.matchTextDirection,
+      },
+      'iconColor': iconColor.toARGB32(),
+      'section': section?.name,
+      'infoItems': List<String>.from(infoItems),
+      'deleted': deleted,
+    };
+  }
+
+  static _InformationCardModel? fromJson(dynamic raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final iconMap = raw['icon'];
+    if (iconMap is! Map<String, dynamic>) return null;
+    final codePoint = iconMap['codePoint'];
+    if (codePoint is! int) return null;
+
+    return _InformationCardModel(
+      id: raw['id']?.toString() ?? '',
+      title: raw['title']?.toString() ?? '',
+      subtitle: raw['subtitle']?.toString() ?? '',
+      icon: IconData(
+        codePoint,
+        fontFamily: iconMap['fontFamily']?.toString(),
+        fontPackage: iconMap['fontPackage']?.toString(),
+        matchTextDirection: iconMap['matchTextDirection'] == true,
+      ),
+      iconColor: Color(raw['iconColor'] is int
+          ? raw['iconColor'] as int
+          : ARAColors.brand.toARGB32()),
+      section: _sectionFromName(raw['section']?.toString()),
+      infoItems: (raw['infoItems'] is List)
+          ? (raw['infoItems'] as List)
+                .map((item) => item.toString())
+                .toList(growable: false)
+          : const [],
+      deleted: raw['deleted'] == true,
+    );
+  }
+
+  static _InfoSection? _sectionFromName(String? name) {
+    if (name == null || name.isEmpty) return null;
+    for (final section in _InfoSection.values) {
+      if (section.name == name) return section;
+    }
+    return null;
+  }
 }
 
 class _InformationCardScreen extends StatefulWidget {
