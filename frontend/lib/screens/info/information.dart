@@ -26,6 +26,7 @@ part 'widgets/shelter_map_panel.dart';
 part 'widgets/editable_info_sections.dart';
 part 'widgets/info_card_dialogs.dart';
 part 'widgets/info_card_screens.dart';
+part 'widgets/material_icon_catalog.dart';
 
 final InformationService _informationService =
     InformationService(ApiClient(ApiConfig.baseUrl));

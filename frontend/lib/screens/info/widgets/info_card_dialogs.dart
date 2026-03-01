@@ -40,7 +40,7 @@ class _CardIconOption {
   });
 }
 
-const List<_CardIconOption> _cardIconOptions = [
+const List<_CardIconOption> _featuredCardIconOptions = [
   _CardIconOption(label: 'Document', icon: Icons.description_outlined),
   _CardIconOption(label: 'Shield', icon: Icons.shield_outlined),
   _CardIconOption(label: 'Map', icon: Icons.map_outlined),
@@ -51,6 +51,49 @@ const List<_CardIconOption> _cardIconOptions = [
   _CardIconOption(label: 'Star', icon: Icons.star_outline),
   _CardIconOption(label: 'Cleaning', icon: Icons.cleaning_services_outlined),
   _CardIconOption(label: 'Paw', icon: Icons.pets_outlined),
+  _CardIconOption(label: 'Info', icon: Icons.info_outline),
+  _CardIconOption(label: 'Warning', icon: Icons.warning_amber_outlined),
+  _CardIconOption(label: 'Help', icon: Icons.help_outline),
+  _CardIconOption(label: 'Location', icon: Icons.location_on_outlined),
+  _CardIconOption(label: 'Directions', icon: Icons.directions_outlined),
+  _CardIconOption(label: 'Car', icon: Icons.directions_car_outlined),
+  _CardIconOption(label: 'Bus', icon: Icons.directions_bus_outlined),
+  _CardIconOption(label: 'Train', icon: Icons.train_outlined),
+  _CardIconOption(label: 'Bed', icon: Icons.bed_outlined),
+  _CardIconOption(label: 'Kitchen', icon: Icons.kitchen_outlined),
+  _CardIconOption(label: 'Restaurant', icon: Icons.restaurant_outlined),
+  _CardIconOption(label: 'Water', icon: Icons.water_drop_outlined),
+  _CardIconOption(label: 'Phone', icon: Icons.phone_outlined),
+  _CardIconOption(label: 'Mail', icon: Icons.mail_outline),
+  _CardIconOption(label: 'Chat', icon: Icons.chat_bubble_outline),
+  _CardIconOption(label: 'Camera', icon: Icons.photo_camera_outlined),
+  _CardIconOption(label: 'Image', icon: Icons.image_outlined),
+  _CardIconOption(label: 'People', icon: Icons.people_outline),
+  _CardIconOption(label: 'Person', icon: Icons.person_outline),
+  _CardIconOption(label: 'Volunteer', icon: Icons.volunteer_activism_outlined),
+  _CardIconOption(label: 'Medical', icon: Icons.medical_services_outlined),
+  _CardIconOption(label: 'Health', icon: Icons.health_and_safety_outlined),
+  _CardIconOption(label: 'Work', icon: Icons.work_outline),
+  _CardIconOption(label: 'Time', icon: Icons.schedule_outlined),
+  _CardIconOption(label: 'Task', icon: Icons.task_alt_outlined),
+  _CardIconOption(label: 'Lock', icon: Icons.lock_outline),
+  _CardIconOption(label: 'Key', icon: Icons.key_outlined),
+  _CardIconOption(label: 'Build', icon: Icons.build_outlined),
+  _CardIconOption(label: 'Settings', icon: Icons.settings_outlined),
+  _CardIconOption(label: 'Laundry', icon: Icons.local_laundry_service_outlined),
+  _CardIconOption(label: 'Wifi', icon: Icons.wifi_outlined),
+  _CardIconOption(label: 'Shopping', icon: Icons.shopping_basket_outlined),
+  _CardIconOption(label: 'Park', icon: Icons.park_outlined),
+  _CardIconOption(label: 'Forest', icon: Icons.forest_outlined),
+  _CardIconOption(label: 'Sun', icon: Icons.wb_sunny_outlined),
+  _CardIconOption(label: 'Night', icon: Icons.nightlight_outlined),
+  _CardIconOption(label: 'Rain', icon: Icons.umbrella_outlined),
+  _CardIconOption(label: 'Trash', icon: Icons.delete_outline),
+  _CardIconOption(label: 'Edit', icon: Icons.edit_outlined),
+  _CardIconOption(label: 'Book', icon: Icons.menu_book_outlined),
+  _CardIconOption(label: 'School', icon: Icons.school_outlined),
+  _CardIconOption(label: 'Heart', icon: Icons.favorite_border),
+  _CardIconOption(label: 'Dog', icon: Icons.pets_outlined),
 ];
 
 const List<Color> _cardColorOptions = [
@@ -242,22 +285,38 @@ class _AnchoredIconDropdown extends StatefulWidget {
 }
 
 class _AnchoredIconDropdownState extends State<_AnchoredIconDropdown> {
+  static const int _maxVisibleOptions = 120;
   final FocusNode _focusNode = FocusNode();
   final GlobalKey _fieldKey = GlobalKey();
+  final TextEditingController _searchController = TextEditingController();
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
 
   @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_refreshOverlay);
+  }
+
+  @override
   void dispose() {
     _removeOverlay();
+    _searchController
+      ..removeListener(_refreshOverlay)
+      ..dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _refreshOverlay() {
+    _overlayEntry?.markNeedsBuild();
   }
 
   void _removeOverlay() {
     _overlayEntry?.remove();
     _overlayEntry = null;
     _isOpen = false;
+    _searchController.clear();
   }
 
   void _toggleOverlay() {
@@ -279,6 +338,16 @@ class _AnchoredIconDropdownState extends State<_AnchoredIconDropdown> {
 
     _overlayEntry = OverlayEntry(
       builder: (context) {
+        final query = _searchController.text.trim().toLowerCase();
+        final matchingOptions = widget.options.where((option) {
+          if (query.isEmpty) return true;
+          final label = option.label.toLowerCase();
+          return label.contains(query) ||
+              label.replaceAll(' ', '_').contains(query.replaceAll(' ', '_'));
+        }).toList(growable: false);
+        final filteredOptions = matchingOptions
+            .take(_maxVisibleOptions)
+            .toList(growable: false);
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
@@ -321,41 +390,79 @@ class _AnchoredIconDropdownState extends State<_AnchoredIconDropdown> {
                           ),
                         ),
                         const Divider(height: 1),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 240),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: widget.options.length,
-                            itemBuilder: (context, index) {
-                              final option = widget.options[index];
-                              final selected = option.icon == widget.value;
-                              return InkWell(
-                                onTap: () {
-                                  widget.onChanged(option.icon);
-                                  if (!mounted) return;
-                                  setState(_removeOverlay);
-                                  _focusNode.unfocus();
-                                },
-                                child: Container(
-                                  color: selected
-                                      ? ARAColors.surfaceWarm
-                                      : Colors.transparent,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(option.icon),
-                                      const SizedBox(width: 10),
-                                      Text(option.label),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                          child: TextField(
+                            controller: _searchController,
+                            autofocus: true,
+                            decoration: const InputDecoration(
+                              hintText: 'Search icons',
+                              prefixIcon: Icon(Icons.search),
+                              isDense: true,
+                            ),
                           ),
                         ),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 240),
+                          child: filteredOptions.isEmpty
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Text(
+                                      'No icons found',
+                                      style: TextStyle(color: ARAColors.subInk),
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: filteredOptions.length,
+                                  itemBuilder: (context, index) {
+                                    final option = filteredOptions[index];
+                                    final selected = option.icon == widget.value;
+                                    return InkWell(
+                                      onTap: () {
+                                        widget.onChanged(option.icon);
+                                        if (!mounted) return;
+                                        setState(_removeOverlay);
+                                        _focusNode.unfocus();
+                                      },
+                                      child: Container(
+                                        color: selected
+                                            ? ARAColors.surfaceWarm
+                                            : Colors.transparent,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(option.icon),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Text(option.label),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        if (matchingOptions.length > filteredOptions.length)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Showing first ${filteredOptions.length} matches. Keep typing to narrow the list.',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: ARAColors.subInk,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
