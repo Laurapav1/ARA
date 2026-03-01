@@ -113,20 +113,6 @@ class _InformationScreenState extends State<InformationScreen> {
     );
   }
 
-  Future<void> _saveHeaderToBackend() async {
-    final auth = context.read<AuthStore>();
-    final token = auth.accessToken;
-    if (!auth.isStaff || token == null || token.isEmpty) return;
-    await _informationService.saveDocument(
-      'screen_header',
-      {
-        'title': _headerTitle,
-        'subtitle': _headerSubtitle,
-      },
-      token: token,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStore>();
@@ -220,15 +206,6 @@ class _InformationScreenState extends State<InformationScreen> {
                 await _addCard();
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.title_outlined),
-              title: const Text('Edit header'),
-              onTap: () async {
-                Navigator.pop(ctx);
-                if (!mounted) return;
-                await _editScreenHeader();
-              },
-            ),
             if (_cards.where((card) => !card.deleted).isNotEmpty)
               ListTile(
                 leading: const Icon(Icons.edit_outlined),
@@ -264,22 +241,6 @@ class _InformationScreenState extends State<InformationScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _editScreenHeader() async {
-    final result = await _showScreenHeaderDialog(
-      context: context,
-      initialTitle: _headerTitle,
-      initialSubtitle: _headerSubtitle,
-    );
-    if (!mounted || result == null) return;
-
-    setState(() {
-      _headerTitle = result.$1;
-      _headerSubtitle = result.$2;
-    });
-
-    await _saveHeaderToBackend();
   }
 
   Future<void> _addCard() async {
