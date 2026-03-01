@@ -10,6 +10,7 @@ import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/global_search_filter.dart';
 import '../../theme/ara_theme.dart';
+import 'shift_zone_dialogs.dart';
 import 'zone_list_screen.dart';
 
 class ShiftZoneScreen extends StatefulWidget {
@@ -29,6 +30,13 @@ class ShiftZoneScreen extends StatefulWidget {
 class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   final _service = ShiftsService();
   late Future<ShiftView> _future;
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
   ShiftView? _currentShift;
   bool _isRefreshing = false;
   Timer? _midnightTimer;
@@ -36,6 +44,7 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   String? _focusedZoneName;
   List<String> _pinnedZoneIdentities = <String>[];
   int _focusRequestId = 0;
+  ShiftZoneStaffMode _staffMode = ShiftZoneStaffMode.none;
 
   @override
   void initState() {
@@ -378,8 +387,118 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
     setState(() {});
   }
 
+  Future<void> _addZone() async {
+    final name = await showShiftZoneNameDialog(
+      context: context,
+      title: 'Add zone',
+    );
+    if (!mounted || name == null) return;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+
+    final auth = context.read<AuthStore>();
+    final token = auth.accessToken;
+    if (token == null || token.isEmpty) {
+      _showMessage('Missing login token.');
+      return;
+    }
+
+    try {
+      await _service.createZone(
+        date: _fmtIso(widget.date),
+        shiftType: widget.shiftType,
+        name: trimmed,
+        isGroupedZone: widget.shiftType == 'Evening',
+        token: token,
+      );
+      await _reload();
+      _showMessage('Zone added.');
+    } on ApiException catch (e) {
+      _showMessage(e.message);
+    }
+  }
+
+  void _setStaffMode(ShiftZoneStaffMode mode) {
+    if (!mounted) return;
+    setState(() => _staffMode = mode);
+  }
+
+  Future<void> _openShiftActionsSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('Add zone'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                await _addZone();
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                _staffMode == ShiftZoneStaffMode.edit
+                    ? Icons.check_circle_outline
+                    : Icons.edit_outlined,
+              ),
+              title: Text(
+                _staffMode == ShiftZoneStaffMode.edit
+                    ? 'Done editing zones'
+                    : 'Edit zones',
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _setStaffMode(
+                  _staffMode == ShiftZoneStaffMode.edit
+                      ? ShiftZoneStaffMode.none
+                      : ShiftZoneStaffMode.edit,
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                _staffMode == ShiftZoneStaffMode.delete
+                    ? Icons.check_circle_outline
+                    : Icons.delete_outline,
+                color: _staffMode == ShiftZoneStaffMode.delete
+                    ? null
+                    : ARAColors.danger,
+              ),
+              title: Text(
+                _staffMode == ShiftZoneStaffMode.delete
+                    ? 'Done deleting zones'
+                    : 'Delete zones',
+                style: TextStyle(
+                  color: _staffMode == ShiftZoneStaffMode.delete
+                      ? null
+                      : ARAColors.danger,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _setStaffMode(
+                  _staffMode == ShiftZoneStaffMode.delete
+                      ? ShiftZoneStaffMode.none
+                      : ShiftZoneStaffMode.delete,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthStore>();
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.shiftType} Shift'),
@@ -397,7 +516,7 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
                   onTap: onTap,
                   leading: CircleAvatar(
                     backgroundColor: zone.progress >= 1.0
-                        ? ARAColors.successSoft
+                        ? ARAColors.successDark
                         : ARAColors.surfaceWarm,
                     child: Icon(
                       zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
@@ -433,6 +552,12 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
               icon: const Icon(Icons.close),
               onPressed: _searchFilterController.clearQuery,
             ),
+          if (auth.isStaff)
+            IconButton(
+              onPressed: _openShiftActionsSheet,
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'Shift actions',
+            ),
         ],
       ),
       body: SafeArea(
@@ -464,7 +589,9 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
                       ZoneListScreen(
                         key: ValueKey(shift.shiftId),
                         shiftType: widget.shiftType,
+                        date: widget.date,
                         zones: visibleZones,
+                        staffMode: _staffMode,
                         shiftId: shift.shiftId,
                         onReload: _reload,
                         initialPinnedZoneIdentities: _pinnedZoneIdentities,
@@ -519,16 +646,15 @@ class _ErrorState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+          mainAxisSize: MainAxisSize.min,
+          children: [
             const Icon(Icons.error_outline, size: 64, color: ARAColors.subInk),
             const SizedBox(height: 12),
             Text(
               message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: ARAColors.subInk),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: ARAColors.subInk),
               textAlign: TextAlign.center,
             ),
           ],

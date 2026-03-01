@@ -1,4 +1,4 @@
-﻿part of '../information.dart';
+part of '../information.dart';
 
 ButtonStyle _editorCancelTextButtonStyle() {
   return TextButton.styleFrom(
@@ -208,60 +208,6 @@ Future<String?> _showInformationItemDialog({
   );
 
   controller.dispose();
-  return result;
-}
-
-Future<(String, String)?> _showScreenHeaderDialog({
-  required BuildContext context,
-  required String initialTitle,
-  required String initialSubtitle,
-}) async {
-  final titleController = TextEditingController(text: initialTitle);
-  final subtitleController = TextEditingController(text: initialSubtitle);
-
-  final result = await showDialog<(String, String)>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Edit header'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: 'Header title'),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: subtitleController,
-              decoration: const InputDecoration(labelText: 'Header subtitle'),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          style: _editorCancelTextButtonStyle(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () {
-            final title = titleController.text.trim();
-            final subtitle = subtitleController.text.trim();
-            if (title.isEmpty || subtitle.isEmpty) return;
-            Navigator.pop(ctx, (title, subtitle));
-          },
-          child: const Text('Save'),
-        ),
-      ],
-    ),
-  );
-
-  titleController.dispose();
-  subtitleController.dispose();
   return result;
 }
 
@@ -542,3 +488,4 @@ class _AnchoredIconDropdownState extends State<_AnchoredIconDropdown> {
     );
   }
 }
+

@@ -65,10 +65,7 @@ class AccountScreen extends StatelessWidget {
                                     builder: (_) => const LoginScreen(),
                                   ),
                                 ),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: ARAColors.brand,
-                                  foregroundColor: ARAColors.ink,
-                                ),
+                                style: ARATheme.primaryCtaButtonStyle,
                                 child: const Text('Sign in'),
                               ),
                             ),
@@ -84,14 +81,14 @@ class AccountScreen extends StatelessWidget {
                                 onPressed: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        const RequestAccessScreen(),
+                                    builder: (_) => const RequestAccessScreen(),
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: ARAColors.ink,
                                   side: BorderSide(
-                                    color: Theme.of(context).dividerColor
+                                    color: Theme.of(context)
+                                        .dividerColor
                                         .withValues(alpha: 0.9),
                                   ),
                                   padding:

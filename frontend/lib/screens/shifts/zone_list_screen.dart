@@ -5,10 +5,15 @@ import '../../theme/ara_theme.dart';
 import '../../services/auth_store.dart';
 import '../../services/shifts_service.dart';
 import '../../services/api_client.dart';
+import 'shift_zone_dialogs.dart';
+
+enum ShiftZoneStaffMode { none, edit, delete }
 
 class ZoneListScreen extends StatefulWidget {
   final String shiftType;
+  final DateTime date;
   final List<Zone> zones;
+  final ShiftZoneStaffMode staffMode;
   final String? shiftId;
   final VoidCallback? onReload;
   final String? focusedZoneName;
@@ -19,7 +24,9 @@ class ZoneListScreen extends StatefulWidget {
   const ZoneListScreen({
     super.key,
     required this.shiftType,
+    required this.date,
     required this.zones,
+    this.staffMode = ShiftZoneStaffMode.none,
     this.shiftId,
     this.onReload,
     this.focusedZoneName,
@@ -48,7 +55,8 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     _zones = widget.zones.map((z) => z.copy()).toList();
     _signedUp = List<bool>.filled(_zones.length, false, growable: true);
     _signedUpTasks.clear();
-    _pinnedZoneIdentities = List<String>.from(widget.initialPinnedZoneIdentities);
+    _pinnedZoneIdentities =
+        List<String>.from(widget.initialPinnedZoneIdentities);
     _promotePinnedZonesIfPresent();
     _scheduleFocusIfNeeded();
   }
@@ -62,8 +70,10 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       _signedUpTasks.clear();
       _promotePinnedZonesIfPresent();
     }
-    if (oldWidget.initialPinnedZoneIdentities != widget.initialPinnedZoneIdentities) {
-      _pinnedZoneIdentities = List<String>.from(widget.initialPinnedZoneIdentities);
+    if (oldWidget.initialPinnedZoneIdentities !=
+        widget.initialPinnedZoneIdentities) {
+      _pinnedZoneIdentities =
+          List<String>.from(widget.initialPinnedZoneIdentities);
       _promotePinnedZonesIfPresent();
     }
     _scheduleFocusIfNeeded();
@@ -160,7 +170,8 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   }
 
   void _scheduleFocusIfNeeded() {
-    if (widget.focusedZoneName == null || widget.focusedZoneName!.trim().isEmpty) {
+    if (widget.focusedZoneName == null ||
+        widget.focusedZoneName!.trim().isEmpty) {
       return;
     }
     if (widget.focusRequestId == _lastHandledFocusRequestId) {
@@ -251,13 +262,23 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     return '${zone.name}::${task.name}';
   }
 
+  String _fmtIso(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
   bool _canJoin(AuthStore auth) {
     if (auth.isStaff) return true;
     if (!auth.isApproved) return false;
     final me = auth.me;
     if (me == null) return false;
     final now = DateTime.now();
-    final from = me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
+    final from =
+        me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
     final to = me.volunteerTo != null ? DateTime.parse(me.volunteerTo!) : null;
     if (from != null && now.isBefore(from)) return false;
     if (to != null && now.isAfter(to)) return false;
@@ -272,7 +293,8 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     final me = auth.me;
     if (me == null) return 'Please sign in to join tasks.';
     final now = DateTime.now();
-    final from = me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
+    final from =
+        me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
     final to = me.volunteerTo != null ? DateTime.parse(me.volunteerTo!) : null;
     if (from != null && now.isBefore(from)) {
       return 'Your volunteering period has not started yet.';
@@ -450,6 +472,67 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     }
   }
 
+  Future<void> _editZone(Zone zone, AuthStore auth) async {
+    final token = auth.accessToken;
+    if (token == null || token.isEmpty) {
+      _showMessage('Missing login token.');
+      return;
+    }
+
+    final newName = await showShiftZoneNameDialog(
+      context: context,
+      title: 'Edit zone',
+      initialValue: zone.name,
+    );
+    if (!mounted || newName == null) return;
+
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty || trimmed == zone.name) return;
+
+    try {
+      await _service.updateZone(
+        date: _fmtIso(widget.date),
+        shiftType: widget.shiftType,
+        currentName: zone.name,
+        newName: trimmed,
+        isGroupedZone: zone.subtasks.isNotEmpty,
+        token: token,
+      );
+      widget.onReload?.call();
+      _showMessage('Zone updated.');
+    } on ApiException catch (e) {
+      _showMessage(e.message);
+    }
+  }
+
+  Future<void> _deleteZone(Zone zone, AuthStore auth) async {
+    final token = auth.accessToken;
+    if (token == null || token.isEmpty) {
+      _showMessage('Missing login token.');
+      return;
+    }
+
+    final confirmed = await showShiftZoneDeleteDialog(
+      context: context,
+      zoneName: zone.name,
+    );
+    if (!mounted || !confirmed) return;
+
+    try {
+      await _service.deleteZone(
+        date: _fmtIso(widget.date),
+        shiftType: widget.shiftType,
+        name: zone.name,
+        isGroupedZone: zone.subtasks.isNotEmpty,
+        token: token,
+      );
+      widget.onReload?.call();
+      _showMessage('Zone deleted.');
+    } on ApiException catch (e) {
+      _showMessage(e.message);
+    }
+  }
+
   String _friendlyCompleteError(String message) {
     final normalized = message.toLowerCase();
     if (normalized.contains('not assigned')) {
@@ -544,7 +627,6 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
               ),
             ),
           ),
-
         Expanded(
           child: ListView(
             controller: _scrollController,
@@ -613,6 +695,41 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     return category;
   }
 
+  Future<void> _handleZoneStaffAction(Zone zone, AuthStore auth) async {
+    switch (widget.staffMode) {
+      case ShiftZoneStaffMode.edit:
+        await _editZone(zone, auth);
+        return;
+      case ShiftZoneStaffMode.delete:
+        await _deleteZone(zone, auth);
+        return;
+      case ShiftZoneStaffMode.none:
+        return;
+    }
+  }
+
+  IconData? _zoneStaffActionIcon() {
+    switch (widget.staffMode) {
+      case ShiftZoneStaffMode.edit:
+        return Icons.edit_outlined;
+      case ShiftZoneStaffMode.delete:
+        return Icons.delete_outline;
+      case ShiftZoneStaffMode.none:
+        return null;
+    }
+  }
+
+  String? _zoneStaffActionTooltip() {
+    switch (widget.staffMode) {
+      case ShiftZoneStaffMode.edit:
+        return 'Edit zone';
+      case ShiftZoneStaffMode.delete:
+        return 'Delete zone';
+      case ShiftZoneStaffMode.none:
+        return null;
+    }
+  }
+
   Widget _buildZoneCard(
     int index,
     AuthStore auth,
@@ -624,11 +741,12 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       return _buildGroupedZoneCard(zone, auth, canJoin, meId);
     }
     final done = zone.progress >= 1.0;
-    final isAssigned =
-        meId != null && zone.assignedVolunteerIds.contains(meId);
+    final isAssigned = meId != null && zone.assignedVolunteerIds.contains(meId);
 
     final bg = _cardColor(index);
     final pal = _paletteFor(bg);
+    final staffActionEnabled =
+        auth.isStaff && widget.staffMode != ShiftZoneStaffMode.none;
 
     return _ZoneCard(
       zone: zone,
@@ -637,9 +755,17 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
       icon: _statusIcon(index),
       isDone: done,
       isAssigned: isAssigned,
+      staffActionIcon: staffActionEnabled ? _zoneStaffActionIcon() : null,
+      staffActionTooltip: staffActionEnabled ? _zoneStaffActionTooltip() : null,
+      onStaffActionPressed:
+          staffActionEnabled ? () => _handleZoneStaffAction(zone, auth) : null,
       onTap: () {
         final currentIndex = _pinAndPromoteZone(zone);
         if (currentIndex < 0) return;
+        if (staffActionEnabled) {
+          _handleZoneStaffAction(zone, auth);
+          return;
+        }
         if (!canJoin) {
           _showJoinBlocked(auth);
           return;
@@ -726,6 +852,16 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                       ),
                     ),
                   ),
+                  if (auth.isStaff &&
+                      widget.staffMode != ShiftZoneStaffMode.none)
+                    IconButton(
+                      onPressed: () => _handleZoneStaffAction(zone, auth),
+                      icon: Icon(_zoneStaffActionIcon()),
+                      color: widget.staffMode == ShiftZoneStaffMode.delete
+                          ? ARAColors.danger
+                          : pal.primary,
+                      tooltip: _zoneStaffActionTooltip(),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -757,9 +893,10 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     _TextPalette pal,
   ) {
     final done = task.progress >= 1.0;
-    final isAssigned =
-        meId != null && task.assignedVolunteerIds.contains(meId);
+    final isAssigned = meId != null && task.assignedVolunteerIds.contains(meId);
     final signedUp = _isTaskSignedUp(zone, task);
+    final staffModeActive =
+        auth.isStaff && widget.staffMode != ShiftZoneStaffMode.none;
 
     return Material(
       color: pal.overlay,
@@ -768,6 +905,10 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
         borderRadius: BorderRadius.circular(14),
         onTap: () {
           _pinAndPromoteZone(zone);
+          if (staffModeActive) {
+            _handleZoneStaffAction(zone, auth);
+            return;
+          }
           if (!canJoin) {
             _showJoinBlocked(auth);
             return;
@@ -806,43 +947,45 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                 task.assignedVolunteerNames,
                 isAssigned,
               ),
-              const SizedBox(width: 8),
-              if (!done)
-                IconButton(
-                  icon: const Icon(Icons.check),
-                  color: pal.primary,
-                  onPressed: () {
-                    _pinAndPromoteZone(zone);
-                    if (!canJoin) {
-                      _showJoinBlocked(auth);
-                      return;
-                    }
-                    if (task.id != null && widget.shiftId != null) {
-                      _completeBackendTask(task, auth);
-                      return;
-                    }
-                    _updateSubtaskProgress(zone, task, 1.0);
-                  },
-                  style: IconButton.styleFrom(
-                    backgroundColor: pal.overlay,
+              if (!staffModeActive) ...[
+                const SizedBox(width: 8),
+                if (!done)
+                  IconButton(
+                    icon: const Icon(Icons.check),
+                    color: pal.primary,
+                    onPressed: () {
+                      _pinAndPromoteZone(zone);
+                      if (!canJoin) {
+                        _showJoinBlocked(auth);
+                        return;
+                      }
+                      if (task.id != null && widget.shiftId != null) {
+                        _completeBackendTask(task, auth);
+                        return;
+                      }
+                      _updateSubtaskProgress(zone, task, 1.0);
+                    },
+                    style: IconButton.styleFrom(
+                      backgroundColor: pal.overlay,
+                    ),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.replay),
+                    color: pal.primary,
+                    onPressed: () {
+                      _pinAndPromoteZone(zone);
+                      if (task.id != null && widget.shiftId != null) {
+                        _reopenBackendTask(task, auth);
+                        return;
+                      }
+                      _updateSubtaskProgress(zone, task, 0.0);
+                    },
+                    style: IconButton.styleFrom(
+                      backgroundColor: pal.overlay,
+                    ),
                   ),
-                )
-              else
-                IconButton(
-                  icon: const Icon(Icons.replay),
-                  color: pal.primary,
-                  onPressed: () {
-                    _pinAndPromoteZone(zone);
-                    if (task.id != null && widget.shiftId != null) {
-                      _reopenBackendTask(task, auth);
-                      return;
-                    }
-                    _updateSubtaskProgress(zone, task, 0.0);
-                  },
-                  style: IconButton.styleFrom(
-                    backgroundColor: pal.overlay,
-                  ),
-                ),
+              ],
             ],
           ),
         ),
@@ -912,6 +1055,9 @@ class _ZoneCard extends StatefulWidget {
   final IconData icon;
   final bool isDone;
   final bool isAssigned;
+  final IconData? staffActionIcon;
+  final String? staffActionTooltip;
+  final VoidCallback? onStaffActionPressed;
   final VoidCallback onTap;
   final VoidCallback onComplete;
   final VoidCallback onReopen;
@@ -923,6 +1069,9 @@ class _ZoneCard extends StatefulWidget {
     required this.icon,
     required this.isDone,
     required this.isAssigned,
+    this.staffActionIcon,
+    this.staffActionTooltip,
+    this.onStaffActionPressed,
     required this.onTap,
     required this.onComplete,
     required this.onReopen,
@@ -939,8 +1088,9 @@ class _ZoneCardState extends State<_ZoneCard> {
     final taskCount = widget.zone.taskCount ?? widget.zone.tasks.length;
     final startTime = widget.zone.startTime;
     final taskLabel = '$taskCount task${taskCount == 1 ? '' : 's'}';
-    final subtitle =
-        startTime == null || startTime.isEmpty ? taskLabel : '$startTime • $taskLabel';
+    final subtitle = startTime == null || startTime.isEmpty
+        ? taskLabel
+        : '$startTime â€¢ $taskLabel';
 
     return Material(
       borderRadius: BorderRadius.circular(20),
@@ -962,8 +1112,11 @@ class _ZoneCardState extends State<_ZoneCard> {
                         color: pal.overlay,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child:
-                          Icon(widget.icon, color: pal.onAccentIcon, size: 28),
+                      child: Icon(
+                        widget.icon,
+                        color: pal.onAccentIcon,
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -991,7 +1144,20 @@ class _ZoneCardState extends State<_ZoneCard> {
                     ),
                     _buildVolunteerIcons(),
                     const SizedBox(width: 8),
-                    if (!widget.isDone)
+                    if (widget.onStaffActionPressed != null &&
+                        widget.staffActionIcon != null)
+                      IconButton(
+                        icon: Icon(widget.staffActionIcon),
+                        tooltip: widget.staffActionTooltip,
+                        color: widget.staffActionIcon == Icons.delete_outline
+                            ? ARAColors.danger
+                            : pal.primary,
+                        onPressed: widget.onStaffActionPressed,
+                        style: IconButton.styleFrom(
+                          backgroundColor: pal.overlay,
+                        ),
+                      )
+                    else if (!widget.isDone)
                       IconButton(
                         icon: const Icon(Icons.check),
                         color: pal.primary,

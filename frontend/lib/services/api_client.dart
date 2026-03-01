@@ -16,7 +16,8 @@ class ApiClient {
   final String baseUrl;
   final http.Client _client;
 
-  ApiClient(this.baseUrl, [http.Client? client]) : _client = client ?? http.Client();
+  ApiClient(this.baseUrl, [http.Client? client])
+      : _client = client ?? http.Client();
 
   Future<Map<String, dynamic>> getJson(
     String path, {
@@ -81,13 +82,34 @@ class ApiClient {
 
   Future<Map<String, dynamic>> deleteJson(
     String path, {
+    Map<String, dynamic>? body,
     String? token,
   }) async {
     final res = await _client.delete(
       Uri.parse('$baseUrl$path'),
       headers: _headers(token),
+      body: body == null ? null : jsonEncode(body),
     );
     return _handle(res);
+  }
+
+  String _messageWithValidationDetails(
+    String message,
+    Map<String, List<String>>? errors,
+  ) {
+    if (errors == null || errors.isEmpty) return message;
+    final firstEntry = errors.entries.firstWhere(
+      (entry) => entry.value.isNotEmpty,
+      orElse: () => const MapEntry('', <String>[]),
+    );
+    if (firstEntry.value.isEmpty) return message;
+    final detail = firstEntry.key.isEmpty
+        ? firstEntry.value.first
+        : '${firstEntry.key}: ${firstEntry.value.first}';
+    if (message == 'Validation failed' || message == 'Request failed') {
+      return detail;
+    }
+    return '$message ($detail)';
   }
 
   Map<String, String> _headers(String? token) {
@@ -122,7 +144,11 @@ class ApiClient {
       }
     } catch (_) {}
 
-    throw ApiException(res.statusCode, message, errors: errors);
+    throw ApiException(
+      res.statusCode,
+      _messageWithValidationDetails(message, errors),
+      errors: errors,
+    );
   }
 
   dynamic _handleAny(http.Response res) {
@@ -147,6 +173,10 @@ class ApiClient {
       }
     } catch (_) {}
 
-    throw ApiException(res.statusCode, message, errors: errors);
+    throw ApiException(
+      res.statusCode,
+      _messageWithValidationDetails(message, errors),
+      errors: errors,
+    );
   }
 }
