@@ -1,7 +1,9 @@
 part of '../information.dart';
 
 class _LivingInfoTab extends StatelessWidget {
-  const _LivingInfoTab();
+  final _EditableInfoSectionsController? editorController;
+
+  const _LivingInfoTab({this.editorController});
 
   @override
   Widget build(BuildContext context) {
@@ -9,6 +11,7 @@ class _LivingInfoTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       children: [
         _EditableInfoSections(
+          controller: editorController,
           storageKey: 'info_living_info',
           initialSections: [
             _EditableInfoSectionModel(

@@ -1,7 +1,9 @@
 part of '../information.dart';
 
 class _SafetyTab extends StatelessWidget {
-  const _SafetyTab();
+  final _EditableInfoSectionsController? editorController;
+
+  const _SafetyTab({this.editorController});
 
   @override
   Widget build(BuildContext context) {
@@ -9,6 +11,7 @@ class _SafetyTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       children: [
         _EditableInfoSections(
+          controller: editorController,
           storageKey: 'info_safety',
           initialSections: [
             _EditableInfoSectionModel(

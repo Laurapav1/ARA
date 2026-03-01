@@ -106,55 +106,7 @@ class _InformationCardScreen extends StatefulWidget {
 }
 
 class _InformationCardScreenState extends State<_InformationCardScreen> {
-  Future<void> _editCard() async {
-    final result = await _showCardEditorDialog(
-      context: context,
-      title: 'Edit information card',
-      initialTitle: widget.card.title,
-      initialSubtitle: widget.card.subtitle,
-      initialIcon: widget.card.icon,
-      initialIconColor: widget.card.iconColor,
-    );
-    if (!mounted) return;
-    if (result == null) return;
-
-    setState(() {
-      widget.card.title = result.title;
-      widget.card.subtitle = result.subtitle;
-      widget.card.icon = result.icon;
-      widget.card.iconColor = result.iconColor;
-    });
-  }
-
-  Future<void> _deleteCard() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete card'),
-        content: Text('Delete "${widget.card.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: ARAColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    widget.card.deleted = true;
-    if (!mounted) return;
-    Navigator.pop(context);
-  }
+  bool _isEditingInformation = false;
 
   Future<void> _addInformation() async {
     final text = await _showInformationItemDialog(context: context);
@@ -185,6 +137,48 @@ class _InformationCardScreenState extends State<_InformationCardScreen> {
     });
   }
 
+  Future<void> _handleCardMenuSelection(String value) async {
+    switch (value) {
+      case 'edit_information':
+        setState(() => _isEditingInformation = true);
+        return;
+      case 'done_editing':
+        setState(() => _isEditingInformation = false);
+        return;
+    }
+  }
+
+  Future<void> _openCardActionsSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.notes_outlined),
+              title: Text(
+                _isEditingInformation
+                    ? 'Done editing information'
+                    : 'Edit information',
+              ),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                await _handleCardMenuSelection(
+                  _isEditingInformation ? 'done_editing' : 'edit_information',
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,14 +188,9 @@ class _InformationCardScreenState extends State<_InformationCardScreen> {
         actions: widget.isStaff
             ? [
                 IconButton(
-                  onPressed: _editCard,
-                  icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Edit card',
-                ),
-                IconButton(
-                  onPressed: _deleteCard,
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Delete card',
+                  onPressed: _openCardActionsSheet,
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: 'Card actions',
                 ),
               ]
             : null,
@@ -246,7 +235,7 @@ class _InformationCardScreenState extends State<_InformationCardScreen> {
                     ),
                     child: ListTile(
                       title: Text(text),
-                      trailing: widget.isStaff
+                      trailing: widget.isStaff && _isEditingInformation
                           ? PopupMenuButton<String>(
                               onSelected: (value) {
                                 if (value == 'edit') {
@@ -270,7 +259,7 @@ class _InformationCardScreenState extends State<_InformationCardScreen> {
                     ),
                   );
                 }),
-                if (widget.isStaff)
+                if (widget.isStaff && _isEditingInformation)
                   Align(
                     alignment: Alignment.centerLeft,
                     child: OutlinedButton.icon(
@@ -284,7 +273,7 @@ class _InformationCardScreenState extends State<_InformationCardScreen> {
           ),
         ],
       ),
-      floatingActionButton: widget.isStaff
+      floatingActionButton: widget.isStaff && _isEditingInformation
           ? FloatingActionButton(
               onPressed: _addInformation,
               backgroundColor: ARAColors.brand,
@@ -301,12 +290,14 @@ class _InformationSectionScreen extends StatefulWidget {
   final Widget child;
   final _InformationCardModel? card;
   final bool isStaff;
+  final _EditableInfoSectionsController? editorController;
 
   const _InformationSectionScreen({
     required this.title,
     required this.child,
     this.card,
     this.isStaff = false,
+    this.editorController,
   });
 
   @override
@@ -315,60 +306,20 @@ class _InformationSectionScreen extends StatefulWidget {
 }
 
 class _InformationSectionScreenState extends State<_InformationSectionScreen> {
-  Future<void> _editCard() async {
-    final card = widget.card;
-    if (card == null) return;
-    final result = await _showCardEditorDialog(
-      context: context,
-      title: 'Edit information card',
-      initialTitle: card.title,
-      initialSubtitle: card.subtitle,
-      initialIcon: card.icon,
-      initialIconColor: card.iconColor,
-    );
-    if (!mounted) return;
-    if (result == null) return;
-    setState(() {
-      card.title = result.title;
-      card.subtitle = result.subtitle;
-      card.icon = result.icon;
-      card.iconColor = result.iconColor;
-    });
+  Future<void> _handleSectionMenuSelection(String value) async {
+    switch (value) {
+      case 'edit_information':
+        widget.editorController?.startEditing();
+        setState(() {});
+        return;
+      case 'done_editing':
+        widget.editorController?.stopEditing();
+        setState(() {});
+        return;
+    }
   }
 
-  Future<void> _deleteCard() async {
-    final card = widget.card;
-    if (card == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete card'),
-        content: Text('Delete "${card.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: ARAColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (!mounted) return;
-
-    if (confirmed != true) return;
-    card.deleted = true;
-    if (!mounted) return;
-    Navigator.pop(context);
-  }
-
-  Future<void> _openStaffActions() async {
+  Future<void> _openSectionActionsSheet() async {
     await showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -379,23 +330,20 @@ class _InformationSectionScreenState extends State<_InformationSectionScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit_outlined),
-              title: const Text('Edit card'),
+              leading: const Icon(Icons.notes_outlined),
+              title: Text(
+                widget.editorController?.isEditing == true
+                    ? 'Done editing information'
+                    : 'Edit information',
+              ),
               onTap: () async {
                 Navigator.pop(ctx);
                 if (!mounted) return;
-                await _editCard();
-              },
-            ),
-            ListTile(
-              leading:
-                  const Icon(Icons.delete_outline, color: ARAColors.danger),
-              title: const Text('Delete card',
-                  style: TextStyle(color: ARAColors.danger)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                if (!mounted) return;
-                await _deleteCard();
+                await _handleSectionMenuSelection(
+                  widget.editorController?.isEditing == true
+                      ? 'done_editing'
+                      : 'edit_information',
+                );
               },
             ),
           ],
@@ -420,7 +368,7 @@ class _InformationSectionScreenState extends State<_InformationSectionScreen> {
                 actions: widget.isStaff && widget.card != null
                     ? [
                         IconButton(
-                          onPressed: _openStaffActions,
+                          onPressed: _openSectionActionsSheet,
                           icon: const Icon(Icons.more_vert),
                           tooltip: 'Card actions',
                         ),

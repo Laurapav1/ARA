@@ -1,7 +1,9 @@
 part of '../information.dart';
 
 class _FirstDayTab extends StatelessWidget {
-  const _FirstDayTab();
+  final _EditableInfoSectionsController? editorController;
+
+  const _FirstDayTab({this.editorController});
 
   @override
   Widget build(BuildContext context) {
@@ -9,6 +11,7 @@ class _FirstDayTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       children: [
         _EditableInfoSections(
+          controller: editorController,
           storageKey: 'info_first_day',
           initialSections: [
             _EditableInfoSectionModel(

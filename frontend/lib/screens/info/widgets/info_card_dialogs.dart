@@ -40,62 +40,6 @@ class _CardIconOption {
   });
 }
 
-const List<_CardIconOption> _featuredCardIconOptions = [
-  _CardIconOption(label: 'Document', icon: Icons.description_outlined),
-  _CardIconOption(label: 'Shield', icon: Icons.shield_outlined),
-  _CardIconOption(label: 'Map', icon: Icons.map_outlined),
-  _CardIconOption(label: 'Home', icon: Icons.home_outlined),
-  _CardIconOption(label: 'Checklist', icon: Icons.checklist_outlined),
-  _CardIconOption(label: 'Calendar', icon: Icons.calendar_month_outlined),
-  _CardIconOption(label: 'Flight', icon: Icons.flight_land_outlined),
-  _CardIconOption(label: 'Star', icon: Icons.star_outline),
-  _CardIconOption(label: 'Cleaning', icon: Icons.cleaning_services_outlined),
-  _CardIconOption(label: 'Paw', icon: Icons.pets_outlined),
-  _CardIconOption(label: 'Info', icon: Icons.info_outline),
-  _CardIconOption(label: 'Warning', icon: Icons.warning_amber_outlined),
-  _CardIconOption(label: 'Help', icon: Icons.help_outline),
-  _CardIconOption(label: 'Location', icon: Icons.location_on_outlined),
-  _CardIconOption(label: 'Directions', icon: Icons.directions_outlined),
-  _CardIconOption(label: 'Car', icon: Icons.directions_car_outlined),
-  _CardIconOption(label: 'Bus', icon: Icons.directions_bus_outlined),
-  _CardIconOption(label: 'Train', icon: Icons.train_outlined),
-  _CardIconOption(label: 'Bed', icon: Icons.bed_outlined),
-  _CardIconOption(label: 'Kitchen', icon: Icons.kitchen_outlined),
-  _CardIconOption(label: 'Restaurant', icon: Icons.restaurant_outlined),
-  _CardIconOption(label: 'Water', icon: Icons.water_drop_outlined),
-  _CardIconOption(label: 'Phone', icon: Icons.phone_outlined),
-  _CardIconOption(label: 'Mail', icon: Icons.mail_outline),
-  _CardIconOption(label: 'Chat', icon: Icons.chat_bubble_outline),
-  _CardIconOption(label: 'Camera', icon: Icons.photo_camera_outlined),
-  _CardIconOption(label: 'Image', icon: Icons.image_outlined),
-  _CardIconOption(label: 'People', icon: Icons.people_outline),
-  _CardIconOption(label: 'Person', icon: Icons.person_outline),
-  _CardIconOption(label: 'Volunteer', icon: Icons.volunteer_activism_outlined),
-  _CardIconOption(label: 'Medical', icon: Icons.medical_services_outlined),
-  _CardIconOption(label: 'Health', icon: Icons.health_and_safety_outlined),
-  _CardIconOption(label: 'Work', icon: Icons.work_outline),
-  _CardIconOption(label: 'Time', icon: Icons.schedule_outlined),
-  _CardIconOption(label: 'Task', icon: Icons.task_alt_outlined),
-  _CardIconOption(label: 'Lock', icon: Icons.lock_outline),
-  _CardIconOption(label: 'Key', icon: Icons.key_outlined),
-  _CardIconOption(label: 'Build', icon: Icons.build_outlined),
-  _CardIconOption(label: 'Settings', icon: Icons.settings_outlined),
-  _CardIconOption(label: 'Laundry', icon: Icons.local_laundry_service_outlined),
-  _CardIconOption(label: 'Wifi', icon: Icons.wifi_outlined),
-  _CardIconOption(label: 'Shopping', icon: Icons.shopping_basket_outlined),
-  _CardIconOption(label: 'Park', icon: Icons.park_outlined),
-  _CardIconOption(label: 'Forest', icon: Icons.forest_outlined),
-  _CardIconOption(label: 'Sun', icon: Icons.wb_sunny_outlined),
-  _CardIconOption(label: 'Night', icon: Icons.nightlight_outlined),
-  _CardIconOption(label: 'Rain', icon: Icons.umbrella_outlined),
-  _CardIconOption(label: 'Trash', icon: Icons.delete_outline),
-  _CardIconOption(label: 'Edit', icon: Icons.edit_outlined),
-  _CardIconOption(label: 'Book', icon: Icons.menu_book_outlined),
-  _CardIconOption(label: 'School', icon: Icons.school_outlined),
-  _CardIconOption(label: 'Heart', icon: Icons.favorite_border),
-  _CardIconOption(label: 'Dog', icon: Icons.pets_outlined),
-];
-
 const List<Color> _cardColorOptions = [
   ARAColors.infoSectionOverviewIcon,
   ARAColors.infoSectionCleaningIcon,
@@ -264,6 +208,60 @@ Future<String?> _showInformationItemDialog({
   );
 
   controller.dispose();
+  return result;
+}
+
+Future<(String, String)?> _showScreenHeaderDialog({
+  required BuildContext context,
+  required String initialTitle,
+  required String initialSubtitle,
+}) async {
+  final titleController = TextEditingController(text: initialTitle);
+  final subtitleController = TextEditingController(text: initialSubtitle);
+
+  final result = await showDialog<(String, String)>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Edit header'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: 'Header title'),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: subtitleController,
+              decoration: const InputDecoration(labelText: 'Header subtitle'),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          style: _editorCancelTextButtonStyle(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final title = titleController.text.trim();
+            final subtitle = subtitleController.text.trim();
+            if (title.isEmpty || subtitle.isEmpty) return;
+            Navigator.pop(ctx, (title, subtitle));
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
+
+  titleController.dispose();
+  subtitleController.dispose();
   return result;
 }
 

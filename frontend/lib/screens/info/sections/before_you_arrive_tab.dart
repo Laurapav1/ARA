@@ -1,7 +1,9 @@
 part of '../information.dart';
 
 class _BeforeYouArriveTab extends StatelessWidget {
-  const _BeforeYouArriveTab();
+  final _EditableInfoSectionsController? editorController;
+
+  const _BeforeYouArriveTab({this.editorController});
 
   @override
   Widget build(BuildContext context) {
@@ -9,6 +11,7 @@ class _BeforeYouArriveTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       children: [
         _EditableInfoSections(
+          controller: editorController,
           storageKey: 'info_before_you_arrive',
           initialSections: [
             _EditableInfoSectionModel(

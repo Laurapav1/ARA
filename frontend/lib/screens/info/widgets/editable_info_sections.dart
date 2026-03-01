@@ -74,13 +74,33 @@ class _EditableInfoSectionModel {
   }
 }
 
+class _EditableInfoSectionsController extends ChangeNotifier {
+  bool _isEditing = false;
+
+  bool get isEditing => _isEditing;
+
+  void startEditing() {
+    if (_isEditing) return;
+    _isEditing = true;
+    notifyListeners();
+  }
+
+  void stopEditing() {
+    if (!_isEditing) return;
+    _isEditing = false;
+    notifyListeners();
+  }
+}
+
 class _EditableInfoSections extends StatefulWidget {
   final String storageKey;
   final List<_EditableInfoSectionModel> initialSections;
+  final _EditableInfoSectionsController? controller;
 
   const _EditableInfoSections({
     required this.storageKey,
     required this.initialSections,
+    this.controller,
   });
 
   @override
@@ -98,7 +118,23 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
     super.initState();
     _sections = widget.initialSections.map((s) => s.copy()).toList();
     _savedSections = widget.initialSections.map((s) => s.copy()).toList();
+    widget.controller?.addListener(_syncEditingFromController);
     _loadSections();
+  }
+
+  @override
+  void didUpdateWidget(covariant _EditableInfoSections oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller == widget.controller) return;
+    oldWidget.controller?.removeListener(_syncEditingFromController);
+    widget.controller?.addListener(_syncEditingFromController);
+    _syncEditingFromController();
+  }
+
+  @override
+  void dispose() {
+    widget.controller?.removeListener(_syncEditingFromController);
+    super.dispose();
   }
 
   Future<void> _loadSections() async {
@@ -130,6 +166,12 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
       if (!mounted) return;
       setState(() => _loading = false);
     }
+  }
+
+  void _syncEditingFromController() {
+    final nextValue = widget.controller?.isEditing ?? false;
+    if (!mounted || _isEditing == nextValue) return;
+    setState(() => _isEditing = nextValue);
   }
 
   @override
@@ -169,7 +211,7 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!isEditing)
+              if (!isEditing && widget.controller == null)
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
@@ -234,6 +276,7 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
     setState(() {
       _isEditing = true;
     });
+    widget.controller?.startEditing();
   }
 
   void _cancelEditing() {
@@ -243,6 +286,7 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
         ..addAll(_savedSections.map((section) => section.copy()));
       _isEditing = false;
     });
+    widget.controller?.stopEditing();
   }
 
   Future<void> _addSection() async {
@@ -393,6 +437,7 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
         ..addAll(_sections.map((section) => section.copy()));
       _isEditing = false;
     });
+    widget.controller?.stopEditing();
     ScaffoldMessenger.maybeOf(context)
         ?.showSnackBar(const SnackBar(content: Text('Changes saved')));
   }

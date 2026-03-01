@@ -39,7 +39,12 @@ class InformationScreen extends StatefulWidget {
 }
 
 class _InformationScreenState extends State<InformationScreen> {
+  static const String _defaultHeaderTitle = 'Information';
+  static const String _defaultHeaderSubtitle = 'Everything you need to know';
+
   List<_InformationCardModel> _cards = const [];
+  String _headerTitle = _defaultHeaderTitle;
+  String _headerSubtitle = _defaultHeaderSubtitle;
   bool _isLoading = true;
 
   @override
@@ -64,6 +69,17 @@ class _InformationScreenState extends State<InformationScreen> {
 
     try {
       final auth = context.read<AuthStore>();
+      final headerData = await _informationService.getDocument(
+        'screen_header',
+        token: auth.accessToken,
+      );
+      if (headerData is Map<String, dynamic>) {
+        _headerTitle =
+            headerData['title']?.toString() ?? _defaultHeaderTitle;
+        _headerSubtitle =
+            headerData['subtitle']?.toString() ?? _defaultHeaderSubtitle;
+      }
+
       final data = await _informationService.getDocument(
         'cards',
         token: auth.accessToken,
@@ -97,6 +113,20 @@ class _InformationScreenState extends State<InformationScreen> {
     );
   }
 
+  Future<void> _saveHeaderToBackend() async {
+    final auth = context.read<AuthStore>();
+    final token = auth.accessToken;
+    if (!auth.isStaff || token == null || token.isEmpty) return;
+    await _informationService.saveDocument(
+      'screen_header',
+      {
+        'title': _headerTitle,
+        'subtitle': _headerSubtitle,
+      },
+      token: token,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStore>();
@@ -105,21 +135,20 @@ class _InformationScreenState extends State<InformationScreen> {
 
     return Scaffold(
       backgroundColor: ARAColors.bg,
-      floatingActionButton: isStaff
-          ? FloatingActionButton(
-              onPressed: _addCard,
-              backgroundColor: ARAColors.brand,
-              foregroundColor: ARAColors.ink,
-              child: const Icon(Icons.add),
-            )
-          : null,
       body: SafeArea(
         child: Column(
           children: [
             const OfflineBanner(),
-            const ScreenHeader(
-              title: 'Information',
-              subtitle: 'Everything you need to know',
+            ScreenHeader(
+              title: _headerTitle,
+              subtitle: _headerSubtitle,
+              trailing: isStaff
+                  ? IconButton(
+                      onPressed: _openHomeActionsSheet,
+                      icon: const Icon(Icons.more_vert),
+                      tooltip: 'Information actions',
+                    )
+                  : null,
             ),
             Expanded(
               child: _isLoading
@@ -172,6 +201,87 @@ class _InformationScreenState extends State<InformationScreen> {
     );
   }
 
+  Future<void> _openHomeActionsSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Add card'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                await _addCard();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.title_outlined),
+              title: const Text('Edit header'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                await _editScreenHeader();
+              },
+            ),
+            if (_cards.where((card) => !card.deleted).isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit card'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  if (!mounted) return;
+                  await _openCardSelectionSheet(
+                    title: 'Edit card',
+                    onSelected: _editCard,
+                  );
+                },
+              ),
+            if (_cards.where((card) => !card.deleted).isNotEmpty)
+              ListTile(
+                leading:
+                    const Icon(Icons.delete_outline, color: ARAColors.danger),
+                title: const Text(
+                  'Delete card',
+                  style: TextStyle(color: ARAColors.danger),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  if (!mounted) return;
+                  await _openCardSelectionSheet(
+                    title: 'Delete card',
+                    onSelected: _deleteCard,
+                    destructive: true,
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editScreenHeader() async {
+    final result = await _showScreenHeaderDialog(
+      context: context,
+      initialTitle: _headerTitle,
+      initialSubtitle: _headerSubtitle,
+    );
+    if (!mounted || result == null) return;
+
+    setState(() {
+      _headerTitle = result.$1;
+      _headerSubtitle = result.$2;
+    });
+
+    await _saveHeaderToBackend();
+  }
+
   Future<void> _addCard() async {
     final result = await _showCardEditorDialog(
       context: context,
@@ -197,19 +307,135 @@ class _InformationScreenState extends State<InformationScreen> {
     await _saveCardsToBackend();
   }
 
+  Future<void> _editCard(_InformationCardModel card) async {
+    final result = await _showCardEditorDialog(
+      context: context,
+      title: 'Edit information card',
+      initialTitle: card.title,
+      initialSubtitle: card.subtitle,
+      initialIcon: card.icon,
+      initialIconColor: card.iconColor,
+    );
+    if (!mounted || result == null) return;
+
+    setState(() {
+      card.title = result.title;
+      card.subtitle = result.subtitle;
+      card.icon = result.icon;
+      card.iconColor = result.iconColor;
+    });
+
+    await _saveCardsToBackend();
+  }
+
+  Future<void> _deleteCard(_InformationCardModel card) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete card'),
+        content: Text('Delete "${card.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: ARAColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+
+    setState(() {
+      card.deleted = true;
+      _cards.removeWhere((existing) => existing.deleted);
+    });
+
+    await _saveCardsToBackend();
+  }
+
+  Future<void> _openCardSelectionSheet({
+    required String title,
+    required Future<void> Function(_InformationCardModel card) onSelected,
+    bool destructive = false,
+  }) async {
+    final visibleCards = _cards.where((card) => !card.deleted).toList();
+    if (visibleCards.isEmpty) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: ARAColors.inkStrong,
+                  ),
+                ),
+              ),
+            ),
+            ...visibleCards.map((card) {
+              return ListTile(
+                leading: Icon(
+                  destructive ? Icons.delete_outline : card.icon,
+                  color: destructive ? ARAColors.danger : null,
+                ),
+                title: Text(
+                  card.title,
+                  style: TextStyle(
+                    color: destructive ? ARAColors.danger : ARAColors.inkStrong,
+                  ),
+                ),
+                subtitle: card.subtitle.isEmpty ? null : Text(card.subtitle),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  if (!mounted) return;
+                  await onSelected(card);
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _openCard(
     _InformationCardModel card, {
     required bool isStaff,
   }) async {
     if (card.section != null) {
       final section = card.section!;
+      final editorController = _EditableInfoSectionsController();
       final content = switch (section) {
-        _InfoSection.shelterMap => const _OverviewTab(),
+        _InfoSection.shelterMap =>
+          _OverviewTab(editorController: editorController),
         _InfoSection.cleaning => const _CleaningTab(),
-        _InfoSection.safety => const _SafetyTab(),
-        _InfoSection.beforeYouArrive => const _BeforeYouArriveTab(),
-        _InfoSection.firstDay => const _FirstDayTab(),
-        _InfoSection.livingInfo => const _LivingInfoTab(),
+        _InfoSection.safety =>
+          _SafetyTab(editorController: editorController),
+        _InfoSection.beforeYouArrive =>
+          _BeforeYouArriveTab(editorController: editorController),
+        _InfoSection.firstDay =>
+          _FirstDayTab(editorController: editorController),
+        _InfoSection.livingInfo =>
+          _LivingInfoTab(editorController: editorController),
       };
 
       await Navigator.push(
@@ -220,6 +446,7 @@ class _InformationScreenState extends State<InformationScreen> {
             child: content,
             card: card,
             isStaff: isStaff,
+            editorController: editorController,
           ),
         ),
       );
