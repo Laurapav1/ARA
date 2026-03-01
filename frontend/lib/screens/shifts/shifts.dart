@@ -25,35 +25,42 @@ class ShiftsScreen extends StatelessWidget {
               subtitle: 'Select when you\'d like to volunteer',
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                children: [
-                  AraCard(
-                    title: 'Morning Shift',
-                    description: '${schedule.label} - ${schedule.morning}',
-                    icon: Icons.wb_sunny,
-                    gradient: ARAColors.morningGradient,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MorningShiftScreen(),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final topInset =
+                      (constraints.maxHeight * 0.14).clamp(12.0, 96.0).toDouble();
+
+                  return ListView(
+                    padding: EdgeInsets.fromLTRB(24, topInset, 24, 24),
+                    children: [
+                      AraCard(
+                        title: 'Morning Shift',
+                        description: '${schedule.label} - ${schedule.morning}',
+                        icon: Icons.wb_sunny,
+                        gradient: ARAColors.morningGradient,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MorningShiftScreen(),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  AraCard(
-                    title: 'Evening Shift',
-                    description: '${schedule.label} - ${schedule.evening}',
-                    icon: Icons.nightlight_round,
-                    gradient: ARAColors.eveningGradient,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const EveningShiftScreen(),
+                      const SizedBox(height: 20),
+                      AraCard(
+                        title: 'Evening Shift',
+                        description: '${schedule.label} - ${schedule.evening}',
+                        icon: Icons.nightlight_round,
+                        gradient: ARAColors.eveningGradient,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EveningShiftScreen(),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
           ],

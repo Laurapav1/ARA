@@ -279,6 +279,9 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            actionsAlignment: MainAxisAlignment.end,
+            actionsOverflowButtonSpacing: 10,
             title: const Text('Cancel volunteer stay'),
             content: Text(
               'Cancel ${volunteer.fullName} and remove from active planning?',
@@ -293,6 +296,8 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
                 style: FilledButton.styleFrom(
                   backgroundColor: ARAColors.danger,
                   foregroundColor: ARAColors.cardBg,
+                  minimumSize: const Size(140, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 ),
                 child: const Text('Cancel stay'),
               ),
@@ -327,6 +332,9 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsAlignment: MainAxisAlignment.end,
+        actionsOverflowButtonSpacing: 10,
         title: const Text('Decline request'),
         content: Text('Decline ${volunteer.fullName}\'s volunteer request?'),
         actions: [
@@ -342,6 +350,8 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
             style: FilledButton.styleFrom(
               backgroundColor: ARAColors.danger,
               foregroundColor: ARAColors.cardBg,
+              minimumSize: const Size(140, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
             child: const Text('Decline request'),
           ),

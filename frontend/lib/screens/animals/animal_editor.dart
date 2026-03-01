@@ -27,6 +27,7 @@ class AnimalEditorScreen extends StatefulWidget {
 }
 
 class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
+  static const int _maxPhotoBytes = 2 * 1024 * 1024;
   final _formKey = GlobalKey<FormState>();
   late final AnimalsService _animalsService;
 
@@ -44,6 +45,18 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
   late Set<HandlingFlag> _flags;
   Uint8List? _photoBytes;
 
+  List<HandlingFlag> get _availableHandlingFlags {
+    if (_species == 'cat') {
+      return const [HandlingFlag.quarantine];
+    }
+    return HandlingFlag.values;
+  }
+
+  void _normalizeFlagsForSpecies() {
+    final allowed = _availableHandlingFlags.toSet();
+    _flags = _flags.where(allowed.contains).toSet();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +73,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
     _isDangerous = a?.isDangerous ?? false;
     _isInTreatment = a?.isInTreatment ?? false;
     _flags = Set<HandlingFlag>.from(a?.flags ?? const {});
+    _normalizeFlagsForSpecies();
     _photoBytes = a?.photoBytes;
   }
 
@@ -95,6 +109,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
 
     final existing = widget.animal;
     final id = existing?.id ?? 'a${DateTime.now().millisecondsSinceEpoch}';
+    _normalizeFlagsForSpecies();
 
     final updated = Animal(
       id: id,
@@ -133,10 +148,65 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
     final picked = await picker.pickImage(
       source: source,
       maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 70,
     );
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
+    if (bytes.lengthInBytes > _maxPhotoBytes) {
+      _showMessage('Photo is too large. Please choose a smaller image.');
+      return;
+    }
     setState(() => _photoBytes = bytes);
+  }
+
+  Future<void> _openPhotoActions() async {
+    final action = await showModalBottomSheet<_PhotoAction>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final hasPhoto = _photoBytes != null;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('Camera'),
+                onTap: () => Navigator.pop(context, _PhotoAction.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.pop(context, _PhotoAction.gallery),
+              ),
+              if (hasPhoto)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: ARAColors.danger),
+                  title: const Text('Delete photo'),
+                  textColor: ARAColors.danger,
+                  onTap: () => Navigator.pop(context, _PhotoAction.remove),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (action == null) return;
+    if (action == _PhotoAction.camera) {
+      await _pickPhoto(ImageSource.camera);
+      return;
+    }
+    if (action == _PhotoAction.gallery) {
+      await _pickPhoto(ImageSource.gallery);
+      return;
+    }
+    if (action == _PhotoAction.remove) {
+      setState(() => _photoBytes = null);
+    }
   }
 
   void _showMessage(String message) {
@@ -233,10 +303,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
                     _FieldCard(
                       child: _PhotoPicker(
                         photoBytes: _photoBytes,
-                        onPickCamera: () async =>
-                            _pickPhoto(ImageSource.camera),
-                        onPickGallery: () async =>
-                            _pickPhoto(ImageSource.gallery),
+                        onManagePhoto: _openPhotoActions,
                       ),
                     ),
                   ],
@@ -295,6 +362,7 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
               const SizedBox(height: 8),
               _SectionCard(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _OutlineBox(
                       child: SwitchListTile(
@@ -302,58 +370,71 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
                         contentPadding: EdgeInsets.zero,
                         onChanged: (value) => setState(() {
                           _isDangerous = value;
-                          if (!_isDangerous) _flags = <HandlingFlag>{};
                         }),
                         title: const Text('Requires extra caution'),
                         activeThumbColor: ARAColors.brand,
                       ),
                     ),
-                    if (_isDangerous) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'Handling flags',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      _OutlineBox(
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: HandlingFlag.values.map((flag) {
+                    const SizedBox(height: 12),
+                    Text(
+                      'Handling flags',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: _OutlineBox(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: _availableHandlingFlags.map((flag) {
                             final selected = _flags.contains(flag);
-                            return FilterChip(
-                              selected: selected,
-                              showCheckmark: false,
-                              avatar: Icon(
-                                flag.icon,
-                                size: 16,
-                                color: flag.color,
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  alignment: Alignment.centerLeft,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
+                                  backgroundColor: selected
+                                      ? flag.color.withValues(alpha: 0.16)
+                                      : ARAColors.surfaceWarm,
+                                  side: BorderSide(
+                                    color: selected
+                                        ? flag.color.withValues(alpha: 0.6)
+                                        : ARAColors.surfaceWarmTint,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                onPressed: () => setState(() {
+                                  selected
+                                      ? _flags.remove(flag)
+                                      : _flags.add(flag);
+                                }),
+                                icon: Icon(
+                                  flag.icon,
+                                  size: 16,
+                                  color: flag.color,
+                                ),
+                                label: Text(
+                                  flag.label,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: selected
+                                        ? ARAColors.ink
+                                        : ARAColors.subInk,
+                                  ),
+                                ),
                               ),
-                              label: Text(flag.label),
-                              labelStyle: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    selected ? ARAColors.ink : ARAColors.subInk,
-                              ),
-                              backgroundColor: ARAColors.surfaceWarm,
-                              selectedColor: flag.color.withValues(alpha: 0.16),
-                              side: BorderSide(
-                                color: selected
-                                    ? flag.color.withValues(alpha: 0.6)
-                                    : ARAColors.surfaceWarmTint,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              onSelected: (value) => setState(() {
-                                value ? _flags.add(flag) : _flags.remove(flag);
-                              }),
                             );
                           }).toList(),
                         ),
                       ),
-                    ],
+                    ),
                     const SizedBox(height: 12),
                     _FieldCard(
                       child: TextFormField(
@@ -398,15 +479,15 @@ class _AnimalEditorScreenState extends State<AnimalEditorScreen> {
   }
 }
 
+enum _PhotoAction { camera, gallery, remove }
+
 class _PhotoPicker extends StatelessWidget {
   final Uint8List? photoBytes;
-  final VoidCallback onPickCamera;
-  final VoidCallback onPickGallery;
+  final VoidCallback onManagePhoto;
 
   const _PhotoPicker({
     required this.photoBytes,
-    required this.onPickCamera,
-    required this.onPickGallery,
+    required this.onManagePhoto,
   });
 
   @override
@@ -437,28 +518,27 @@ class _PhotoPicker extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              photoBytes == null ? 'Add photo' : 'Change photo',
+              photoBytes == null ? 'No photo yet' : 'Photo selected',
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: ARAColors.ink,
               ),
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FilledButton.icon(
-                onPressed: onPickCamera,
-                icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                label: const Text('Camera'),
+          OutlinedButton.icon(
+            onPressed: onManagePhoto,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: ARAColors.subInk,
+              backgroundColor: ARAColors.surfaceWarm,
+              side: const BorderSide(color: ARAColors.surfaceWarmTint),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: onPickGallery,
-                icon: const Icon(Icons.photo_library_outlined, size: 18),
-                label: const Text('Gallery'),
-              ),
-            ],
+            ),
+            icon: const Icon(Icons.add_a_photo_outlined, size: 16),
+            label: Text(photoBytes == null ? 'Add photo' : 'Edit photo'),
           ),
         ],
       ),

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Ara.Api.Data;
 using Ara.Api.Dtos;
 using Ara.Api.Enums;
@@ -15,6 +15,8 @@ namespace Ara.Api.Controllers;
 [Authorize]
 public class ShiftsController(ARADbContext db) : ControllerBase
 {
+    private static readonly string[] GroupedZoneSuffixes = ["Water", "Cleaning"];
+
     // GET /api/shifts?date=2026-01-05&type=morning
     [HttpGet]
     public async Task<ActionResult<ShiftViewDto>> GetShift(
@@ -32,7 +34,6 @@ public class ShiftsController(ARADbContext db) : ControllerBase
 
         var shift = await GetOrCreateShiftInstance(parsedDate, type);
 
-        // Load tasks + assignments + volunteers
         var loaded = await db
             .ShiftInstances.AsNoTracking()
             .Where(s => s.Id == shift.Id)
@@ -76,13 +77,192 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         return Ok(dto);
     }
 
-    // POST /api/shifts/{shiftId}/tasks/{taskId}/join
+    [HttpPost("zones")]
+    public async Task<IActionResult> CreateZone([FromBody] CreateShiftZoneRequest request)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user.Role != Role.Staff)
+            return Forbid();
+
+        var zoneName = NormalizeZoneName(request.Name);
+        if (zoneName.Length == 0)
+            return BadRequest(new { error = "Zone name is required." });
+
+        if (!Enum.IsDefined(typeof(ShiftType), request.ShiftType))
+            return BadRequest(new { error = "Invalid shift type." });
+
+        var template = await GetTemplateForDate(request.Date, request.ShiftType);
+        var desiredTaskNames = BuildZoneTaskNames(zoneName, request.IsGroupedZone);
+
+        var existingNames = new HashSet<string>(
+            template.Tasks.Select(t => t.Name),
+            StringComparer.OrdinalIgnoreCase
+        );
+
+        if (desiredTaskNames.Any(existingNames.Contains))
+            return Conflict(new { error = "A zone with that name already exists." });
+
+        var newTasks = desiredTaskNames
+            .Select(taskName => new TaskTemplate
+            {
+                Id = Guid.NewGuid(),
+                ShiftTemplateId = template.Id,
+                ShiftTemplate = template,
+                Name = taskName,
+                MaxVolunteers = null,
+                RequiredVolunteers = 1
+            })
+            .ToList();
+
+        db.TaskTemplates.AddRange(newTasks);
+
+        var shiftInstances = await db
+            .ShiftInstances.Include(s => s.Tasks)
+            .Where(s => s.ShiftTemplateId == template.Id)
+            .ToListAsync();
+
+        foreach (var shift in shiftInstances)
+        {
+            var instanceNames = new HashSet<string>(
+                shift.Tasks.Select(t => t.Name),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var missingTasks = newTasks.Where(task => !instanceNames.Contains(task.Name));
+            foreach (var task in missingTasks)
+            {
+                shift.Tasks.Add(
+                    new TaskInstance
+                    {
+                        TaskTemplateId = task.Id,
+                        Name = task.Name,
+                        MaxVolunteers = task.MaxVolunteers,
+                        RequiredVolunteers = task.RequiredVolunteers
+                    }
+                );
+            }
+        }
+
+        await db.SaveChangesAsync();
+        return Ok(new { message = "Zone created." });
+    }
+
+    [HttpPut("zones")]
+    public async Task<IActionResult> UpdateZone([FromBody] UpdateShiftZoneRequest request)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user.Role != Role.Staff)
+            return Forbid();
+
+        var currentName = NormalizeZoneName(request.CurrentName);
+        var newName = NormalizeZoneName(request.NewName);
+        if (currentName.Length == 0 || newName.Length == 0)
+            return BadRequest(new { error = "Current and new zone names are required." });
+
+        if (!Enum.IsDefined(typeof(ShiftType), request.ShiftType))
+            return BadRequest(new { error = "Invalid shift type." });
+
+        if (string.Equals(currentName, newName, StringComparison.OrdinalIgnoreCase))
+            return Ok(new { message = "Zone updated." });
+
+        var template = await GetTemplateForDate(request.Date, request.ShiftType);
+        var matchingTemplateTasks = template
+            .Tasks.Where(t => TaskMatchesZone(t.Name, currentName, request.IsGroupedZone))
+            .ToList();
+
+        if (matchingTemplateTasks.Count == 0)
+            return NotFound(new { error = "Zone not found." });
+
+        var desiredTaskNames = BuildZoneTaskNames(newName, request.IsGroupedZone);
+        var conflictingNames = new HashSet<string>(
+            template.Tasks.Except(matchingTemplateTasks).Select(t => t.Name),
+            StringComparer.OrdinalIgnoreCase
+        );
+
+        if (desiredTaskNames.Any(conflictingNames.Contains))
+            return Conflict(new { error = "A zone with that name already exists." });
+
+        foreach (var task in matchingTemplateTasks)
+        {
+            task.Name = RenameTaskForZone(task.Name, currentName, newName, request.IsGroupedZone);
+        }
+
+        var shiftInstances = await db
+            .ShiftInstances.Include(s => s.Tasks)
+            .Where(s => s.ShiftTemplateId == template.Id)
+            .ToListAsync();
+
+        foreach (var shift in shiftInstances)
+        {
+            var matchingInstanceTasks = shift
+                .Tasks.Where(t => TaskMatchesZone(t.Name, currentName, request.IsGroupedZone))
+                .ToList();
+
+            foreach (var task in matchingInstanceTasks)
+            {
+                task.Name = RenameTaskForZone(
+                    task.Name,
+                    currentName,
+                    newName,
+                    request.IsGroupedZone
+                );
+            }
+        }
+
+        await db.SaveChangesAsync();
+        return Ok(new { message = "Zone updated." });
+    }
+
+    [HttpDelete("zones")]
+    public async Task<IActionResult> DeleteZone([FromBody] DeleteShiftZoneRequest request)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user.Role != Role.Staff)
+            return Forbid();
+
+        var zoneName = NormalizeZoneName(request.Name);
+        if (zoneName.Length == 0)
+            return BadRequest(new { error = "Zone name is required." });
+
+        if (!Enum.IsDefined(typeof(ShiftType), request.ShiftType))
+            return BadRequest(new { error = "Invalid shift type." });
+
+        var template = await GetTemplateForDate(request.Date, request.ShiftType);
+        var matchingTemplateTasks = template
+            .Tasks.Where(t => TaskMatchesZone(t.Name, zoneName, request.IsGroupedZone))
+            .ToList();
+
+        if (matchingTemplateTasks.Count == 0)
+            return NotFound(new { error = "Zone not found." });
+
+        db.TaskTemplates.RemoveRange(matchingTemplateTasks);
+
+        var shiftInstances = await db
+            .ShiftInstances.Include(s => s.Tasks)
+            .Where(s => s.ShiftTemplateId == template.Id)
+            .ToListAsync();
+
+        foreach (var shift in shiftInstances)
+        {
+            var matchingInstanceTasks = shift
+                .Tasks.Where(t => TaskMatchesZone(t.Name, zoneName, request.IsGroupedZone))
+                .ToList();
+
+            if (matchingInstanceTasks.Count > 0)
+            {
+                db.TaskInstances.RemoveRange(matchingInstanceTasks);
+            }
+        }
+
+        await db.SaveChangesAsync();
+        return Ok(new { message = "Zone deleted." });
+    }
+
     [HttpPost("{shiftId:Guid}/tasks/{taskId:Guid}/join")]
     public async Task<IActionResult> JoinTask(Guid shiftId, Guid taskId)
     {
         var volunteerId = GetUserIdOrThrow();
 
-        // Load the task instance and validate it belongs to this shift
         var task = await db
             .TaskInstances.Include(t => t.ShiftInstance)
             .SingleOrDefaultAsync(t => t.Id == taskId);
@@ -92,7 +272,6 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         if (task.ShiftInstanceId != shiftId)
             return BadRequest(new { error = "Task does not belong to the shift." });
 
-        // Optional: enforce volunteer constraints (approved + period)
         var user = await db.Users.SingleAsync(u => u.Id == volunteerId);
 
         if (user.Role == Role.Volunteer && user.Status != VolunteerStatus.Approved)
@@ -104,7 +283,6 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         if (user.VolunteerTo is not null && task.ShiftInstance.Date > user.VolunteerTo.Value)
             return StatusCode(403, new { error = "Your volunteering period has ended." });
 
-        // Capacity check (optional)
         if (task.MaxVolunteers is not null)
         {
             var count = await db.TaskAssignments.CountAsync(a => a.TaskInstanceId == taskId);
@@ -123,18 +301,15 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         }
         catch (DbUpdateException)
         {
-            // This will happen if they try to join the same task twice (unique index)
             return StatusCode(409, new { error = "Already joined this task." });
         }
     }
 
-    // DELETE /api/shifts/{shiftId}/tasks/{taskId}/leave
     [HttpDelete("{shiftId:Guid}/tasks/{taskId:Guid}/leave")]
     public async Task<IActionResult> LeaveTask(Guid shiftId, Guid taskId)
     {
         var volunteerId = GetUserIdOrThrow();
 
-        // Ensure task belongs to shift
         var task = await db.TaskInstances.AsNoTracking().SingleOrDefaultAsync(t => t.Id == taskId);
         if (task is null)
             return NotFound(new { error = "Task not found." });
@@ -189,7 +364,6 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            // 🔥 Someone else completed it first
             return Conflict(new { error = "Task was completed by someone else." });
         }
     }
@@ -237,6 +411,12 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         return id;
     }
 
+    private async Task<User> GetCurrentUserAsync()
+    {
+        var userId = GetUserIdOrThrow();
+        return await db.Users.SingleAsync(u => u.Id == userId);
+    }
+
     private static ShiftTaskStatus GetTaskStatus(TaskInstance task, int assignedCount)
     {
         if (task.CompletedAt is not null)
@@ -246,6 +426,21 @@ public class ShiftsController(ARADbContext db) : ControllerBase
             return ShiftTaskStatus.Missing;
 
         return ShiftTaskStatus.InProgress;
+    }
+
+    private async Task<ShiftTemplate> GetTemplateForDate(DateOnly date, ShiftType type)
+    {
+        var season = SeasonResolver.Resolve(date);
+        var template = await db
+            .ShiftTemplates.Include(t => t.Tasks)
+            .SingleOrDefaultAsync(t => t.ShiftType == type && t.Season == season);
+
+        if (template is null)
+            throw new InvalidOperationException(
+                $"No ShiftTemplate configured for {type} {season}."
+            );
+
+        return template;
     }
 
     private async Task<ShiftInstance> GetOrCreateShiftInstance(DateOnly date, ShiftType type)
@@ -263,22 +458,13 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         if (existing is not null)
             return existing;
 
-        var season = SeasonResolver.Resolve(date);
-
-        var template = await db
-            .ShiftTemplates.Include(t => t.Tasks)
-            .SingleOrDefaultAsync(t => t.ShiftType == type && t.Season == season);
-
-        if (template is null)
-            throw new InvalidOperationException(
-                $"No ShiftTemplate configured for {type} {season}."
-            );
+        var template = await GetTemplateForDate(date, type);
 
         var shift = new ShiftInstance
         {
             Date = date,
             ShiftType = type,
-            Season = season,
+            Season = template.Season,
             StartTime = template.StartTime,
             ShiftTemplateId = template.Id,
             Tasks = template
@@ -328,6 +514,48 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         return tasks.Where(t => !baseNames.Contains(t.Name) && !excluded.Contains(t.Name));
     }
 
+    private static string NormalizeZoneName(string value) => value.Trim();
+
+    private static List<string> BuildZoneTaskNames(string zoneName, bool isGroupedZone)
+    {
+        if (!isGroupedZone)
+            return [zoneName];
+
+        return GroupedZoneSuffixes.Select(suffix => $"{zoneName} - {suffix}").ToList();
+    }
+
+    private static bool TaskMatchesZone(string taskName, string zoneName, bool isGroupedZone)
+    {
+        if (!isGroupedZone)
+            return taskName.Equals(zoneName, StringComparison.OrdinalIgnoreCase);
+
+        return TryGetSplitBaseName(taskName, out var baseName)
+            && baseName.Equals(zoneName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string RenameTaskForZone(
+        string currentTaskName,
+        string currentZoneName,
+        string newZoneName,
+        bool isGroupedZone
+    )
+    {
+        if (!isGroupedZone)
+            return newZoneName;
+
+        if (!TryGetSplitBaseName(currentTaskName, out var baseName))
+            return currentTaskName;
+
+        if (!baseName.Equals(currentZoneName, StringComparison.OrdinalIgnoreCase))
+            return currentTaskName;
+
+        var suffix = currentTaskName[
+            (currentTaskName.LastIndexOf(" - ", StringComparison.Ordinal) + 3)..
+        ]
+            .Trim();
+        return $"{newZoneName} - {suffix}";
+    }
+
     private static bool TryGetSplitBaseName(string name, out string baseName)
     {
         baseName = string.Empty;
@@ -339,10 +567,7 @@ public class ShiftsController(ARADbContext db) : ControllerBase
         }
 
         var label = name[(idx + separator.Length)..].Trim();
-        if (
-            !label.Equals("Water", StringComparison.OrdinalIgnoreCase)
-            && !label.Equals("Cleaning", StringComparison.OrdinalIgnoreCase)
-        )
+        if (!GroupedZoneSuffixes.Contains(label, StringComparer.OrdinalIgnoreCase))
         {
             return false;
         }

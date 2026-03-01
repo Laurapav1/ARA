@@ -17,7 +17,9 @@ class StaffAccountScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Change password'),
-        actionsAlignment: MainAxisAlignment.center,
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsAlignment: MainAxisAlignment.end,
+        actionsOverflowButtonSpacing: 10,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -68,6 +70,10 @@ class StaffAccountScreen extends StatelessWidget {
                 ),
               );
             },
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(140, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
             child: const Text('Update'),
           ),
         ],
@@ -233,6 +239,8 @@ class _SettingsTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        splashFactory: NoSplash.splashFactory,
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(16),

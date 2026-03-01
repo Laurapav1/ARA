@@ -79,6 +79,61 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Future<void> _editAnimal() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnimalEditorScreen(animal: _animal),
+      ),
+    );
+    await _loadDetails();
+  }
+
+  Future<void> _changeStatus() async {
+    await showAnimalStatusDialog(
+      context,
+      _animal,
+      _deleteAnimal,
+    );
+  }
+
+  Future<void> _openAnimalActionsSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Edit details'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                await _editAnimal();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.swap_horiz, color: ARAColors.danger),
+              title: const Text(
+                'Change status',
+                style: TextStyle(color: ARAColors.danger),
+              ),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                await _changeStatus();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStore>();
@@ -89,6 +144,15 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       appBar: AppBar(
         title: Text(_animal.name),
         titleTextStyle: ARATypography.detailNavTitle,
+        actions: isStaff
+            ? [
+                IconButton(
+                  onPressed: _openAnimalActionsSheet,
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: 'Animal actions',
+                ),
+              ]
+            : null,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -107,41 +171,26 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                     const SizedBox(height: 12),
                     _buildMoreInfo(context, _animal),
                     const SizedBox(height: 24),
-                    if (isStaff) ...[
-                      FilledButton(
-                        onPressed: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AnimalEditorScreen(animal: _animal),
-                            ),
-                          );
-                          await _loadDetails();
-                        },
-                        child: const Text('Edit details'),
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () => showAnimalStatusDialog(
-                          context,
-                          _animal,
-                          _deleteAnimal,
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ARAColors.danger,
-                          side: const BorderSide(color: Color(0xFFE47070)),
-                        ),
-                        child: const Text('Change status'),
-                      ),
-                    ],
                   ],
                 ),
     );
   }
 
   Widget _buildHero(Animal a) {
+    final heroMedia = a.photoBytes == null
+        ? const DecoratedBox(
+            decoration: BoxDecoration(gradient: ARAColors.softBackgroundGradient),
+            child: Center(
+              child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
+            ),
+          )
+        : Image.memory(
+            a.photoBytes!,
+            fit: BoxFit.cover,
+          );
+
     return Container(
-      height: 220,
+      height: 270,
       decoration: BoxDecoration(
         color: ARAColors.surfaceWarm,
         borderRadius: BorderRadius.circular(20),
@@ -149,12 +198,10 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       ),
       child: Stack(
         children: [
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(gradient: ARAColors.softBackgroundGradient),
-              child: Center(
-                child: Icon(Icons.pets, size: 80, color: ARAColors.brandDark),
-              ),
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: heroMedia,
             ),
           ),
           if (a.flags.isNotEmpty)
@@ -188,7 +235,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   }
 
   Widget _buildInfoRow(Animal a) {
-    final needsCaution = a.isDangerous || a.flags.isNotEmpty;
+    final needsCaution = a.isDangerous;
     final location = _buildLocationLabel(a);
 
     return Column(
@@ -197,8 +244,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
           children: [
             Expanded(
               child: _InfoTile(
-                label: 'Handling',
-                value: needsCaution ? 'Use caution' : 'No special notes',
+                label: 'Safety Status',
+                value: needsCaution ? 'Use caution' : 'Friendly',
                 isWarning: needsCaution,
               ),
             ),
@@ -351,7 +398,8 @@ class _InfoTile extends StatelessWidget {
         color: isWarning ? ARAColors.cautionSurface : ARAColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isWarning ? ARAColors.cautionBorder : ARAColors.surfaceWarmTint,
+          color:
+              isWarning ? ARAColors.cautionBorder : ARAColors.surfaceWarmTint,
         ),
       ),
       child: Column(

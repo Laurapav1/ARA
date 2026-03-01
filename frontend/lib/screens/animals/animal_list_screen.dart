@@ -40,7 +40,7 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
   bool _isLoading = true;
   String? _loadError;
 
-  bool _needsCaution(Animal a) => a.isDangerous || a.flags.isNotEmpty;
+  bool _needsCaution(Animal a) => a.isDangerous;
 
   @override
   void initState() {
@@ -61,7 +61,7 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
         GlobalFilterOption<Animal>(
           id: 'care_required',
           label: 'Care required',
-          predicate: (animal) => animal.isDangerous || animal.flags.isNotEmpty,
+          predicate: (animal) => animal.isDangerous,
         ),
         GlobalFilterOption<Animal>(
           id: 'in_treatment',

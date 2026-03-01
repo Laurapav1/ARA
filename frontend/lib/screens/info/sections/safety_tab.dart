@@ -1,38 +1,42 @@
 part of '../information.dart';
 
 class _SafetyTab extends StatelessWidget {
-  const _SafetyTab();
+  final _EditableInfoSectionsController? editorController;
+
+  const _SafetyTab({this.editorController});
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      children: const [
-        ExpandableSectionGroup(
-          initiallyExpandedId: '',
-          sections: [
-            ExpandableSectionItem(
+      children: [
+        _EditableInfoSections(
+          controller: editorController,
+          storageKey: 'info_safety',
+          initialSections: [
+            _EditableInfoSectionModel(
               id: 'rules',
               title: 'Rules',
-              child: InfoSectionList(items: _safetyRules),
+              style: InfoSectionListStyle.bullet,
+              items: _safetyRules,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'dog_handling_rules',
               title: 'Dog Handling Rules',
-              child: InfoSectionList(items: _safetyDogHandlingRules),
+              style: InfoSectionListStyle.bullet,
+              items: _safetyDogHandlingRules,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'conduct',
               title: 'Conduct',
-              child: InfoSectionList(items: _safetyConduct),
+              style: InfoSectionListStyle.bullet,
+              items: _safetyConduct,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'incidents',
               title: 'Incident steps',
-              child: InfoSectionList(
-                items: _incidentSteps,
-                style: InfoSectionListStyle.numbered,
-              ),
+              style: InfoSectionListStyle.numbered,
+              items: _incidentSteps,
             ),
           ],
         ),

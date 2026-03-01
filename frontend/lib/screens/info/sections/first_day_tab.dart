@@ -1,30 +1,36 @@
 part of '../information.dart';
 
 class _FirstDayTab extends StatelessWidget {
-  const _FirstDayTab();
+  final _EditableInfoSectionsController? editorController;
+
+  const _FirstDayTab({this.editorController});
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      children: const [
-        ExpandableSectionGroup(
-          initiallyExpandedId: '',
-          sections: [
-            ExpandableSectionItem(
+      children: [
+        _EditableInfoSections(
+          controller: editorController,
+          storageKey: 'info_first_day',
+          initialSections: [
+            _EditableInfoSectionModel(
               id: 'induction_overview',
               title: 'Induction',
-              child: InfoSectionList(items: _firstDayInductionOverview),
+              style: InfoSectionListStyle.bullet,
+              items: _firstDayInductionOverview,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'how_shifts_work',
               title: 'How Shifts Work',
-              child: InfoSectionList(items: _firstDayHowShiftsWork),
+              style: InfoSectionListStyle.bullet,
+              items: _firstDayHowShiftsWork,
             ),
-            ExpandableSectionItem(
+            _EditableInfoSectionModel(
               id: 'living_at_ara',
               title: 'Living at ARA',
-              child: InfoSectionList(items: _firstDayLivingAtAra),
+              style: InfoSectionListStyle.bullet,
+              items: _firstDayLivingAtAra,
             ),
           ],
         ),

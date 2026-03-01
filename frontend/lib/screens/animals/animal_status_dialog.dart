@@ -14,6 +14,9 @@ Future<void> showAnimalStatusDialog(
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsAlignment: MainAxisAlignment.end,
+        actionsOverflowButtonSpacing: 10,
         title: const Row(
           children: [
             Icon(Icons.pets, color: ARAColors.ink),
@@ -63,6 +66,8 @@ Future<void> showAnimalStatusDialog(
             style: FilledButton.styleFrom(
               backgroundColor: ARAColors.brand,
               foregroundColor: ARAColors.ink,
+              minimumSize: const Size(140, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
             child: const Text('Confirm'),
           ),

@@ -49,12 +49,19 @@ class _ShelterMapPanelState extends State<_ShelterMapPanel> {
     final rawDy = (_ShelterMapPanel._viewportHeight / 2) - focusY;
 
     final minDx = viewportWidth - _ShelterMapPanel._mapWidth;
-    final minDy = _ShelterMapPanel._viewportHeight - _ShelterMapPanel._mapHeight;
+    final minDy =
+        _ShelterMapPanel._viewportHeight - _ShelterMapPanel._mapHeight;
 
-    final dx = rawDx.clamp(minDx, 0.0).toDouble();
-    final dy = rawDy.clamp(minDy, 0.0).toDouble();
+    // Never allow positive dx; otherwise wide viewports create whitespace on the left.
+    final dxLower = minDx <= 0.0 ? minDx : 0.0;
+    final dyLower = minDy <= 0.0 ? minDy : 0.0;
+    final dyUpper = minDy <= 0.0 ? 0.0 : minDy;
 
-    _controller.value = Matrix4.identity()..translateByDouble(dx, dy, 0.0, 1.0);
+    final dx = rawDx.clamp(dxLower, 0.0).round();
+    final dy = rawDy.clamp(dyLower, dyUpper).round();
+
+    _controller.value = Matrix4.identity()
+      ..translateByDouble(dx.toDouble(), dy.toDouble(), 0.0, 1.0);
     _initialViewportSet = true;
   }
 
@@ -84,19 +91,19 @@ class _ShelterMapPanelState extends State<_ShelterMapPanel> {
                       child: Image.asset(
                         _ShelterMapPanel._mapAssetPath,
                         fit: BoxFit.cover,
-                        errorBuilder:
-                            (context, error, stackTrace) => DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    ARAColors.surfaceWarm,
-                                    ARAColors.surfaceWarmAlt,
-                                  ],
-                                ),
-                              ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                ARAColors.surfaceWarm,
+                                ARAColors.surfaceWarmAlt,
+                              ],
                             ),
+                          ),
+                        ),
                       ),
                     ),
                     ..._mapSpots.map(

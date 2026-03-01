@@ -1,7 +1,9 @@
 part of '../information.dart';
 
 class _OverviewTab extends StatefulWidget {
-  const _OverviewTab();
+  final _EditableInfoSectionsController? editorController;
+
+  const _OverviewTab({this.editorController});
 
   @override
   State<_OverviewTab> createState() => _OverviewTabState();
@@ -27,18 +29,15 @@ class _OverviewTabState extends State<_OverviewTab> {
           ),
         ),
         const SizedBox(height: 12),
-        const ExpandableSectionGroup(
-          initiallyExpandedId: '',
-          sections: [
-            ExpandableSectionItem(
+        _EditableInfoSections(
+          controller: widget.editorController,
+          storageKey: 'info_overview_zone_basics',
+          initialSections: [
+            _EditableInfoSectionModel(
               id: 'zone_basics',
               title: 'Zone basics',
-              child: InfoSectionList(items: _overviewStructureBullets),
-            ),
-            ExpandableSectionItem(
-              id: 'who_is_who',
-              title: 'Who\'s who',
-              child: InfoSectionList(items: _overviewWhoIsWhoBullets),
+              style: InfoSectionListStyle.bullet,
+              items: _overviewStructureBullets,
             ),
           ],
         ),

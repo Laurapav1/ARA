@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/zone.dart';
 import '../../models/shift_view.dart';
 import '../../services/auth_store.dart';
@@ -9,6 +10,7 @@ import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/global_search_filter.dart';
 import '../../theme/ara_theme.dart';
+import 'shift_zone_dialogs.dart';
 import 'zone_list_screen.dart';
 
 class ShiftZoneScreen extends StatefulWidget {
@@ -28,12 +30,21 @@ class ShiftZoneScreen extends StatefulWidget {
 class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   final _service = ShiftsService();
   late Future<ShiftView> _future;
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
   ShiftView? _currentShift;
   bool _isRefreshing = false;
   Timer? _midnightTimer;
   late final GlobalSearchFilterController<Zone> _searchFilterController;
   String? _focusedZoneName;
+  List<String> _pinnedZoneIdentities = <String>[];
   int _focusRequestId = 0;
+  ShiftZoneStaffMode _staffMode = ShiftZoneStaffMode.none;
 
   @override
   void initState() {
@@ -62,7 +73,29 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
     }).catchError((_) {
       // Error handling stays in FutureBuilder.
     });
+    unawaited(_loadPinnedZoneIdentity());
     _scheduleMidnightRefresh();
+  }
+
+  String get _pinnedZoneKey =>
+      'pinned_zones_${widget.shiftType.toLowerCase()}_${_fmtIso(widget.date)}';
+
+  Future<void> _loadPinnedZoneIdentity() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pinned = prefs.getStringList(_pinnedZoneKey) ?? const <String>[];
+    if (!mounted) return;
+    setState(() {
+      _pinnedZoneIdentities = pinned.where((x) => x.trim().isNotEmpty).toList();
+    });
+  }
+
+  Future<void> _savePinnedZoneIdentity(List<String> pinned) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (pinned.isEmpty) {
+      await prefs.remove(_pinnedZoneKey);
+      return;
+    }
+    await prefs.setStringList(_pinnedZoneKey, pinned);
   }
 
   void _scheduleMidnightRefresh() {
@@ -354,163 +387,178 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
     setState(() {});
   }
 
-  List<GlobalFilterOption<Zone>> _zoneFilters(List<Zone> zones) {
-    if (widget.shiftType == 'Evening') {
-      return [
-        GlobalFilterOption<Zone>(
-          id: 'evening_parks',
-          label: 'Parks',
-          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.parks,
-        ),
-        GlobalFilterOption<Zone>(
-          id: 'evening_zones',
-          label: 'Zones',
-          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.zones,
-        ),
-        GlobalFilterOption<Zone>(
-          id: 'evening_extra',
-          label: 'Extra tasks',
-          predicate: (zone) => _eveningGroupFor(zone) == _EveningGroup.extra,
-        ),
-      ];
+  Future<void> _addZone() async {
+    final name = await showShiftZoneNameDialog(
+      context: context,
+      title: 'Add zone',
+    );
+    if (!mounted || name == null) return;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+
+    final auth = context.read<AuthStore>();
+    final token = auth.accessToken;
+    if (token == null || token.isEmpty) {
+      _showMessage('Missing login token.');
+      return;
     }
 
-    final options = <GlobalFilterOption<Zone>>[
-      GlobalFilterOption<Zone>(
-        id: 'status_done',
-        label: 'Done',
-        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.done,
-      ),
-      GlobalFilterOption<Zone>(
-        id: 'status_in_progress',
-        label: 'In progress',
-        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.inProgress,
-      ),
-      GlobalFilterOption<Zone>(
-        id: 'status_unassigned',
-        label: 'Unassigned',
-        predicate: (zone) => _zoneStatus(zone) == _ZoneStatus.unassigned,
-      ),
-    ];
-
-    final categories = zones
-        .map((zone) => zone.category.trim())
-        .where((category) => category.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
-    for (final category in categories) {
-      options.add(
-        GlobalFilterOption<Zone>(
-          id: 'category_${category.toLowerCase()}',
-          label: category,
-          predicate: (zone) =>
-              zone.category.toLowerCase() == category.toLowerCase(),
-        ),
+    try {
+      await _service.createZone(
+        date: _fmtIso(widget.date),
+        shiftType: widget.shiftType,
+        name: trimmed,
+        isGroupedZone: widget.shiftType == 'Evening',
+        token: token,
       );
+      await _reload();
+      _showMessage('Zone added.');
+    } on ApiException catch (e) {
+      _showMessage(e.message);
     }
-    return options;
   }
 
-  _ZoneStatus _zoneStatus(Zone zone) {
-    if (zone.subtasks.isNotEmpty) {
-      if (zone.subtasks.every((task) => task.progress >= 1.0)) {
-        return _ZoneStatus.done;
-      }
-      if (zone.subtasks.any((task) => task.progress > 0 || task.volunteers > 0)) {
-        return _ZoneStatus.inProgress;
-      }
-      return _ZoneStatus.unassigned;
-    }
-
-    if (zone.progress >= 1.0) return _ZoneStatus.done;
-    if (zone.progress > 0 || zone.volunteers > 0) return _ZoneStatus.inProgress;
-    return _ZoneStatus.unassigned;
+  void _setStaffMode(ShiftZoneStaffMode mode) {
+    if (!mounted) return;
+    setState(() => _staffMode = mode);
   }
 
-  _EveningGroup _eveningGroupFor(Zone zone) {
-    final category = zone.category.toLowerCase();
-    final name = zone.name.toLowerCase();
-
-    if (_isEveningSpecialTask(name)) {
-      return _EveningGroup.extra;
-    }
-
-    // Zone/kennel matching must win over generic category labels.
-    if (name.contains('zone') ||
-        name.contains('kennel') ||
-        category.contains('zone') ||
-        category.contains('kennel')) {
-      return _EveningGroup.zones;
-    }
-
-    if (name.contains('park') || category.contains('park')) {
-      return _EveningGroup.parks;
-    }
-
-    // In evening shifts, non-park/non-special work is zone-related by default.
-    return _EveningGroup.zones;
+  Future<void> _openShiftActionsSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('Add zone'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                await _addZone();
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                _staffMode == ShiftZoneStaffMode.edit
+                    ? Icons.check_circle_outline
+                    : Icons.edit_outlined,
+              ),
+              title: Text(
+                _staffMode == ShiftZoneStaffMode.edit
+                    ? 'Done editing zones'
+                    : 'Edit zones',
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _setStaffMode(
+                  _staffMode == ShiftZoneStaffMode.edit
+                      ? ShiftZoneStaffMode.none
+                      : ShiftZoneStaffMode.edit,
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                _staffMode == ShiftZoneStaffMode.delete
+                    ? Icons.check_circle_outline
+                    : Icons.delete_outline,
+                color: _staffMode == ShiftZoneStaffMode.delete
+                    ? null
+                    : ARAColors.danger,
+              ),
+              title: Text(
+                _staffMode == ShiftZoneStaffMode.delete
+                    ? 'Done deleting zones'
+                    : 'Delete zones',
+                style: TextStyle(
+                  color: _staffMode == ShiftZoneStaffMode.delete
+                      ? null
+                      : ARAColors.danger,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _setStaffMode(
+                  _staffMode == ShiftZoneStaffMode.delete
+                      ? ShiftZoneStaffMode.none
+                      : ShiftZoneStaffMode.delete,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMorningShift = widget.shiftType == 'Morning';
+    final auth = context.watch<AuthStore>();
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.shiftType} Shift'),
-        actions: isMorningShift
-            ? null
-            : [
-                ...buildGlobalSearchFilterActions<Zone>(
-                  context: context,
-                  title: 'tasks',
-                  items:
-                      _currentShift == null ? <Zone>[] : _toZones(_currentShift!),
-                  controller: _searchFilterController,
-                  searchResultBuilder: (context, zone, onTap) => Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-                    child: Card(
-                      child: ListTile(
-                        onTap: onTap,
-                        leading: CircleAvatar(
-                          backgroundColor: zone.progress >= 1.0
-                              ? ARAColors.successSoft
-                              : ARAColors.surfaceWarm,
-                          child: Icon(
-                            zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
-                            color: ARAColors.ink,
-                          ),
-                        ),
-                        title: Text(zone.name),
-                        subtitle: Text(
-                          [
-                            if (zone.category.trim().toLowerCase() != 'general')
-                              zone.category,
-                            if ((zone.startTime ?? '').isNotEmpty) zone.startTime!,
-                            '${zone.taskCount ?? zone.tasks.length} task(s)',
-                          ].join(' - '),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                      ),
+        actions: [
+          ...buildGlobalSearchFilterActions<Zone>(
+            context: context,
+            title: 'tasks',
+            items: _currentShift == null ? <Zone>[] : _toZones(_currentShift!),
+            controller: _searchFilterController,
+            showFilter: false,
+            searchResultBuilder: (context, zone, onTap) => Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+              child: Card(
+                child: ListTile(
+                  onTap: onTap,
+                  leading: CircleAvatar(
+                    backgroundColor: zone.progress >= 1.0
+                        ? ARAColors.successSoft
+                        : ARAColors.surfaceWarm,
+                    child: Icon(
+                      zone.progress >= 1.0 ? Icons.check : Icons.task_alt,
+                      color: ARAColors.ink,
                     ),
                   ),
-                  onItemSelected: (zone) {
-                    _searchFilterController.updateQuery(zone.name);
-                    setState(() {
-                      _focusedZoneName = zone.name;
-                      _focusRequestId++;
-                    });
-                  },
-                ),
-                if (_searchFilterController.query.trim().isNotEmpty)
-                  IconButton(
-                    tooltip: 'Clear search',
-                    icon: const Icon(Icons.close),
-                    onPressed: _searchFilterController.clearQuery,
+                  title: Text(zone.name),
+                  subtitle: Text(
+                    [
+                      if (zone.category.trim().toLowerCase() != 'general')
+                        zone.category,
+                      if ((zone.startTime ?? '').isNotEmpty) zone.startTime!,
+                      '${zone.taskCount ?? zone.tasks.length} task(s)',
+                    ].join(' - '),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  trailing: const Icon(Icons.chevron_right),
+                ),
+              ),
+            ),
+            onItemSelected: (zone) {
+              _searchFilterController.updateQuery(zone.name);
+              setState(() {
+                _focusedZoneName = zone.name;
+                _focusRequestId++;
+              });
+            },
+          ),
+          if (_searchFilterController.query.trim().isNotEmpty)
+            IconButton(
+              tooltip: 'Clear search',
+              icon: const Icon(Icons.close),
+              onPressed: _searchFilterController.clearQuery,
+            ),
+          if (auth.isStaff)
+            IconButton(
+              onPressed: _openShiftActionsSheet,
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'Shift actions',
+            ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -534,22 +582,23 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
 
                   final shift = _currentShift!;
                   final zones = _toZones(shift);
-                  final visibleZones = isMorningShift
-                      ? zones
-                      : () {
-                          _searchFilterController.setFilterOptions(
-                            _zoneFilters(zones),
-                          );
-                          return _searchFilterController.apply(zones);
-                        }();
+                  _searchFilterController.setFilterOptions(const []);
+                  final visibleZones = _searchFilterController.apply(zones);
                   return Stack(
                     children: [
                       ZoneListScreen(
                         key: ValueKey(shift.shiftId),
                         shiftType: widget.shiftType,
+                        date: widget.date,
                         zones: visibleZones,
+                        staffMode: _staffMode,
                         shiftId: shift.shiftId,
                         onReload: _reload,
+                        initialPinnedZoneIdentities: _pinnedZoneIdentities,
+                        onPinnedZonesChanged: (pinned) {
+                          _pinnedZoneIdentities = List<String>.from(pinned);
+                          unawaited(_savePinnedZoneIdentity(pinned));
+                        },
                         focusedZoneName: _focusedZoneName,
                         focusRequestId: _focusRequestId,
                       ),
@@ -586,9 +635,6 @@ class _TaskGrouping {
   const _TaskGrouping(this.groupName, this.subLabel);
 }
 
-enum _ZoneStatus { done, inProgress, unassigned }
-enum _EveningGroup { parks, zones, extra }
-
 class _ErrorState extends StatelessWidget {
   final String message;
 
@@ -600,16 +646,15 @@ class _ErrorState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+          mainAxisSize: MainAxisSize.min,
+          children: [
             const Icon(Icons.error_outline, size: 64, color: ARAColors.subInk),
             const SizedBox(height: 12),
             Text(
               message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: ARAColors.subInk),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: ARAColors.subInk),
               textAlign: TextAlign.center,
             ),
           ],

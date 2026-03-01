@@ -21,33 +21,40 @@ class AnimalHomeScreen extends StatelessWidget {
               title: 'Meet Our Animals',
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                children: [
-                  AraCard(
-                    title: 'Dogs',
-                    description: 'Meet our canine companions',
-                    icon: Icons.pets,
-                    gradient: ARAColors.dogGradient,
-                    image: '🐕',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const DogsScreen()),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  AraCard(
-                    title: 'Cats',
-                    description: 'Explore our feline friends',
-                    icon: Icons.pets,
-                    gradient: ARAColors.catGradient,
-                    image: '🐈',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const CatsScreen()),
-                    ),
-                  ),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final topInset =
+                      (constraints.maxHeight * 0.14).clamp(12.0, 96.0).toDouble();
+
+                  return ListView(
+                    padding: EdgeInsets.fromLTRB(24, topInset, 24, 24),
+                    children: [
+                      AraCard(
+                        title: 'Dogs',
+                        description: 'Meet our canine companions',
+                        icon: Icons.pets,
+                        gradient: ARAColors.dogGradient,
+                        image: '\u{1F415}',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const DogsScreen()),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      AraCard(
+                        title: 'Cats',
+                        description: 'Explore our feline friends',
+                        icon: Icons.pets,
+                        gradient: ARAColors.catGradient,
+                        image: '\u{1F408}',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CatsScreen()),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],

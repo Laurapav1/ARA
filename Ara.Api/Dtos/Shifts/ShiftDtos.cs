@@ -22,3 +22,25 @@ public record ShiftViewDto(
     string StartTime, // "08:00"
     List<ShiftTaskDto> Tasks
 );
+
+public record CreateShiftZoneRequest(
+    DateOnly Date,
+    ShiftType ShiftType,
+    string Name,
+    bool IsGroupedZone
+);
+
+public record UpdateShiftZoneRequest(
+    DateOnly Date,
+    ShiftType ShiftType,
+    string CurrentName,
+    string NewName,
+    bool IsGroupedZone
+);
+
+public record DeleteShiftZoneRequest(
+    DateOnly Date,
+    ShiftType ShiftType,
+    string Name,
+    bool IsGroupedZone
+);

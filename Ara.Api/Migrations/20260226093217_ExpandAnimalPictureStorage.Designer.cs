@@ -3,6 +3,7 @@ using System;
 using Ara.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ara.Api.Migrations
 {
     [DbContext(typeof(ARADbContext))]
-    partial class ARADbContextModelSnapshot : ModelSnapshot
+    [Migration("20260226093217_ExpandAnimalPictureStorage")]
+    partial class ExpandAnimalPictureStorage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -84,24 +87,6 @@ namespace Ara.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Animals");
-                });
-
-            modelBuilder.Entity("Ara.Domain.Models.Information.InformationBlob", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<string>("Json")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Key");
-
-                    b.ToTable("InformationBlobs");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.ShiftInstance", b =>

@@ -21,7 +21,7 @@ class ARAColors {
   static const Color surfaceCoolSoft = Color(0xFFF2F5F7);
 
   static const Color success = Color(0xFF66BB6A);
-  static const Color successSoft = Color(0xFFB9E0B9);
+    static const Color successSoft = Color.fromRGBO(154, 207, 154, 1);
   static const Color successDark = Color(0xFF1B5E20);
   static const Color warning = Color(0xFFFB8C00);
   static const Color warningSoft = Color(0xFFEACD8C);
@@ -95,6 +95,19 @@ class ARAColors {
 }
 
 class ARATheme {
+  static final ButtonStyle primaryCtaButtonStyle = FilledButton.styleFrom(
+    backgroundColor: ARAColors.brand,
+    foregroundColor: ARAColors.ink,
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+    ),
+    textStyle: const TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+    ),
+  );
+
   static ThemeData get light {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: ARAColors.brand,
@@ -144,18 +157,7 @@ class ARATheme {
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: ARAColors.brand,
-          foregroundColor: ARAColors.ink,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        style: primaryCtaButtonStyle,
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
