@@ -1,5 +1,21 @@
 ﻿part of '../information.dart';
 
+ButtonStyle _editorCancelTextButtonStyle() {
+  return TextButton.styleFrom(
+    foregroundColor: ARAColors.brandDeep,
+    backgroundColor: Colors.transparent,
+    overlayColor: Colors.transparent,
+    shadowColor: Colors.transparent,
+    surfaceTintColor: Colors.transparent,
+    splashFactory: NoSplash.splashFactory,
+    elevation: 0,
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    minimumSize: Size.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+  );
+}
+
 class _CardEditorResult {
   final String title;
   final String subtitle;
@@ -136,6 +152,7 @@ Future<_CardEditorResult?> _showCardEditorDialog({
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
+            style: _editorCancelTextButtonStyle(),
             child: const Text('Cancel'),
           ),
           FilledButton(
@@ -188,6 +205,7 @@ Future<String?> _showInformationItemDialog({
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
+          style: _editorCancelTextButtonStyle(),
           child: const Text('Cancel'),
         ),
         FilledButton(

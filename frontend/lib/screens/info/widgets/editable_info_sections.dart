@@ -4,12 +4,21 @@ ButtonStyle _editorPrimaryButtonStyle() {
   return FilledButton.styleFrom(
     backgroundColor: ARAColors.brand,
     foregroundColor: ARAColors.ink,
+    overlayColor: Colors.transparent,
+    shadowColor: Colors.transparent,
+    surfaceTintColor: Colors.transparent,
+    splashFactory: NoSplash.splashFactory,
   );
 }
 
 ButtonStyle _editorOutlineButtonStyle() {
   return OutlinedButton.styleFrom(
     foregroundColor: ARAColors.brandDark,
+    backgroundColor: Colors.transparent,
+    overlayColor: Colors.transparent,
+    shadowColor: Colors.transparent,
+    surfaceTintColor: Colors.transparent,
+    splashFactory: NoSplash.splashFactory,
     side: const BorderSide(color: ARAColors.surfaceWarmTint),
   );
 }
@@ -80,12 +89,15 @@ class _EditableInfoSections extends StatefulWidget {
 
 class _EditableInfoSectionsState extends State<_EditableInfoSections> {
   late final List<_EditableInfoSectionModel> _sections;
+  late final List<_EditableInfoSectionModel> _savedSections;
   bool _loading = true;
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
     _sections = widget.initialSections.map((s) => s.copy()).toList();
+    _savedSections = widget.initialSections.map((s) => s.copy()).toList();
     _loadSections();
   }
 
@@ -107,6 +119,9 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
           _sections
             ..clear()
             ..addAll(loaded);
+          _savedSections
+            ..clear()
+            ..addAll(loaded.map((section) => section.copy()));
         }
       }
     } catch (_) {
@@ -120,6 +135,7 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
   @override
   Widget build(BuildContext context) {
     final isStaff = context.watch<AuthStore>().isStaff;
+    final isEditing = isStaff && _isEditing;
     if (_loading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
@@ -138,7 +154,7 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
                   title: section.title,
                   child: _EditableInfoSectionBody(
                     section: section,
-                    isStaff: isStaff,
+                    isEditing: isEditing,
                     onAddBullet: () => _addBullet(section),
                     onEditBullet: (index) => _editBullet(section, index),
                     onDeleteBullet: (index) => _deleteBullet(section, index),
@@ -153,40 +169,80 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _addSection,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add section'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: ARAColors.brandDark,
-                    backgroundColor: Colors.transparent,
-                    side: const BorderSide(
-                      color: ARAColors.surfaceWarmTint,
-                      width: 1,
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+              if (!isEditing)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _startEditing,
+                    style: _editorPrimaryButtonStyle(),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Edit information'),
+                  ),
+                ),
+              if (isEditing) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _addSection,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add section'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ARAColors.brandDark,
+                      backgroundColor: Colors.transparent,
+                      overlayColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      surfaceTintColor: Colors.transparent,
+                      splashFactory: NoSplash.splashFactory,
+                      side: const BorderSide(
+                        color: ARAColors.surfaceWarmTint,
+                        width: 1,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _saveChanges,
-                  style: _editorPrimaryButtonStyle(),
-                  child: const Text('Save changes'),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _cancelEditing,
+                    style: _editorOutlineButtonStyle(),
+                    child: const Text('Cancel'),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _saveChanges,
+                    style: _editorPrimaryButtonStyle(),
+                    child: const Text('Save changes'),
+                  ),
+                ),
+              ],
             ],
           ),
         ],
       ],
     );
+  }
+
+  void _startEditing() {
+    setState(() {
+      _isEditing = true;
+    });
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _sections
+        ..clear()
+        ..addAll(_savedSections.map((section) => section.copy()));
+      _isEditing = false;
+    });
   }
 
   Future<void> _addSection() async {
@@ -331,6 +387,12 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
     );
 
     if (!mounted) return;
+    setState(() {
+      _savedSections
+        ..clear()
+        ..addAll(_sections.map((section) => section.copy()));
+      _isEditing = false;
+    });
     ScaffoldMessenger.maybeOf(context)
         ?.showSnackBar(const SnackBar(content: Text('Changes saved')));
   }
@@ -372,7 +434,7 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
 
 class _EditableInfoSectionBody extends StatelessWidget {
   final _EditableInfoSectionModel section;
-  final bool isStaff;
+  final bool isEditing;
   final VoidCallback onAddBullet;
   final Future<void> Function(int index) onEditBullet;
   final void Function(int index) onDeleteBullet;
@@ -380,7 +442,7 @@ class _EditableInfoSectionBody extends StatelessWidget {
 
   const _EditableInfoSectionBody({
     required this.section,
-    required this.isStaff,
+    required this.isEditing,
     required this.onAddBullet,
     required this.onEditBullet,
     required this.onDeleteBullet,
@@ -389,7 +451,7 @@ class _EditableInfoSectionBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!isStaff) {
+    if (!isEditing) {
       return InfoSectionList(items: section.items, style: section.style);
     }
 
@@ -456,8 +518,12 @@ class _EditableInfoSectionBody extends StatelessWidget {
             label: const Text('Edit section'),
             style: OutlinedButton.styleFrom(
               foregroundColor: ARAColors.subInk,
-              side: const BorderSide(color: ARAColors.surfaceWarmTint),
               backgroundColor: Colors.transparent,
+              overlayColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              splashFactory: NoSplash.splashFactory,
+              side: const BorderSide(color: ARAColors.surfaceWarmTint),
             ),
           ),
         ),
