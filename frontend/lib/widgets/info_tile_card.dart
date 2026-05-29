@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../theme/ara_theme.dart';
+import 'inline_staff_action_button.dart';
 
 class InfoTileCard extends StatelessWidget {
   final String title;
@@ -20,6 +22,10 @@ class InfoTileCard extends StatelessWidget {
   final double backgroundIconAngle;
   final bool pinTitleToBottom;
   final double titleTopGap;
+  final IconData? actionIcon;
+  final String? actionTooltip;
+  final VoidCallback? onActionPressed;
+  final Color? actionColor;
 
   const InfoTileCard({
     super.key,
@@ -41,6 +47,10 @@ class InfoTileCard extends StatelessWidget {
     this.backgroundIconAngle = 0.0,
     this.pinTitleToBottom = false,
     this.titleTopGap = 6,
+    this.actionIcon,
+    this.actionTooltip,
+    this.onActionPressed,
+    this.actionColor,
   });
 
   @override
@@ -48,7 +58,8 @@ class InfoTileCard extends StatelessWidget {
     final displayTitle = title.replaceFirst(' (', '\n(');
     final resolvedTextColor = textColor ??
         (backgroundGradient != null ? ARAColors.cardBg : ARAColors.inkStrong);
-    final contentPadding = showArrow
+    final hasAction = actionIcon != null && onActionPressed != null;
+    final contentPadding = (showArrow || hasAction)
         ? const EdgeInsets.fromLTRB(16, 16, 64, 16)
         : const EdgeInsets.all(16);
 
@@ -113,6 +124,17 @@ class InfoTileCard extends StatelessWidget {
                                 : ARAColors.brand),
                       ),
                     ),
+                  ),
+                ),
+              if (hasAction)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: InlineStaffActionButton(
+                    onPressed: onActionPressed!,
+                    tooltip: actionTooltip,
+                    icon: actionIcon!,
+                    iconColor: actionColor ?? resolvedTextColor,
                   ),
                 ),
               Padding(

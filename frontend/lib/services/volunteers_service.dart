@@ -47,6 +47,28 @@ class VolunteerStay {
     }
   }
 
+
+  VolunteerStay copyWith({
+    String? id,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? status,
+    String? createdAt,
+    String? volunteerFrom,
+    String? volunteerTo,
+  }) {
+    return VolunteerStay(
+      id: id ?? this.id,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      email: email ?? this.email,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      volunteerFrom: volunteerFrom ?? this.volunteerFrom,
+      volunteerTo: volunteerTo ?? this.volunteerTo,
+    );
+  }
   factory VolunteerStay.fromJson(Map<String, dynamic> json) {
     return VolunteerStay(
       id: json['id'].toString(),
@@ -120,3 +142,4 @@ class VolunteersService {
     );
   }
 }
+

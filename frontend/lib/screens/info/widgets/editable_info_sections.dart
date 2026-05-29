@@ -1,4 +1,4 @@
-﻿part of '../information.dart';
+part of '../information.dart';
 
 ButtonStyle _editorPrimaryButtonStyle() {
   return FilledButton.styleFrom(
@@ -110,6 +110,7 @@ class _EditableInfoSections extends StatefulWidget {
 class _EditableInfoSectionsState extends State<_EditableInfoSections> {
   late final List<_EditableInfoSectionModel> _sections;
   late final List<_EditableInfoSectionModel> _savedSections;
+  late final OptimisticMutationRunner _mutationRunner;
   bool _loading = true;
   bool _isEditing = false;
 
@@ -118,6 +119,9 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
     super.initState();
     _sections = widget.initialSections.map((s) => s.copy()).toList();
     _savedSections = widget.initialSections.map((s) => s.copy()).toList();
+    _mutationRunner = OptimisticMutationRunner(
+      context.read<OptimisticSyncStore>(),
+    );
     widget.controller?.addListener(_syncEditingFromController);
     _loadSections();
   }
@@ -134,6 +138,7 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
   @override
   void dispose() {
     widget.controller?.removeListener(_syncEditingFromController);
+    _mutationRunner.dispose();
     super.dispose();
   }
 
@@ -163,8 +168,9 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
     } catch (_) {
       // Keep defaults if backend load fails.
     } finally {
-      if (!mounted) return;
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -424,22 +430,56 @@ class _EditableInfoSectionsState extends State<_EditableInfoSections> {
       return;
     }
 
-    await _informationService.saveDocument(
-      widget.storageKey,
-      _sections.map((section) => section.toJson()).toList(growable: false),
-      token: token,
-    );
+    final previousSaved = _savedSections.map((section) => section.copy()).toList(
+          growable: false,
+        );
+    final currentSnapshot = _sections.map((section) => section.copy()).toList(
+          growable: false,
+        );
+    final payload = _sections.map((section) => section.toJson()).toList(
+          growable: false,
+        );
 
-    if (!mounted) return;
     setState(() {
       _savedSections
         ..clear()
-        ..addAll(_sections.map((section) => section.copy()));
+        ..addAll(currentSnapshot.map((section) => section.copy()));
       _isEditing = false;
     });
     widget.controller?.stopEditing();
-    ScaffoldMessenger.maybeOf(context)
-        ?.showSnackBar(const SnackBar(content: Text('Changes saved')));
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      const SnackBar(content: Text('Changes saved locally')),
+    );
+
+    _mutationRunner.run(
+      key: 'info_section_',
+      applyOptimistic: () {},
+      sync: () => _informationService.saveDocument(
+        widget.storageKey,
+        payload,
+        token: token,
+      ),
+      revertOptimistic: () {
+        if (!mounted) return;
+        setState(() {
+          _sections
+            ..clear()
+            ..addAll(previousSaved.map((section) => section.copy()));
+          _savedSections
+            ..clear()
+            ..addAll(previousSaved.map((section) => section.copy()));
+        });
+      },
+      onPermanentFailure: (error) {
+        if (!mounted) return;
+        final message = error is ApiException
+            ? error.message
+            : 'Could not save changes.';
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      },
+    );
   }
 
   Future<String?> _showSectionTitleDialog({
@@ -630,3 +670,10 @@ class _EditableSectionMarker extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+

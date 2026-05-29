@@ -111,6 +111,48 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         return Ok(BuildMeResponse(u));
     }
 
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userIdStr =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized(new { error = "Invalid token (no user id)." });
+
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Unauthorized(new { error = "User not found." });
+
+        var currentPassword = request.CurrentPassword.Trim();
+        var newPassword = request.NewPassword.Trim();
+
+        if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+        {
+            return Unauthorized(new { error = "Current password is incorrect." });
+        }
+
+        if (newPassword.Length < 6)
+        {
+            return BadRequest(new { error = "New password must be at least 6 characters." });
+        }
+
+        if (currentPassword == newPassword)
+        {
+            return BadRequest(
+                new { error = "New password must be different from the current password." }
+            );
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.RefreshTokenRevokedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Password updated." });
+    }
+
     [HttpPost("refresh")]
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponse>> Refresh([FromBody] RefreshRequest request)

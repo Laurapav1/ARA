@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_store.dart';
+import '../../services/optimistic_mutation_runner.dart';
+import '../../services/optimistic_sync_store.dart';
 import '../../services/volunteers_service.dart';
 import '../../services/api_client.dart';
 import '../../theme/ara_theme.dart';
@@ -18,6 +20,7 @@ class VolunteerRequestsScreen extends StatefulWidget {
 class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
   final _service = VolunteersService();
   late final GlobalSearchFilterController<VolunteerStay> _searchController;
+  late final OptimisticMutationRunner _mutationRunner;
 
   List<VolunteerStay> _volunteers = [];
   bool _loading = true;
@@ -26,6 +29,9 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
   @override
   void initState() {
     super.initState();
+    _mutationRunner = OptimisticMutationRunner(
+      context.read<OptimisticSyncStore>(),
+    );
     _searchController = GlobalSearchFilterController<VolunteerStay>(
       resourceType: 'staff_volunteers',
       titleOf: (volunteer) => volunteer.fullName,
@@ -42,6 +48,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _mutationRunner.dispose();
     super.dispose();
   }
 
@@ -89,7 +96,6 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
       auth.setPendingRequestsCount(0);
     }
   }
-
   DateTime? _parseDateOnly(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     try {
@@ -111,10 +117,29 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
 
   List<VolunteerStay> get _pending {
     final list = _volunteers.where((v) => v.isPending).toList();
-    list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    list.sort((a, b) {
+      final aStart = _parseDateOnly(a.volunteerFrom);
+      final bStart = _parseDateOnly(b.volunteerFrom);
+      if (aStart != null && bStart != null) {
+        final byStartDate = aStart.compareTo(bStart);
+        if (byStartDate != 0) return byStartDate;
+      } else if (aStart != null) {
+        return -1;
+      } else if (bStart != null) {
+        return 1;
+      }
+
+      final aCreated = DateTime.tryParse(a.createdAt);
+      final bCreated = DateTime.tryParse(b.createdAt);
+      if (aCreated != null && bCreated != null) {
+        return aCreated.compareTo(bCreated);
+      }
+      if (aCreated != null) return -1;
+      if (bCreated != null) return 1;
+      return a.createdAt.compareTo(b.createdAt);
+    });
     return list;
   }
-
   List<VolunteerStay> get _upcoming {
     final today = _today;
     final list = _volunteers.where((v) {
@@ -180,29 +205,71 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
     if (!today.isBefore(start) && !today.isAfter(end)) return 2;
     return 3;
   }
+  void _setVolunteers(List<VolunteerStay> volunteers) {
+    if (!mounted) return;
+    setState(() {
+      _volunteers = volunteers;
+    });
+    context
+        .read<AuthStore>()
+        .setPendingRequestsCount(_volunteers.where((v) => v.isPending).length);
+  }
+
+  List<VolunteerStay> _cloneVolunteers() => List<VolunteerStay>.from(_volunteers);
+
+  String _syncKey(String action, String volunteerId) =>
+      'volunteer_${action}_$volunteerId';
 
   Future<void> _approve(VolunteerStay volunteer) async {
     final auth = context.read<AuthStore>();
     final token = auth.accessToken ?? '';
-    try {
-      await _service.approve(id: volunteer.id, token: token);
-      _showSnack('${volunteer.fullName} approved', ARAColors.success);
-      await _loadVolunteers();
-    } on ApiException catch (e) {
-      _showSnack(e.message, ARAColors.danger);
-    }
+    final previous = _cloneVolunteers();
+    _mutationRunner.run(
+      key: _syncKey('approve', volunteer.id),
+      applyOptimistic: () {
+        _setVolunteers(
+          _volunteers
+              .map(
+                (current) => current.id == volunteer.id
+                    ? current.copyWith(status: 'Approved')
+                    : current,
+              )
+              .toList(growable: false),
+        );
+      },
+      sync: () => _service.approve(id: volunteer.id, token: token),
+      revertOptimistic: () => _setVolunteers(previous),
+      onPermanentFailure: (error) {
+        final message =
+            error is ApiException ? error.message : 'Could not approve volunteer.';
+        _showSnack(message, ARAColors.danger);
+      },
+    );
+    _showSnack('${volunteer.fullName} approved locally', ARAColors.success);
   }
 
   Future<void> _decline(VolunteerStay volunteer) async {
     final auth = context.read<AuthStore>();
     final token = auth.accessToken ?? '';
-    try {
-      await _service.decline(id: volunteer.id, token: token);
-      _showSnack('Request declined', ARAColors.danger);
-      await _loadVolunteers();
-    } on ApiException catch (e) {
-      _showSnack(e.message, ARAColors.danger);
-    }
+    final previous = _cloneVolunteers();
+    _mutationRunner.run(
+      key: _syncKey('decline', volunteer.id),
+      applyOptimistic: () {
+        _setVolunteers(
+          _volunteers
+              .where((current) => current.id != volunteer.id)
+              .toList(growable: false),
+        );
+      },
+      sync: () => _service.decline(id: volunteer.id, token: token),
+      revertOptimistic: () => _setVolunteers(previous),
+      onPermanentFailure: (error) {
+        final message =
+            error is ApiException ? error.message : 'Could not decline request.';
+        _showSnack(message, ARAColors.danger);
+      },
+    );
+    _showSnack('Request removed locally', ARAColors.success);
   }
 
   Future<void> _editStay(VolunteerStay volunteer) async {
@@ -236,7 +303,8 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
               onPrimary: ARAColors.ink,
             ),
             datePickerTheme: DatePickerThemeData(
-              rangeSelectionBackgroundColor: ARAColors.brand.withValues(alpha: 0.20),
+              rangeSelectionBackgroundColor:
+                  ARAColors.brand.withValues(alpha: 0.20),
               dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) {
                   return ARAColors.brand;
@@ -256,22 +324,44 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
       },
     );
 
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
 
     final auth = context.read<AuthStore>();
     final token = auth.accessToken ?? '';
-    try {
-      await _service.updateStay(
+    final previous = _cloneVolunteers();
+    final nextFrom = _fmtIsoDate(picked.start);
+    final nextTo = _fmtIsoDate(picked.end);
+    _mutationRunner.run(
+      key: _syncKey('stay', volunteer.id),
+      applyOptimistic: () {
+        _setVolunteers(
+          _volunteers
+              .map(
+                (current) => current.id == volunteer.id
+                    ? current.copyWith(
+                        volunteerFrom: nextFrom,
+                        volunteerTo: nextTo,
+                      )
+                    : current,
+              )
+              .toList(growable: false),
+        );
+      },
+      sync: () => _service.updateStay(
         id: volunteer.id,
         token: token,
-        volunteerFrom: _fmtIsoDate(picked.start),
-        volunteerTo: _fmtIsoDate(picked.end),
-      );
-      _showSnack('Stay dates updated', ARAColors.success);
-      await _loadVolunteers();
-    } on ApiException catch (e) {
-      _showSnack(e.message, ARAColors.danger);
-    }
+        volunteerFrom: nextFrom,
+        volunteerTo: nextTo,
+      ),
+      revertOptimistic: () => _setVolunteers(previous),
+      onPermanentFailure: (error) {
+        final message = error is ApiException
+            ? error.message
+            : 'Could not update stay dates.';
+        _showSnack(message, ARAColors.danger);
+      },
+    );
+    _showSnack('Stay dates updated locally', ARAColors.success);
   }
 
   Future<void> _cancelStay(VolunteerStay volunteer) async {
@@ -306,17 +396,29 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
         ) ??
         false;
 
-    if (!approved) return;
+    if (!approved || !mounted) return;
 
     final auth = context.read<AuthStore>();
     final token = auth.accessToken ?? '';
-    try {
-      await _service.cancelStay(id: volunteer.id, token: token);
-      _showSnack('Stay cancelled', ARAColors.danger);
-      await _loadVolunteers();
-    } on ApiException catch (e) {
-      _showSnack(e.message, ARAColors.danger);
-    }
+    final previous = _cloneVolunteers();
+    _mutationRunner.run(
+      key: _syncKey('cancel', volunteer.id),
+      applyOptimistic: () {
+        _setVolunteers(
+          _volunteers
+              .where((current) => current.id != volunteer.id)
+              .toList(growable: false),
+        );
+      },
+      sync: () => _service.cancelStay(id: volunteer.id, token: token),
+      revertOptimistic: () => _setVolunteers(previous),
+      onPermanentFailure: (error) {
+        final message =
+            error is ApiException ? error.message : 'Could not cancel stay.';
+        _showSnack(message, ARAColors.danger);
+      },
+    );
+    _showSnack('Stay cancelled locally', ARAColors.success);
   }
 
   String _fmtIsoDate(DateTime date) {
@@ -324,7 +426,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
     final year = d.year.toString().padLeft(4, '0');
     final month = d.month.toString().padLeft(2, '0');
     final day = d.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
+    return [year, month, day].join('-');
   }
 
   void _showDeclineDialog(VolunteerStay volunteer) {
@@ -388,22 +490,28 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
             items: _volunteers,
             controller: _searchController,
             showFilter: false,
-            searchResultBuilder: (context, volunteer, onTap) => ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person)),
-              title: Text(volunteer.fullName),
-              subtitle: Text(
-                '${volunteer.email} - ${volunteer.stayLabel}',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            searchResultBuilder: (context, volunteer, onTap) => Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+              child: Card(
+                color: ARAColors.cardBg,
+                child: ListTile(
+                  onTap: onTap,
+                  leading: const CircleAvatar(child: Icon(Icons.person)),
+                  title: Text(volunteer.fullName),
+                  subtitle: Text(
+                    '${volunteer.email} - ${volunteer.stayLabel}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Text(
+                    volunteer.status,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: ARAColors.subInk,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
               ),
-              trailing: Text(
-                volunteer.status,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: ARAColors.subInk,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              onTap: onTap,
             ),
             onItemSelected: (volunteer) {
               final tabController = DefaultTabController.of(tabContext);
@@ -850,3 +958,18 @@ class _ErrorState extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

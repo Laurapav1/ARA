@@ -65,7 +65,6 @@ class AccountScreen extends StatelessWidget {
                                     builder: (_) => const LoginScreen(),
                                   ),
                                 ),
-                                style: ARATheme.primaryCtaButtonStyle,
                                 child: const Text('Sign in'),
                               ),
                             ),
@@ -137,3 +136,4 @@ class _AraHomeLogo extends StatelessWidget {
     );
   }
 }
+

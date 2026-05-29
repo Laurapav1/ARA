@@ -24,7 +24,7 @@ class ShiftsEntryScreen extends StatelessWidget {
       message: isPending
           ? 'Your request is pending review. You will get access once approved.'
           : 'Sign in or submit a volunteer request\nto access shifts.',
-      ctaLabel: isPending ? 'Go to Info' : 'Apply or Sign In',
+      ctaLabel: isPending ? 'Go to Info' : 'Request or Sign In',
       onCta: isPending ? onOpenInfo : onOpenAccount,
       child: const ShiftsScreen(),
     );

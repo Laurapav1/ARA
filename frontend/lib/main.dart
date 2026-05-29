@@ -3,13 +3,22 @@ import 'package:provider/provider.dart';
 import 'app/main_scaffold.dart';
 import 'services/mock_database.dart';
 import 'services/auth_store.dart';
+import 'services/optimistic_sync_store.dart';
 import 'theme/ara_theme.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthStore()),
+        ChangeNotifierProvider(create: (_) => OptimisticSyncStore()),
+        ChangeNotifierProxyProvider<OptimisticSyncStore, AuthStore>(
+          create: (context) => AuthStore(context.read<OptimisticSyncStore>()),
+          update: (_, syncStore, auth) {
+            if (auth == null) return AuthStore(syncStore);
+            auth.setSyncStore(syncStore);
+            return auth;
+          },
+        ),
         ChangeNotifierProxyProvider<AuthStore, MockDatabase>(
           create: (_) => MockDatabase(),
           update: (_, auth, db) {
