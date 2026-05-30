@@ -20,6 +20,7 @@ public class User
     public DateTime? UpdatedAt { get; set; }
     public DateOnly? VolunteerFrom { get; set; }
     public DateOnly? VolunteerTo { get; set; }
+    public ICollection<VolunteerStay> VolunteerStays { get; set; } = [];
 
     // Refresh token (single-device for now)
     public string? RefreshTokenHash { get; set; }

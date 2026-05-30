@@ -40,6 +40,7 @@ class _VolunteerRequestsScreenState extends State<VolunteerRequestsScreen> {
         volunteer.status,
         volunteer.requestedAtLabel,
         volunteer.stayLabel,
+        if (volunteer.isReturning) 'returning',
       ],
     );
     _loadVolunteers();
@@ -779,6 +780,34 @@ class _VolunteerStayCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _InfoPill(
+                      icon: volunteer.isReturning
+                          ? Icons.history
+                          : Icons.person_add_alt_1,
+                      label: volunteer.isReturning
+                          ? 'Returning volunteer'
+                          : 'New volunteer',
+                    ),
+                    if (volunteer.isReturning)
+                      _InfoPill(
+                        icon: Icons.event_repeat,
+                        label:
+                            '${volunteer.previousStayCount} previous stay${volunteer.previousStayCount == 1 ? '' : 's'}',
+                      ),
+                  ],
+                ),
+                if (volunteer.isReturning) ...[
+                  const SizedBox(height: 8),
+                  _InfoPill(
+                    icon: Icons.history_toggle_off,
+                    label: 'Last stay ${volunteer.lastStayLabel}',
+                  ),
+                ],
                 const SizedBox(height: 14),
                 if (isNarrow) ...[
                   _InfoPill(

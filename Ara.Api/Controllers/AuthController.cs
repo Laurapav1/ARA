@@ -28,7 +28,12 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         var existsingUser = await db.Users.AnyAsync(u => u.Email == email);
         if (existsingUser)
         {
-            return Conflict(new { error = "Email already exists" });
+            return Conflict(new { error = "Account already exists. Please sign in to request a new stay." });
+        }
+
+        if (request.VolunteerTo < request.VolunteerFrom)
+        {
+            return BadRequest(new { error = "VolunteerTo must be on or after VolunteerFrom" });
         }
 
         var user = new User
@@ -39,12 +44,20 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Role.Volunteer,
             Status = VolunteerStatus.Pending,
-            CreatedAt = DateTime.UtcNow,
-            VolunteerFrom = request.VolunteerFrom,
-            VolunteerTo = request.VolunteerTo
+            CreatedAt = DateTime.UtcNow
         };
 
         db.Users.Add(user);
+        db.VolunteerStays.Add(
+            new VolunteerStay
+            {
+                User = user,
+                Status = VolunteerStayStatus.Pending,
+                VolunteerFrom = request.VolunteerFrom,
+                VolunteerTo = request.VolunteerTo,
+                RequestedAt = DateTime.UtcNow
+            }
+        );
         await db.SaveChangesAsync();
 
         return Created(
@@ -90,7 +103,7 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         user.RefreshTokenRevokedAt = null;
         await db.SaveChangesAsync();
 
-        return Ok(new AuthResponse(token, refreshToken, BuildMeResponse(user)));
+        return Ok(new AuthResponse(token, refreshToken, await BuildMeResponse(user)));
     }
 
     [HttpGet("me")]
@@ -108,7 +121,7 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         if (u is null)
             return Unauthorized(new { error = "User not found." });
 
-        return Ok(BuildMeResponse(u));
+        return Ok(await BuildMeResponse(u));
     }
 
     [HttpPost("change-password")]
@@ -184,7 +197,7 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         user.RefreshTokenRevokedAt = null;
         await db.SaveChangesAsync();
 
-        return Ok(new AuthResponse(accessToken, newRefreshToken, BuildMeResponse(user)));
+        return Ok(new AuthResponse(accessToken, newRefreshToken, await BuildMeResponse(user)));
     }
 
     [HttpPost("logout")]
@@ -207,8 +220,23 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         return Ok(new { message = "Logged out." });
     }
 
-    private static MeResponse BuildMeResponse(User u)
+    private async Task<MeResponse> BuildMeResponse(User u)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var currentOrNextStay = await db
+            .VolunteerStays.AsNoTracking()
+            .Where(s =>
+                s.UserId == u.Id
+                && (
+                    s.Status == VolunteerStayStatus.Approved
+                    || s.Status == VolunteerStayStatus.Pending
+                )
+                && s.VolunteerTo >= today
+            )
+            .OrderBy(s => s.Status == VolunteerStayStatus.Pending)
+            .ThenBy(s => s.VolunteerFrom)
+            .FirstOrDefaultAsync();
+
         return new MeResponse(
             u.Id,
             u.FirstName,
@@ -216,8 +244,8 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
             u.Email,
             u.Role.ToString(),
             u.Status.ToString(),
-            u.VolunteerFrom,
-            u.VolunteerTo
+            currentOrNextStay?.VolunteerFrom ?? u.VolunteerFrom,
+            currentOrNextStay?.VolunteerTo ?? u.VolunteerTo
         );
     }
 }
