@@ -75,16 +75,13 @@ class _InformationCardModel {
     final codePoint = iconMap['codePoint'];
     if (codePoint is! int) return null;
 
+    final icon = _iconFromJson(iconMap);
+
     return _InformationCardModel(
       id: raw['id']?.toString() ?? '',
       title: raw['title']?.toString() ?? '',
       subtitle: raw['subtitle']?.toString() ?? '',
-      icon: IconData(
-        codePoint,
-        fontFamily: iconMap['fontFamily']?.toString(),
-        fontPackage: iconMap['fontPackage']?.toString(),
-        matchTextDirection: iconMap['matchTextDirection'] == true,
-      ),
+      icon: icon,
       iconColor: Color(raw['iconColor'] is int
           ? raw['iconColor'] as int
           : ARAColors.brand.toARGB32()),
@@ -99,6 +96,27 @@ class _InformationCardModel {
       hidden: raw['hidden'] == true,
       deleted: raw['deleted'] == true,
     );
+  }
+
+  static IconData _iconFromJson(Map<String, dynamic> iconMap) {
+    final codePoint = iconMap['codePoint'];
+    if (codePoint is! int) return Icons.description_outlined;
+
+    final fontFamily = iconMap['fontFamily']?.toString();
+    final fontPackage = iconMap['fontPackage']?.toString();
+    final matchTextDirection = iconMap['matchTextDirection'] == true;
+
+    for (final option in _cardIconOptions) {
+      final icon = option.icon;
+      if (icon.codePoint == codePoint &&
+          icon.fontFamily == fontFamily &&
+          icon.fontPackage == fontPackage &&
+          icon.matchTextDirection == matchTextDirection) {
+        return icon;
+      }
+    }
+
+    return Icons.description_outlined;
   }
 
   static List<_EditableInfoSectionModel> _sectionsFromJson(dynamic raw) {

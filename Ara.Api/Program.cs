@@ -120,8 +120,7 @@ builder
 
 var app = builder.Build();
 var httpsPorts =
-    builder.Configuration["ASPNETCORE_HTTPS_PORTS"]
-    ?? builder.Configuration["HTTPS_PORTS"];
+    builder.Configuration["ASPNETCORE_HTTPS_PORTS"] ?? builder.Configuration["HTTPS_PORTS"];
 
 // ── Pipeline
 app.UseSwagger();
