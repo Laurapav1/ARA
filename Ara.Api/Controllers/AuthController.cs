@@ -103,7 +103,7 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         user.RefreshTokenRevokedAt = null;
         await db.SaveChangesAsync();
 
-        return Ok(new AuthResponse(token, refreshToken, await BuildMeResponse(user)));
+        return Ok(new AuthResponse(token, refreshToken, BuildMeResponse(user)));
     }
 
     [HttpGet("me")]
@@ -121,7 +121,7 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         if (u is null)
             return Unauthorized(new { error = "User not found." });
 
-        return Ok(await BuildMeResponse(u));
+        return Ok(BuildMeResponse(u));
     }
 
     [HttpPost("change-password")]
@@ -197,7 +197,7 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         user.RefreshTokenRevokedAt = null;
         await db.SaveChangesAsync();
 
-        return Ok(new AuthResponse(accessToken, newRefreshToken, await BuildMeResponse(user)));
+        return Ok(new AuthResponse(accessToken, newRefreshToken, BuildMeResponse(user)));
     }
 
     [HttpPost("logout")]
@@ -220,32 +220,15 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         return Ok(new { message = "Logged out." });
     }
 
-    private async Task<MeResponse> BuildMeResponse(User u)
+    private static MeResponse BuildMeResponse(User u)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var currentOrNextStay = await db
-            .VolunteerStays.AsNoTracking()
-            .Where(s =>
-                s.UserId == u.Id
-                && (
-                    s.Status == VolunteerStayStatus.Approved
-                    || s.Status == VolunteerStayStatus.Pending
-                )
-                && s.VolunteerTo >= today
-            )
-            .OrderBy(s => s.Status == VolunteerStayStatus.Pending)
-            .ThenBy(s => s.VolunteerFrom)
-            .FirstOrDefaultAsync();
-
         return new MeResponse(
             u.Id,
             u.FirstName,
             u.LastName,
             u.Email,
             u.Role.ToString(),
-            u.Status.ToString(),
-            currentOrNextStay?.VolunteerFrom ?? u.VolunteerFrom,
-            currentOrNextStay?.VolunteerTo ?? u.VolunteerTo
+            u.Status.ToString()
         );
     }
 }

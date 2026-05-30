@@ -403,16 +403,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
   bool _canJoin(AuthStore auth) {
     if (auth.isStaff) return true;
-    if (!auth.isApproved) return false;
-    final me = auth.me;
-    if (me == null) return false;
-    final now = DateTime.now();
-    final from =
-        me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
-    final to = me.volunteerTo != null ? DateTime.parse(me.volunteerTo!) : null;
-    if (from != null && now.isBefore(from)) return false;
-    if (to != null && now.isAfter(to)) return false;
-    return true;
+    return auth.isApproved && auth.me != null;
   }
 
   String _joinBlockReason(AuthStore auth) {
@@ -420,33 +411,12 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     if (!auth.isApproved) {
       return 'Your account is not approved yet.';
     }
-    final me = auth.me;
-    if (me == null) return 'Please sign in to join tasks.';
-    final now = DateTime.now();
-    final from =
-        me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
-    final to = me.volunteerTo != null ? DateTime.parse(me.volunteerTo!) : null;
-    if (from != null && now.isBefore(from)) {
-      return 'Your volunteering period has not started yet.';
-    }
-    if (to != null && now.isAfter(to)) {
-      return 'Your volunteering period has ended.';
-    }
-    return 'You cannot join this task right now.';
+    if (auth.me == null) return 'Please sign in to join tasks.';
+    return 'You need an approved stay for this shift date.';
   }
 
   String? _joinCountdownMessage(AuthStore auth) {
-    if (auth.isStaff || !auth.isApproved) return null;
-    final me = auth.me;
-    if (me == null || me.volunteerFrom == null) return null;
-    final now = DateTime.now();
-    final from = DateTime.parse(me.volunteerFrom!);
-    if (!now.isBefore(from)) return null;
-
-    final hours = from.difference(now).inHours;
-    final days = (hours / 24).ceil().clamp(1, 365);
-    if (days == 1) return 'You can join tasks tomorrow.';
-    return 'You can join tasks in $days days.';
+    return null;
   }
 
   void _showJoinBlocked(AuthStore auth) {

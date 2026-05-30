@@ -165,7 +165,7 @@ class VolunteersService {
   final ApiClient _client;
 
   Future<List<VolunteerStay>> getAll({required String token}) async {
-    final res = await _client.getAny('/api/volunteers/stays', token: token);
+    final res = await _client.getAny('/api/volunteer-stays', token: token);
     final list = res is List ? res : (res?['items'] as List<dynamic>? ?? []);
     return list
         .map((item) => VolunteerStay.fromJson(item as Map<String, dynamic>))
@@ -173,7 +173,7 @@ class VolunteersService {
   }
 
   Future<List<VolunteerStay>> getPending({required String token}) async {
-    final res = await _client.getAny('/api/volunteers/pending', token: token);
+    final res = await _client.getAny('/api/volunteer-stays/pending', token: token);
     final list = res is List ? res : (res?['items'] as List<dynamic>? ?? []);
     return list
         .map((item) => VolunteerStay.fromJson(item as Map<String, dynamic>))
@@ -181,7 +181,7 @@ class VolunteersService {
   }
 
   Future<List<MyVolunteerStay>> getMine({required String token}) async {
-    final res = await _client.getAny('/api/volunteers/me/stays', token: token);
+    final res = await _client.getAny('/api/volunteer-stays/me', token: token);
     final list = res is List ? res : (res?['items'] as List<dynamic>? ?? []);
     return list
         .map((item) => MyVolunteerStay.fromJson(item as Map<String, dynamic>))
@@ -194,7 +194,7 @@ class VolunteersService {
     required String volunteerTo,
   }) async {
     await _client.postJson(
-      '/api/volunteers/me/stays',
+      '/api/volunteer-stays/me',
       token: token,
       body: {
         'volunteerFrom': volunteerFrom,
@@ -205,14 +205,14 @@ class VolunteersService {
 
   Future<void> approve({required String id, required String token}) async {
     await _client.putJson(
-      '/api/volunteers/$id/approve',
+      '/api/volunteer-stays/$id/approve',
       token: token,
     );
   }
 
   Future<void> decline({required String id, required String token}) async {
     await _client.putJson(
-      '/api/volunteers/$id/decline',
+      '/api/volunteer-stays/$id/decline',
       token: token,
     );
   }
@@ -224,7 +224,7 @@ class VolunteersService {
     required String volunteerTo,
   }) async {
     await _client.putJson(
-      '/api/volunteers/$id/stay',
+      '/api/volunteer-stays/$id/stay',
       token: token,
       body: {
         'volunteerFrom': volunteerFrom,
@@ -235,7 +235,7 @@ class VolunteersService {
 
   Future<void> cancelStay({required String id, required String token}) async {
     await _client.putJson(
-      '/api/volunteers/$id/cancel',
+      '/api/volunteer-stays/$id/cancel',
       token: token,
     );
   }

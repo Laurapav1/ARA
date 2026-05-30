@@ -35,10 +35,6 @@ class PendingApprovalScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _logout(BuildContext context) async {
-    await context.read<AuthStore>().logout();
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStore>();
@@ -154,15 +150,6 @@ class PendingApprovalScreen extends StatelessWidget {
                                   color: ARAColors.subInk,
                                 ),
                             textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () => _logout(context),
-                              icon: const Icon(Icons.logout),
-                              label: const Text('Log out'),
-                            ),
                           ),
                         ],
                       ),

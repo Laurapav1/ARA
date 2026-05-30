@@ -46,10 +46,8 @@ class AuthStore extends ChangeNotifier {
       _pendingAccessRequest!.syncedAt != null &&
       !_isSyncingPendingAccessRequest &&
       !_pendingAccessRequestSyncFailed;
-  String? get pendingVolunteerFrom =>
-      _me?.volunteerFrom ?? _pendingAccessRequest?.volunteerFrom;
-  String? get pendingVolunteerTo =>
-      _me?.volunteerTo ?? _pendingAccessRequest?.volunteerTo;
+  String? get pendingVolunteerFrom => _pendingAccessRequest?.volunteerFrom;
+  String? get pendingVolunteerTo => _pendingAccessRequest?.volunteerTo;
   String get pendingEmail => _me?.email ?? _pendingAccessRequest?.email ?? '';
 
   AuthStatus get status {
@@ -314,7 +312,7 @@ class AuthStore extends ChangeNotifier {
     }
     try {
       final res = await _client.getAny(
-        '/api/volunteers/pending',
+        '/api/volunteer-stays/pending',
         token: _accessToken,
       );
       final list = res is List ? res : (res?['items'] as List<dynamic>? ?? []);

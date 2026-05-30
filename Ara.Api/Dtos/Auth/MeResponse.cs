@@ -6,7 +6,5 @@ public record MeResponse(
     string LastName,
     string Email,
     string Role,
-    string Status,
-    DateOnly? VolunteerFrom,
-    DateOnly? VolunteerTo
+    string Status
 );

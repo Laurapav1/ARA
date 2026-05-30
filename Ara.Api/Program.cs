@@ -177,9 +177,7 @@ using (var scope = app.Services.CreateScope())
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Volunteer123!"),
             Role = Ara.Api.Enums.Role.Volunteer,
             Status = Ara.Api.Enums.VolunteerStatus.Approved,
-            CreatedAt = DateTime.UtcNow,
-            VolunteerFrom = new DateOnly(2026, 1, 5),
-            VolunteerTo = new DateOnly(2026, 1, 19)
+            CreatedAt = DateTime.UtcNow
         };
 
         db.Users.Add(volunteer);

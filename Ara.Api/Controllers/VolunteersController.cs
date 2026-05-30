@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Ara.Api.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/volunteer-stays")]
 [ApiController]
-public class VolunteersController(ARADbContext db) : ControllerBase
+public class VolunteerStaysController(ARADbContext db) : ControllerBase
 {
-    [HttpGet("stays")]
+    [HttpGet]
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> GetVolunteerStays()
     {
@@ -47,7 +47,7 @@ public class VolunteersController(ARADbContext db) : ControllerBase
         return Ok(await BuildStayResponses(stays));
     }
 
-    [HttpGet("me/stays")]
+    [HttpGet("me")]
     [Authorize(Roles = "Volunteer")]
     public async Task<ActionResult<List<MyVolunteerStayResponse>>> GetMyStays()
     {
@@ -68,7 +68,7 @@ public class VolunteersController(ARADbContext db) : ControllerBase
         return Ok(stays);
     }
 
-    [HttpPost("me/stays")]
+    [HttpPost("me")]
     [Authorize(Roles = "Volunteer")]
     public async Task<IActionResult> RequestNewStay([FromBody] CreateVolunteerStayRequest request)
     {
@@ -128,8 +128,6 @@ public class VolunteersController(ARADbContext db) : ControllerBase
         stay.ApprovedByUserId = staffId;
         stay.CancelledAt = null;
         stay.User.Status = VolunteerStatus.Approved;
-        stay.User.VolunteerFrom = stay.VolunteerFrom;
-        stay.User.VolunteerTo = stay.VolunteerTo;
 
         await db.SaveChangesAsync();
         return Ok(new { message = "Volunteer stay approved" });
@@ -154,8 +152,6 @@ public class VolunteersController(ARADbContext db) : ControllerBase
         if (!hasApprovedStay)
         {
             stay.User.Status = VolunteerStatus.Declined;
-            stay.User.VolunteerFrom = null;
-            stay.User.VolunteerTo = null;
         }
 
         await db.SaveChangesAsync();
@@ -196,8 +192,6 @@ public class VolunteersController(ARADbContext db) : ControllerBase
 
         stay.VolunteerFrom = request.VolunteerFrom;
         stay.VolunteerTo = request.VolunteerTo;
-        stay.User.VolunteerFrom = request.VolunteerFrom;
-        stay.User.VolunteerTo = request.VolunteerTo;
         await db.SaveChangesAsync();
 
         return Ok(new { message = "Volunteer stay updated" });
@@ -221,51 +215,8 @@ public class VolunteersController(ARADbContext db) : ControllerBase
         stay.Status = VolunteerStayStatus.Cancelled;
         stay.CancelledAt = DateTime.UtcNow;
 
-        var nextApprovedStay = await db
-            .VolunteerStays.Where(s =>
-                s.UserId == stay.UserId
-                && s.Id != stay.Id
-                && s.Status == VolunteerStayStatus.Approved
-            )
-            .OrderByDescending(s => s.VolunteerTo)
-            .FirstOrDefaultAsync();
-
-        if (nextApprovedStay is null)
-        {
-            stay.User.VolunteerFrom = null;
-            stay.User.VolunteerTo = null;
-        }
-        else
-        {
-            stay.User.VolunteerFrom = nextApprovedStay.VolunteerFrom;
-            stay.User.VolunteerTo = nextApprovedStay.VolunteerTo;
-        }
-
         await db.SaveChangesAsync();
         return Ok(new { message = "Volunteer stay cancelled" });
-    }
-
-    [HttpGet]
-    [Authorize(Roles = "Staff")]
-    public async Task<IActionResult> ListVolunteers([FromQuery] VolunteerStatus? status = null)
-    {
-        var q = db.Users.AsNoTracking().Where(u => u.Role == Role.Volunteer);
-        if (status is not null)
-            q = q.Where(u => u.Status == status);
-
-        var list = await q.OrderBy(u => u.CreatedAt)
-            .Select(u => new
-            {
-                u.Id,
-                u.FirstName,
-                u.LastName,
-                u.Email,
-                status = u.Status.ToString().ToLowerInvariant(),
-                u.CreatedAt
-            })
-            .ToListAsync();
-
-        return Ok(list);
     }
 
     private Guid GetUserIdOrThrow()

@@ -1,3 +1,4 @@
+<<<<<<< ours
 namespace Ara.Api.Enums;
 
 public enum VolunteerStatus
@@ -6,3 +7,13 @@ public enum VolunteerStatus
     Approved,
     Declined
 }
+=======
+namespace Ara.Api.Enums;
+
+public enum VolunteerStatus
+{
+    Pending,
+    Approved,
+    Declined
+}
+>>>>>>> theirs

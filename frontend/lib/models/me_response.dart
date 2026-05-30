@@ -5,8 +5,6 @@ class MeResponse {
   final String email;
   final String role;
   final String status;
-  final String? volunteerFrom;
-  final String? volunteerTo;
 
   MeResponse({
     required this.id,
@@ -15,8 +13,6 @@ class MeResponse {
     required this.email,
     required this.role,
     required this.status,
-    required this.volunteerFrom,
-    required this.volunteerTo,
   });
 
   String get fullName => '$firstName $lastName'.trim();
@@ -29,8 +25,6 @@ class MeResponse {
       email: json['email']?.toString() ?? '',
       role: json['role']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
-      volunteerFrom: json['volunteerFrom']?.toString(),
-      volunteerTo: json['volunteerTo']?.toString(),
     );
   }
 }

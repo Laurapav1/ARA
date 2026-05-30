@@ -632,6 +632,8 @@ class _StayDateRangeDialogState extends State<_StayDateRangeDialog> {
 
                 return InkWell(
                   borderRadius: BorderRadius.circular(20),
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
+                  splashFactory: NoSplash.splashFactory,
                   onTap: isDisabled ? null : () => _onDayTap(day),
                   child: Stack(
                     alignment: Alignment.center,

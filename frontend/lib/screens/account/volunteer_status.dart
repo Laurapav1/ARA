@@ -46,27 +46,6 @@ class _VolunteerStatusScreenState extends State<VolunteerStatusScreen> {
     }
   }
 
-  String _fmt(DateTime d) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${d.day} ${months[d.month - 1]} ${d.year}';
-  }
-
-  String _fmtRange(DateTime start, DateTime end) =>
-      '${_fmt(start)} - ${_fmt(end)}';
-
   String _fmtIso(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -207,12 +186,7 @@ class _VolunteerStatusScreenState extends State<VolunteerStatusScreen> {
                             ? currentStay.stayLabel
                             : upcomingStay != null
                                 ? 'Next stay ${upcomingStay.stayLabel}'
-                                : me?.volunteerFrom != null && me?.volunteerTo != null
-                                    ? _fmtRange(
-                                        DateTime.parse(me!.volunteerFrom!),
-                                        DateTime.parse(me.volunteerTo!),
-                                      )
-                                    : 'No current stay scheduled',
+                                : 'No current stay scheduled',
                         icon: Icons.event_available,
                       ),
                       if (pendingStay != null) ...[

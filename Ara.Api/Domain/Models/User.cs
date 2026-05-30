@@ -18,8 +18,6 @@ public class User
     public VolunteerStatus Status { get; set; } = VolunteerStatus.Pending;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
-    public DateOnly? VolunteerFrom { get; set; }
-    public DateOnly? VolunteerTo { get; set; }
     public ICollection<VolunteerStay> VolunteerStays { get; set; } = [];
 
     // Refresh token (single-device for now)
