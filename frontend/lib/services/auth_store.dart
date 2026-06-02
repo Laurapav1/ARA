@@ -32,6 +32,7 @@ class AuthStore extends ChangeNotifier {
   bool _loading = false;
   bool _isSyncingPendingAccessRequest = false;
   bool _pendingAccessRequestSyncFailed = false;
+  String? _pendingAccessRequestSyncError;
   int _pendingRequestsCount = 0;
 
   bool get isLoading => _loading;
@@ -41,6 +42,7 @@ class AuthStore extends ChangeNotifier {
   bool get hasPendingAccessRequest => _pendingAccessRequest != null;
   bool get isSyncingPendingAccessRequest => _isSyncingPendingAccessRequest;
   bool get pendingAccessRequestSyncFailed => _pendingAccessRequestSyncFailed;
+  String? get pendingAccessRequestSyncError => _pendingAccessRequestSyncError;
   bool get pendingAccessRequestSynced =>
       _pendingAccessRequest != null &&
       _pendingAccessRequest!.syncedAt != null &&
@@ -126,6 +128,7 @@ class AuthStore extends ChangeNotifier {
       createdAt: DateTime.now().toUtc(),
     );
     _pendingAccessRequestSyncFailed = false;
+    _pendingAccessRequestSyncError = null;
     _retryTimer?.cancel();
     await _persistPendingAccessRequest();
     _syncStore.queueOperation(
@@ -149,6 +152,7 @@ class AuthStore extends ChangeNotifier {
 
     _isSyncingPendingAccessRequest = true;
     _pendingAccessRequestSyncFailed = false;
+    _pendingAccessRequestSyncError = null;
     _syncStore.markSyncing(_accessRequestSyncKey);
     notifyListeners();
 
@@ -170,6 +174,7 @@ class AuthStore extends ChangeNotifier {
     } on ApiException catch (e) {
       if (_isRetryableSignupFailure(e.statusCode)) {
         _pendingAccessRequestSyncFailed = true;
+        _pendingAccessRequestSyncError = e.message;
         _syncStore.markFailed(_accessRequestSyncKey);
         _scheduleRetry();
       } else {
@@ -182,6 +187,8 @@ class AuthStore extends ChangeNotifier {
       }
     } catch (_) {
       _pendingAccessRequestSyncFailed = true;
+      _pendingAccessRequestSyncError =
+          'Could not reach the server. Check your connection and try again.';
       _syncStore.markFailed(_accessRequestSyncKey);
       _scheduleRetry();
     } finally {
@@ -233,6 +240,7 @@ class AuthStore extends ChangeNotifier {
     _retryTimer?.cancel();
     _pendingAccessRequest = null;
     _pendingAccessRequestSyncFailed = false;
+    _pendingAccessRequestSyncError = null;
     _syncStore.clearOperation(_accessRequestSyncKey);
   }
 

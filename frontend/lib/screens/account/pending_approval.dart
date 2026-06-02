@@ -51,6 +51,7 @@ class PendingApprovalScreen extends StatelessWidget {
     final badgeBg = auth.pendingAccessRequestSynced
         ? ARAColors.brand.withValues(alpha: 0.18)
         : const Color(0xFFFFE4B5);
+    final syncError = auth.pendingAccessRequestSyncError;
 
     return Scaffold(
       body: SafeArea(
@@ -141,6 +142,14 @@ class PendingApprovalScreen extends StatelessWidget {
                               icon: Icons.event_available,
                               label: 'Stay dates',
                               value: stayRange,
+                            ),
+                          ],
+                          if (syncError != null && syncError.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            _DetailRow(
+                              icon: Icons.sync_problem,
+                              label: 'Sync error',
+                              value: syncError,
                             ),
                           ],
                           const SizedBox(height: 16),
