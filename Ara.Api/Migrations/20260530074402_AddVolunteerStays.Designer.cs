@@ -3,6 +3,7 @@ using System;
 using Ara.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ara.Api.Migrations
 {
     [DbContext(typeof(ARADbContext))]
-    partial class ARADbContextModelSnapshot : ModelSnapshot
+    [Migration("20260530074402_AddVolunteerStays")]
+    partial class AddVolunteerStays
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -83,7 +86,7 @@ namespace Ara.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Animals", (string)null);
+                    b.ToTable("Animals");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.Information.InformationBlob", b =>
@@ -101,7 +104,7 @@ namespace Ara.Api.Migrations
 
                     b.HasKey("Key");
 
-                    b.ToTable("InformationBlobs", (string)null);
+                    b.ToTable("InformationBlobs");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.ShiftInstance", b =>
@@ -134,7 +137,7 @@ namespace Ara.Api.Migrations
                     b.HasIndex("Date", "ShiftType")
                         .IsUnique();
 
-                    b.ToTable("ShiftInstances", (string)null);
+                    b.ToTable("ShiftInstances");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.ShiftTemplate", b =>
@@ -164,7 +167,7 @@ namespace Ara.Api.Migrations
                     b.HasIndex("ShiftType", "Season")
                         .IsUnique();
 
-                    b.ToTable("ShiftTemplates", (string)null);
+                    b.ToTable("ShiftTemplates");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.TaskAssignment", b =>
@@ -189,7 +192,7 @@ namespace Ara.Api.Migrations
                     b.HasIndex("TaskInstanceId", "VolunteerId")
                         .IsUnique();
 
-                    b.ToTable("TaskAssignments", (string)null);
+                    b.ToTable("TaskAssignments");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.TaskInstance", b =>
@@ -235,7 +238,7 @@ namespace Ara.Api.Migrations
 
                     b.HasIndex("TaskTemplateId");
 
-                    b.ToTable("TaskInstances", (string)null);
+                    b.ToTable("TaskInstances");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.TaskTemplate", b =>
@@ -262,7 +265,7 @@ namespace Ara.Api.Migrations
 
                     b.HasIndex("ShiftTemplateId");
 
-                    b.ToTable("TaskTemplates", (string)null);
+                    b.ToTable("TaskTemplates");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.User", b =>
@@ -318,12 +321,18 @@ namespace Ara.Api.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("VolunteerFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("VolunteerTo")
+                        .HasColumnType("date");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.VolunteerStay", b =>
@@ -363,7 +372,7 @@ namespace Ara.Api.Migrations
 
                     b.HasIndex("UserId", "Status", "VolunteerFrom", "VolunteerTo");
 
-                    b.ToTable("VolunteerStays", (string)null);
+                    b.ToTable("VolunteerStays");
                 });
 
             modelBuilder.Entity("Ara.Domain.Models.ShiftInstance", b =>

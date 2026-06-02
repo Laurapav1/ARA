@@ -9,6 +9,7 @@ import '../../services/shifts_service.dart';
 import '../../services/api_client.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/global_search_filter.dart';
+import '../../widgets/staff_action_sheet.dart';
 import '../../theme/ara_theme.dart';
 import 'shift_zone_dialogs.dart';
 import 'zone_list_screen.dart';
@@ -424,75 +425,48 @@ class _ShiftZoneScreenState extends State<ShiftZoneScreen> {
   }
 
   Future<void> _openShiftActionsSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: const Text('Add zone'),
-              onTap: () async {
-                Navigator.pop(ctx);
-                if (!mounted) return;
-                await _addZone();
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                _staffMode == ShiftZoneStaffMode.edit
-                    ? Icons.check_circle_outline
-                    : Icons.edit_outlined,
-              ),
-              title: Text(
-                _staffMode == ShiftZoneStaffMode.edit
-                    ? 'Done editing zones'
-                    : 'Edit zones',
-              ),
-              onTap: () {
-                Navigator.pop(ctx);
-                _setStaffMode(
-                  _staffMode == ShiftZoneStaffMode.edit
-                      ? ShiftZoneStaffMode.none
-                      : ShiftZoneStaffMode.edit,
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                _staffMode == ShiftZoneStaffMode.delete
-                    ? Icons.check_circle_outline
-                    : Icons.delete_outline,
-                color: _staffMode == ShiftZoneStaffMode.delete
-                    ? null
-                    : ARAColors.danger,
-              ),
-              title: Text(
-                _staffMode == ShiftZoneStaffMode.delete
-                    ? 'Done deleting zones'
-                    : 'Delete zones',
-                style: TextStyle(
-                  color: _staffMode == ShiftZoneStaffMode.delete
-                      ? null
-                      : ARAColors.danger,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(ctx);
-                _setStaffMode(
-                  _staffMode == ShiftZoneStaffMode.delete
-                      ? ShiftZoneStaffMode.none
-                      : ShiftZoneStaffMode.delete,
-                );
-              },
-            ),
-          ],
+    await showStaffActionSheet(
+      context,
+      items: [
+        StaffActionSheetItem(
+          label: 'Add zone',
+          icon: Icons.add_circle_outline,
+          onTap: _addZone,
         ),
-      ),
+        StaffActionSheetItem(
+          label: _staffMode == ShiftZoneStaffMode.edit
+              ? 'Done editing zones'
+              : 'Edit zones',
+          icon: _staffMode == ShiftZoneStaffMode.edit
+              ? Icons.check_circle_outline
+              : Icons.edit_outlined,
+          onTap: () async {
+            _setStaffMode(
+              _staffMode == ShiftZoneStaffMode.edit
+                  ? ShiftZoneStaffMode.none
+                  : ShiftZoneStaffMode.edit,
+            );
+          },
+        ),
+        StaffActionSheetItem(
+          label: _staffMode == ShiftZoneStaffMode.delete
+              ? 'Done deleting zones'
+              : 'Delete zones',
+          icon: _staffMode == ShiftZoneStaffMode.delete
+              ? Icons.check_circle_outline
+              : Icons.delete_outline,
+          color: _staffMode == ShiftZoneStaffMode.delete
+              ? null
+              : ARAColors.danger,
+          onTap: () async {
+            _setStaffMode(
+              _staffMode == ShiftZoneStaffMode.delete
+                  ? ShiftZoneStaffMode.none
+                  : ShiftZoneStaffMode.delete,
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -663,3 +637,4 @@ class _ErrorState extends StatelessWidget {
     );
   }
 }
+

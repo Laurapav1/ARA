@@ -10,8 +10,12 @@ import '../../theme/ara_theme.dart';
 import '../../widgets/animal_grid.dart';
 import '../../widgets/global_search_filter.dart';
 import '../../widgets/offline_banner.dart';
+import '../../widgets/staff_action_sheet.dart';
 import 'animal_detail.dart';
 import 'animal_editor.dart';
+import 'animal_status_dialog.dart';
+
+enum _AnimalStaffMode { none, edit, delete }
 
 class AnimalListScreen extends StatefulWidget {
   final String title;
@@ -39,6 +43,7 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
   List<Animal> _animals = const [];
   bool _isLoading = true;
   String? _loadError;
+  _AnimalStaffMode _staffMode = _AnimalStaffMode.none;
 
   bool _needsCaution(Animal a) => a.isDangerous;
 
@@ -111,11 +116,133 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
         _loadError = e.toString();
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  Future<void> _openAnimalDetail(Animal animal) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnimalDetailScreen(animal: animal),
+      ),
+    );
+    await _loadAnimals();
+  }
+
+  Future<void> _addAnimal() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnimalEditorScreen(
+          initialSpecies: widget.species,
+        ),
+      ),
+    );
+    await _loadAnimals();
+  }
+
+  Future<void> _editAnimal(Animal animal) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnimalEditorScreen(animal: animal),
+      ),
+    );
+    await _loadAnimals();
+  }
+
+  Future<void> _deleteAnimal(Animal animal) async {
+    final auth = context.read<AuthStore>();
+    final token = auth.accessToken;
+    if (token == null || token.isEmpty) {
+      _showMessage('Missing login token.');
+      return;
+    }
+
+    await showAnimalStatusDialog(
+      context,
+      animal,
+      () async {
+        await _animalsService.deleteAnimal(id: animal.id, token: token);
+        if (!mounted) return;
+        _showMessage('${animal.name} removed');
+        await _loadAnimals();
+      },
+      closeParentOnConfirm: false,
+    );
+  }
+
+  Future<void> _handleAnimalTap(Animal animal) async {
+    switch (_staffMode) {
+      case _AnimalStaffMode.edit:
+        await _editAnimal(animal);
+        return;
+      case _AnimalStaffMode.delete:
+        await _deleteAnimal(animal);
+        return;
+      case _AnimalStaffMode.none:
+        await _openAnimalDetail(animal);
+        return;
+    }
+  }
+
+  void _setStaffMode(_AnimalStaffMode mode) {
+    if (!mounted) return;
+    setState(() {
+      _staffMode = _staffMode == mode ? _AnimalStaffMode.none : mode;
+    });
+  }
+
+  void _showMessage(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _openAnimalActionsSheet() async {
+    final items = <StaffActionSheetItem>[
+      StaffActionSheetItem(
+        label: 'Add animal',
+        icon: Icons.add,
+        onTap: _addAnimal,
+      ),
+      if (_animals.isNotEmpty)
+        StaffActionSheetItem(
+          label: _staffMode == _AnimalStaffMode.edit
+              ? 'Stop editing animals'
+              : 'Edit animals',
+          icon: _staffMode == _AnimalStaffMode.edit
+              ? Icons.close
+              : Icons.edit_outlined,
+          onTap: () async {
+            _setStaffMode(_AnimalStaffMode.edit);
+          },
+        ),
+      if (_animals.isNotEmpty)
+        StaffActionSheetItem(
+          label: _staffMode == _AnimalStaffMode.delete
+              ? 'Stop deleting animals'
+              : 'Delete animals',
+          icon: _staffMode == _AnimalStaffMode.delete
+              ? Icons.close
+              : Icons.delete_outline,
+          color: _staffMode == _AnimalStaffMode.delete
+              ? null
+              : ARAColors.danger,
+          onTap: () async {
+            _setStaffMode(_AnimalStaffMode.delete);
+          },
+        ),
+    ];
+
+    await showStaffActionSheet(
+      context,
+      items: items,
+    );
   }
 
   @override
@@ -123,74 +250,59 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
     final auth = context.watch<AuthStore>();
     final isStaff = auth.isStaff;
     final visibleAnimals = _searchFilterController.apply(_animals);
+    final appBarActions = buildGlobalSearchFilterActions<Animal>(
+      context: context,
+      title: widget.title.toLowerCase(),
+      items: _animals,
+      controller: _searchFilterController,
+      searchResultBuilder: (context, animal, onTap) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+        child: Card(
+          child: ListTile(
+            onTap: onTap,
+            leading: CircleAvatar(
+              backgroundColor: widget.accentSoft,
+              backgroundImage: animal.photoBytes != null
+                  ? MemoryImage(animal.photoBytes!)
+                  : null,
+              child: animal.photoBytes == null
+                  ? Icon(Icons.pets, color: widget.accentColor)
+                  : null,
+            ),
+            title: Text(animal.name),
+            subtitle: Text(
+              [
+                animal.breed,
+                animal.age,
+                animal.zone,
+                if (animal.flags.isNotEmpty) '${animal.flags.length} flags',
+              ].where((v) => v.trim().isNotEmpty).join(' - '),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+          ),
+        ),
+      ),
+      onItemSelected: (animal) async {
+        await _openAnimalDetail(animal);
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
-        actions: buildGlobalSearchFilterActions<Animal>(
-          context: context,
-          title: widget.title.toLowerCase(),
-          items: _animals,
-          controller: _searchFilterController,
-          searchResultBuilder: (context, animal, onTap) => Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-            child: Card(
-              child: ListTile(
-                onTap: onTap,
-                leading: CircleAvatar(
-                  backgroundColor: widget.accentSoft,
-                  backgroundImage: animal.photoBytes != null
-                      ? MemoryImage(animal.photoBytes!)
-                      : null,
-                  child: animal.photoBytes == null
-                      ? Icon(Icons.pets, color: widget.accentColor)
-                      : null,
-                ),
-                title: Text(animal.name),
-                subtitle: Text(
-                  [
-                    animal.breed,
-                    animal.age,
-                    animal.zone,
-                    if (animal.flags.isNotEmpty) '${animal.flags.length} flags',
-                  ].where((v) => v.trim().isNotEmpty).join(' - '),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: const Icon(Icons.chevron_right),
-              ),
+        actions: [
+          ...appBarActions,
+          if (isStaff)
+            IconButton(
+              onPressed: _openAnimalActionsSheet,
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'Animal actions',
             ),
-          ),
-          onItemSelected: (animal) async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AnimalDetailScreen(animal: animal),
-              ),
-            );
-            await _loadAnimals();
-          },
-        ),
+        ],
       ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: isStaff
-          ? FloatingActionButton(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AnimalEditorScreen(
-                      initialSpecies: widget.species,
-                    ),
-                  ),
-                );
-                await _loadAnimals();
-              },
-              backgroundColor: ARAColors.brand,
-              foregroundColor: ARAColors.ink,
-              child: const Icon(Icons.add),
-            )
-          : null,
       body: SafeArea(
         child: Column(
           children: [
@@ -212,14 +324,24 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
                       accentSoft: widget.accentSoft,
                       showCautionIcons: true,
                       needsCaution: _needsCaution,
+                      actionIcon: isStaff && _staffMode == _AnimalStaffMode.delete
+                          ? Icons.delete_outline
+                          : (isStaff && _staffMode == _AnimalStaffMode.edit
+                              ? Icons.edit_outlined
+                              : null),
+                      actionTooltip: isStaff && _staffMode == _AnimalStaffMode.delete
+                          ? 'Delete animal'
+                          : (isStaff && _staffMode == _AnimalStaffMode.edit
+                              ? 'Edit animal'
+                              : null),
+                      actionColor: _staffMode == _AnimalStaffMode.delete
+                          ? ARAColors.danger
+                          : ARAColors.ink,
+                      onActionPressed: isStaff && _staffMode != _AnimalStaffMode.none
+                          ? (animal) => _handleAnimalTap(animal)
+                          : null,
                       onTap: (animal) async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AnimalDetailScreen(animal: animal),
-                          ),
-                        );
-                        await _loadAnimals();
+                        await _handleAnimalTap(animal);
                       },
                     ),
                   if (!_isLoading &&
@@ -228,13 +350,6 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _buildEmptyState(),
-                    ),
-                  if (isStaff)
-                    const Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: SizedBox(height: 96),
                     ),
                 ],
               ),
@@ -299,3 +414,5 @@ class _AnimalListScreenState extends State<AnimalListScreen> {
     );
   }
 }
+
+

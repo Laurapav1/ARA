@@ -1,95 +1,161 @@
+using System.Security.Claims;
 using Ara.Api.Data;
 using Ara.Api.Dtos;
 using Ara.Api.Enums;
+using Ara.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ara.Api.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/volunteer-stays")]
 [ApiController]
-public class VolunteersController(ARADbContext db) : ControllerBase
+public class VolunteerStaysController(ARADbContext db) : ControllerBase
 {
-    [HttpGet("stays")]
+    [HttpGet]
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> GetVolunteerStays()
     {
-        var volunteers = await db
-            .Users.Where(u =>
-                u.Role == Role.Volunteer
-                && (u.Status == VolunteerStatus.Pending || u.Status == VolunteerStatus.Approved)
+        var stays = await db
+            .VolunteerStays.AsNoTracking()
+            .Include(s => s.User)
+            .Where(s =>
+                s.User.Role == Role.Volunteer
+                && (s.Status == VolunteerStayStatus.Pending || s.Status == VolunteerStayStatus.Approved)
             )
-            .OrderBy(u => u.Status)
-            .ThenBy(u => u.VolunteerFrom == null)
-            .ThenBy(u => u.VolunteerFrom)
-            .ThenBy(u => u.CreatedAt)
-            .Select(u => new
-            {
-                u.Id,
-                u.FirstName,
-                u.LastName,
-                u.Email,
-                status = u.Status.ToString().ToLowerInvariant(),
-                u.CreatedAt,
-                u.VolunteerFrom,
-                u.VolunteerTo
-            })
+            .OrderBy(s => s.Status)
+            .ThenBy(s => s.VolunteerFrom)
+            .ThenBy(s => s.RequestedAt)
             .ToListAsync();
 
-        return Ok(volunteers);
+        return Ok(await BuildStayResponses(stays));
     }
 
-    // Get /api/volunteers/pending
     [HttpGet("pending")]
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> GetPendingVolunteers()
     {
-        var pendingVolunteers = await db
-            .Users.Where(u => u.Role == Role.Volunteer && u.Status == VolunteerStatus.Pending)
-            .OrderBy(u => u.VolunteerFrom == null)
-            .ThenBy(u => u.VolunteerFrom)
-            .ThenBy(u => u.CreatedAt)
-            .Select(u => new
-            {
-                u.Id,
-                u.FirstName,
-                u.LastName,
-                u.Email,
-                u.CreatedAt,
-                u.VolunteerFrom,
-                u.VolunteerTo
-            })
+        var stays = await db
+            .VolunteerStays.AsNoTracking()
+            .Include(s => s.User)
+            .Where(s => s.User.Role == Role.Volunteer && s.Status == VolunteerStayStatus.Pending)
+            .OrderBy(s => s.VolunteerFrom)
+            .ThenBy(s => s.RequestedAt)
             .ToListAsync();
 
-        return Ok(pendingVolunteers);
+        return Ok(await BuildStayResponses(stays));
+    }
+
+    [HttpGet("me")]
+    [Authorize(Roles = "Volunteer")]
+    public async Task<ActionResult<List<MyVolunteerStayResponse>>> GetMyStays()
+    {
+        var userId = GetUserIdOrThrow();
+        var stays = await db
+            .VolunteerStays.AsNoTracking()
+            .Where(s => s.UserId == userId)
+            .OrderByDescending(s => s.VolunteerFrom)
+            .Select(s => new MyVolunteerStayResponse(
+                s.Id,
+                s.Status.ToString().ToLowerInvariant(),
+                s.VolunteerFrom,
+                s.VolunteerTo,
+                s.RequestedAt
+            ))
+            .ToListAsync();
+
+        return Ok(stays);
+    }
+
+    [HttpPost("me")]
+    [Authorize(Roles = "Volunteer")]
+    public async Task<IActionResult> RequestNewStay([FromBody] CreateVolunteerStayRequest request)
+    {
+        if (request.VolunteerTo < request.VolunteerFrom)
+        {
+            return BadRequest(new { error = "VolunteerTo must be on or after VolunteerFrom" });
+        }
+
+        var userId = GetUserIdOrThrow();
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId && u.Role == Role.Volunteer);
+        if (user is null)
+        {
+            return Unauthorized(new { error = "Volunteer not found." });
+        }
+
+        if (await HasOverlappingPendingOrApprovedStay(userId, request.VolunteerFrom, request.VolunteerTo))
+        {
+            return Conflict(new { error = "You already have a pending or approved stay for those dates." });
+        }
+
+        var stay = new VolunteerStay
+        {
+            UserId = userId,
+            Status = VolunteerStayStatus.Pending,
+            VolunteerFrom = request.VolunteerFrom,
+            VolunteerTo = request.VolunteerTo,
+            RequestedAt = DateTime.UtcNow
+        };
+
+        db.VolunteerStays.Add(stay);
+        await db.SaveChangesAsync();
+
+        return Created(
+            string.Empty,
+            new
+            {
+                message = "Stay request submitted",
+                id = stay.Id
+            }
+        );
     }
 
     [HttpPut("{id:Guid}/approve")]
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> ApproveVolunteer(Guid id)
     {
-        var rows = await db
-            .Users.Where(u => u.Id == id && u.Role == Role.Volunteer)
-            .ExecuteUpdateAsync(s => s.SetProperty(u => u.Status, VolunteerStatus.Approved));
+        var staffId = GetUserIdOrThrow();
+        var stay = await db
+            .VolunteerStays.Include(s => s.User)
+            .SingleOrDefaultAsync(s => s.Id == id && s.User.Role == Role.Volunteer);
 
-        if (rows == 0)
-            return NotFound(new { error = "Volunteer not found" });
-        return Ok(new { message = "Volunteer approved" });
+        if (stay is null)
+            return NotFound(new { error = "Volunteer stay not found" });
+
+        stay.Status = VolunteerStayStatus.Approved;
+        stay.ApprovedAt = DateTime.UtcNow;
+        stay.ApprovedByUserId = staffId;
+        stay.CancelledAt = null;
+        stay.User.Status = VolunteerStatus.Approved;
+
+        await db.SaveChangesAsync();
+        return Ok(new { message = "Volunteer stay approved" });
     }
 
-    // PUT /api/volunteers/{id}/decline
     [HttpPut("{id:Guid}/decline")]
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> DeclineVolunteer(Guid id)
     {
-        var rows = await db
-            .Users.Where(u => u.Id == id && u.Role == Role.Volunteer)
-            .ExecuteUpdateAsync(s => s.SetProperty(u => u.Status, VolunteerStatus.Declined));
+        var stay = await db
+            .VolunteerStays.Include(s => s.User)
+            .SingleOrDefaultAsync(s => s.Id == id && s.User.Role == Role.Volunteer);
 
-        if (rows == 0)
-            return NotFound(new { error = "Volunteer not found" });
-        return Ok(new { message = "Volunteer declined" });
+        if (stay is null)
+            return NotFound(new { error = "Volunteer stay not found" });
+
+        stay.Status = VolunteerStayStatus.Declined;
+
+        var hasApprovedStay = await db.VolunteerStays.AnyAsync(s =>
+            s.UserId == stay.UserId && s.Id != stay.Id && s.Status == VolunteerStayStatus.Approved
+        );
+        if (!hasApprovedStay)
+        {
+            stay.User.Status = VolunteerStatus.Declined;
+        }
+
+        await db.SaveChangesAsync();
+        return Ok(new { message = "Volunteer stay declined" });
     }
 
     [HttpPut("{id:Guid}/stay")]
@@ -104,23 +170,28 @@ public class VolunteersController(ARADbContext db) : ControllerBase
             return BadRequest(new { error = "VolunteerTo must be on or after VolunteerFrom" });
         }
 
-        var volunteer = await db.Users.SingleOrDefaultAsync(u =>
-            u.Id == id && u.Role == Role.Volunteer
-        );
-        if (volunteer is null)
+        var stay = await db
+            .VolunteerStays.Include(s => s.User)
+            .SingleOrDefaultAsync(s => s.Id == id && s.User.Role == Role.Volunteer);
+        if (stay is null)
         {
-            return NotFound(new { error = "Volunteer not found" });
+            return NotFound(new { error = "Volunteer stay not found" });
         }
 
-        if (volunteer.Status != VolunteerStatus.Approved)
+        if (stay.Status != VolunteerStayStatus.Approved)
         {
             return BadRequest(
-                new { error = "Only approved volunteers can have stay dates updated" }
+                new { error = "Only approved volunteer stays can have dates updated" }
             );
         }
 
-        volunteer.VolunteerFrom = request.VolunteerFrom;
-        volunteer.VolunteerTo = request.VolunteerTo;
+        if (await HasOverlappingPendingOrApprovedStay(stay.UserId, request.VolunteerFrom, request.VolunteerTo, stay.Id))
+        {
+            return Conflict(new { error = "This volunteer already has another pending or approved stay for those dates." });
+        }
+
+        stay.VolunteerFrom = request.VolunteerFrom;
+        stay.VolunteerTo = request.VolunteerTo;
         await db.SaveChangesAsync();
 
         return Ok(new { message = "Volunteer stay updated" });
@@ -130,45 +201,82 @@ public class VolunteersController(ARADbContext db) : ControllerBase
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> CancelVolunteerStay(Guid id)
     {
-        var rows = await db
-            .Users.Where(u =>
-                u.Id == id && u.Role == Role.Volunteer && u.Status == VolunteerStatus.Approved
-            )
-            .ExecuteUpdateAsync(s =>
-                s.SetProperty(u => u.Status, VolunteerStatus.Declined)
-                    .SetProperty(u => u.VolunteerFrom, (DateOnly?)null)
-                    .SetProperty(u => u.VolunteerTo, (DateOnly?)null)
+        var stay = await db
+            .VolunteerStays.Include(s => s.User)
+            .SingleOrDefaultAsync(s =>
+                s.Id == id && s.User.Role == Role.Volunteer && s.Status == VolunteerStayStatus.Approved
             );
 
-        if (rows == 0)
+        if (stay is null)
         {
-            return NotFound(new { error = "Approved volunteer not found" });
+            return NotFound(new { error = "Approved volunteer stay not found" });
         }
 
+        stay.Status = VolunteerStayStatus.Cancelled;
+        stay.CancelledAt = DateTime.UtcNow;
+
+        await db.SaveChangesAsync();
         return Ok(new { message = "Volunteer stay cancelled" });
     }
 
-    // GET /api/volunteers?status=pending|approved|declined
-    [HttpGet]
-    [Authorize(Roles = "Staff")]
-    public async Task<IActionResult> ListVolunteers([FromQuery] VolunteerStatus? status = null)
+    private Guid GetUserIdOrThrow()
     {
-        var q = db.Users.Where(u => u.Role == Role.Volunteer);
-        if (status is not null)
-            q = q.Where(u => u.Status == status);
+        var s = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(s, out var id))
+            throw new UnauthorizedAccessException("Invalid token (no user id).");
+        return id;
+    }
 
-        var list = await q.OrderBy(u => u.CreatedAt)
-            .Select(u => new
-            {
-                u.Id,
-                u.FirstName,
-                u.LastName,
-                u.Email,
-                status = u.Status.ToString().ToLowerInvariant(),
-                u.CreatedAt
-            })
+    private async Task<bool> HasOverlappingPendingOrApprovedStay(
+        Guid userId,
+        DateOnly volunteerFrom,
+        DateOnly volunteerTo,
+        Guid? excludedStayId = null
+    )
+    {
+        return await db.VolunteerStays.AnyAsync(s =>
+            s.UserId == userId
+            && s.Id != excludedStayId
+            && (s.Status == VolunteerStayStatus.Pending || s.Status == VolunteerStayStatus.Approved)
+            && volunteerFrom <= s.VolunteerTo
+            && volunteerTo >= s.VolunteerFrom
+        );
+    }
+
+    private async Task<List<VolunteerStayResponse>> BuildStayResponses(List<VolunteerStay> stays)
+    {
+        var userIds = stays.Select(s => s.UserId).Distinct().ToList();
+        var previousApprovedStays = await db
+            .VolunteerStays.AsNoTracking()
+            .Where(s => userIds.Contains(s.UserId) && s.Status == VolunteerStayStatus.Approved)
+            .OrderByDescending(s => s.VolunteerTo)
             .ToListAsync();
 
-        return Ok(list);
+        return stays
+            .Select(stay =>
+            {
+                var previous = previousApprovedStays
+                    .Where(s => s.UserId == stay.UserId && s.VolunteerTo < stay.VolunteerFrom)
+                    .OrderByDescending(s => s.VolunteerTo)
+                    .ToList();
+                var lastStay = previous.FirstOrDefault();
+
+                return new VolunteerStayResponse(
+                    stay.Id,
+                    stay.UserId,
+                    stay.User.FirstName,
+                    stay.User.LastName,
+                    stay.User.Email,
+                    stay.Status.ToString().ToLowerInvariant(),
+                    stay.RequestedAt,
+                    stay.VolunteerFrom,
+                    stay.VolunteerTo,
+                    previous.Count > 0,
+                    previous.Count,
+                    lastStay?.VolunteerFrom,
+                    lastStay?.VolunteerTo
+                );
+            })
+            .ToList();
     }
 }

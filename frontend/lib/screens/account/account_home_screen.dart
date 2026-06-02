@@ -65,7 +65,6 @@ class AccountScreen extends StatelessWidget {
                                     builder: (_) => const LoginScreen(),
                                   ),
                                 ),
-                                style: ARATheme.primaryCtaButtonStyle,
                                 child: const Text('Sign in'),
                               ),
                             ),
@@ -85,6 +84,8 @@ class AccountScreen extends StatelessWidget {
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  surfaceTintColor: Colors.transparent,
                                   foregroundColor: ARAColors.ink,
                                   side: BorderSide(
                                     color: Theme.of(context)
@@ -99,6 +100,10 @@ class AccountScreen extends StatelessWidget {
                                   textStyle: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
+                                  ),
+                                ).copyWith(
+                                  overlayColor: WidgetStateProperty.all(
+                                    Colors.transparent,
                                   ),
                                 ),
                                 child: const Text('Create Account'),
@@ -137,3 +142,4 @@ class _AraHomeLogo extends StatelessWidget {
     );
   }
 }
+

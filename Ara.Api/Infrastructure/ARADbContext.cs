@@ -8,6 +8,7 @@ namespace Ara.Api.Data;
 public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<VolunteerStay> VolunteerStays => Set<VolunteerStay>();
     public DbSet<ShiftTemplate> ShiftTemplates => Set<ShiftTemplate>();
     public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
     public DbSet<ShiftInstance> ShiftInstances => Set<ShiftInstance>();
@@ -49,6 +50,27 @@ public class ARADbContext(DbContextOptions<ARADbContext> options) : DbContext(op
             e.Property(u => u.RefreshTokenCreatedAt).IsRequired(false);
             e.Property(u => u.RefreshTokenExpiresAt).IsRequired(false);
             e.Property(u => u.RefreshTokenRevokedAt).IsRequired(false);
+        });
+
+        b.Entity<VolunteerStay>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasDefaultValue(VolunteerStayStatus.Pending);
+            e.Property(x => x.VolunteerFrom).IsRequired();
+            e.Property(x => x.VolunteerTo).IsRequired();
+            e.Property(x => x.RequestedAt).IsRequired();
+            e.Property(x => x.ApprovedAt).IsRequired(false);
+            e.Property(x => x.ApprovedByUserId).IsRequired(false);
+            e.Property(x => x.CancelledAt).IsRequired(false);
+
+            e.HasOne(x => x.User)
+                .WithMany(x => x.VolunteerStays)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(x => new { x.UserId, x.Status, x.VolunteerFrom, x.VolunteerTo });
         });
 
         b.Entity<ShiftTemplate>(e =>

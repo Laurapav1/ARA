@@ -274,14 +274,21 @@ public class ShiftsController(ARADbContext db) : ControllerBase
 
         var user = await db.Users.SingleAsync(u => u.Id == volunteerId);
 
-        if (user.Role == Role.Volunteer && user.Status != VolunteerStatus.Approved)
-            return StatusCode(403, new { error = "Account not approved." });
+        if (user.Role == Role.Volunteer)
+        {
+            if (user.Status != VolunteerStatus.Approved)
+                return StatusCode(403, new { error = "Account not approved." });
 
-        if (user.VolunteerFrom is not null && task.ShiftInstance.Date < user.VolunteerFrom.Value)
-            return StatusCode(403, new { error = "Your volunteering period has not started yet." });
+            var hasApprovedStayForShift = await db.VolunteerStays.AnyAsync(s =>
+                s.UserId == volunteerId
+                && s.Status == VolunteerStayStatus.Approved
+                && s.VolunteerFrom <= task.ShiftInstance.Date
+                && s.VolunteerTo >= task.ShiftInstance.Date
+            );
 
-        if (user.VolunteerTo is not null && task.ShiftInstance.Date > user.VolunteerTo.Value)
-            return StatusCode(403, new { error = "Your volunteering period has ended." });
+            if (!hasApprovedStayForShift)
+                return StatusCode(403, new { error = "You do not have an approved stay for this shift date." });
+        }
 
         if (task.MaxVolunteers is not null)
         {

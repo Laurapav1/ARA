@@ -119,12 +119,17 @@ builder
     });
 
 var app = builder.Build();
+var httpsPorts =
+    builder.Configuration["ASPNETCORE_HTTPS_PORTS"] ?? builder.Configuration["HTTPS_PORTS"];
 
 // ── Pipeline
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+if (!string.IsNullOrWhiteSpace(httpsPorts))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors("Frontend");
 app.UseAuthentication();
@@ -157,6 +162,54 @@ using (var scope = app.Services.CreateScope())
         );
         await db.SaveChangesAsync();
         Console.WriteLine("✅ Seeded initial admin user: admin@ara.local / Admin123!");
+    }
+
+    const string volunteerEmail = "volunteer@ara.local";
+    var volunteer = await db.Users.SingleOrDefaultAsync(u => u.Email == volunteerEmail);
+    if (volunteer is null)
+    {
+        volunteer = new Ara.Domain.Models.User
+        {
+            Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            FirstName = "Test",
+            LastName = "Volunteer",
+            Email = volunteerEmail,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Volunteer123!"),
+            Role = Ara.Api.Enums.Role.Volunteer,
+            Status = Ara.Api.Enums.VolunteerStatus.Approved,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        db.Users.Add(volunteer);
+        await db.SaveChangesAsync();
+    }
+
+    if (!await db.VolunteerStays.AnyAsync(s => s.UserId == volunteer.Id))
+    {
+        db.VolunteerStays.AddRange(
+            new Ara.Domain.Models.VolunteerStay
+            {
+                Id = Guid.Parse("33333333-3333-3333-3333-333333333331"),
+                UserId = volunteer.Id,
+                Status = Ara.Api.Enums.VolunteerStayStatus.Approved,
+                VolunteerFrom = new DateOnly(2026, 1, 5),
+                VolunteerTo = new DateOnly(2026, 1, 19),
+                RequestedAt = new DateTime(2025, 12, 1, 12, 0, 0, DateTimeKind.Utc),
+                ApprovedAt = new DateTime(2025, 12, 2, 12, 0, 0, DateTimeKind.Utc)
+            },
+            new Ara.Domain.Models.VolunteerStay
+            {
+                Id = Guid.Parse("33333333-3333-3333-3333-333333333332"),
+                UserId = volunteer.Id,
+                Status = Ara.Api.Enums.VolunteerStayStatus.Pending,
+                VolunteerFrom = new DateOnly(2026, 8, 10),
+                VolunteerTo = new DateOnly(2026, 8, 24),
+                RequestedAt = DateTime.UtcNow
+            }
+        );
+
+        await db.SaveChangesAsync();
+        Console.WriteLine("Seeded test volunteer: volunteer@ara.local / Volunteer123!");
     }
 }
 

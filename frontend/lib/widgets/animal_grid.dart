@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/animal.dart';
 import '../models/handling_flag.dart';
 import '../theme/ara_theme.dart';
+import 'inline_staff_action_button.dart';
 
 enum AnimalFilter { all, careRequired, inTreatment }
 
@@ -58,6 +59,10 @@ class AnimalGrid extends StatelessWidget {
   final bool showCautionIcons;
   final bool Function(Animal) needsCaution;
   final void Function(Animal) onTap;
+  final IconData? actionIcon;
+  final String? actionTooltip;
+  final Color? actionColor;
+  final void Function(Animal)? onActionPressed;
 
   const AnimalGrid({
     super.key,
@@ -67,6 +72,10 @@ class AnimalGrid extends StatelessWidget {
     required this.showCautionIcons,
     required this.needsCaution,
     required this.onTap,
+    this.actionIcon,
+    this.actionTooltip,
+    this.actionColor,
+    this.onActionPressed,
   });
 
   @override
@@ -88,6 +97,12 @@ class AnimalGrid extends StatelessWidget {
           accentSoft: accentSoft,
           showCautionIcon: showCautionIcons && needsCaution(animal),
           onTap: () => onTap(animal),
+          actionIcon: actionIcon,
+          actionTooltip: actionTooltip,
+          actionColor: actionColor,
+          onActionPressed: onActionPressed == null
+              ? null
+              : () => onActionPressed!(animal),
         );
       },
     );
@@ -100,6 +115,10 @@ class _AnimalGridCard extends StatelessWidget {
   final Color accentSoft;
   final bool showCautionIcon;
   final VoidCallback onTap;
+  final IconData? actionIcon;
+  final String? actionTooltip;
+  final Color? actionColor;
+  final VoidCallback? onActionPressed;
 
   const _AnimalGridCard({
     required this.animal,
@@ -107,10 +126,16 @@ class _AnimalGridCard extends StatelessWidget {
     required this.accentSoft,
     required this.showCautionIcon,
     required this.onTap,
+    this.actionIcon,
+    this.actionTooltip,
+    this.actionColor,
+    this.onActionPressed,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasAction = actionIcon != null && onActionPressed != null;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -141,9 +166,21 @@ class _AnimalGridCard extends StatelessWidget {
                   ),
                   if (showCautionIcon)
                     const Positioned(
-                      right: 10,
+                      left: 10,
                       top: 10,
                       child: _CautionBadge(),
+                    ),
+                  if (hasAction)
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: InlineStaffActionButton(
+                        onPressed: onActionPressed!,
+                        tooltip: actionTooltip,
+                        icon: actionIcon!,
+                        iconColor: actionColor ?? ARAColors.ink,
+                        backgroundColor: Colors.white.withValues(alpha: 0.18),
+                      ),
                     ),
                 ],
               ),

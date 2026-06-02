@@ -3,8 +3,11 @@ import 'package:provider/provider.dart';
 import '../../models/zone.dart';
 import '../../theme/ara_theme.dart';
 import '../../services/auth_store.dart';
+import '../../services/optimistic_mutation_runner.dart';
+import '../../services/optimistic_sync_store.dart';
 import '../../services/shifts_service.dart';
 import '../../services/api_client.dart';
+import '../../widgets/inline_staff_action_button.dart';
 import 'shift_zone_dialogs.dart';
 
 enum ShiftZoneStaffMode { none, edit, delete }
@@ -46,12 +49,16 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   final Map<String, GlobalKey> _zoneCardKeys = <String, GlobalKey>{};
   final ScrollController _scrollController = ScrollController();
   final _service = ShiftsService();
+  late final OptimisticMutationRunner _mutationRunner;
   int _lastHandledFocusRequestId = -1;
   List<String> _pinnedZoneIdentities = <String>[];
 
   @override
   void initState() {
     super.initState();
+    _mutationRunner = OptimisticMutationRunner(
+      context.read<OptimisticSyncStore>(),
+    );
     _zones = widget.zones.map((z) => z.copy()).toList();
     _signedUp = List<bool>.filled(_zones.length, false, growable: true);
     _signedUpTasks.clear();
@@ -82,6 +89,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _mutationRunner.dispose();
     super.dispose();
   }
 
@@ -262,6 +270,128 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     return '${zone.name}::${task.name}';
   }
 
+
+  List<Zone> _cloneZones() => _zones.map(_cloneZone).toList();
+
+  Zone _cloneZone(Zone zone) {
+    return zone.copyWith(
+      tasks: List<String>.from(zone.tasks),
+      assignedVolunteerIds: List<String>.from(zone.assignedVolunteerIds),
+      assignedVolunteerNames: List<String>.from(zone.assignedVolunteerNames),
+      subtasks: zone.subtasks.map(_cloneTask).toList(),
+    );
+  }
+
+  ZoneTask _cloneTask(ZoneTask task) {
+    return task.copyWith(
+      assignedVolunteerIds: List<String>.from(task.assignedVolunteerIds),
+      assignedVolunteerNames: List<String>.from(task.assignedVolunteerNames),
+    );
+  }
+
+  bool _isRetryable(Object error) =>
+      OptimisticMutationRunner.defaultRetryable(error);
+
+  void _restoreZones(List<Zone> snapshot) {
+    if (!mounted) return;
+    setState(() {
+      _zones = snapshot.map(_cloneZone).toList();
+    });
+  }
+
+  void _setZoneAssigned({
+    required Zone zone,
+    required String volunteerId,
+    required String volunteerName,
+    required bool assigned,
+  }) {
+    final index = _zones.indexWhere((current) => _zoneIdentity(current) == _zoneIdentity(zone));
+    if (index == -1) return;
+    final current = _zones[index];
+    final ids = List<String>.from(current.assignedVolunteerIds);
+    final names = List<String>.from(current.assignedVolunteerNames);
+    if (assigned) {
+      if (!ids.contains(volunteerId)) ids.add(volunteerId);
+      if (!names.contains(volunteerName)) names.add(volunteerName);
+    } else {
+      ids.removeWhere((id) => id == volunteerId);
+      names.removeWhere((name) => name == volunteerName);
+    }
+    final volunteers = assigned
+        ? current.volunteers + (current.assignedVolunteerIds.contains(volunteerId) ? 0 : 1)
+        : (current.assignedVolunteerIds.contains(volunteerId)
+            ? (current.volunteers - 1).clamp(0, 999)
+            : current.volunteers);
+    if (!mounted) return;
+    setState(() {
+      _zones[index] = current.copyWith(
+        volunteers: volunteers,
+        assignedVolunteerIds: ids,
+        assignedVolunteerNames: names,
+      );
+    });
+  }
+
+  void _setZoneProgress(Zone zone, double progress) {
+    final index = _zones.indexWhere((current) => _zoneIdentity(current) == _zoneIdentity(zone));
+    if (index == -1 || !mounted) return;
+    final current = _zones[index];
+    setState(() {
+      _zones[index] = current.copyWith(progress: progress);
+    });
+  }
+
+  void _setTaskAssigned({
+    required Zone zone,
+    required ZoneTask task,
+    required String volunteerId,
+    required String volunteerName,
+    required bool assigned,
+  }) {
+    final zoneIndex = _zones.indexWhere((current) => _zoneIdentity(current) == _zoneIdentity(zone));
+    if (zoneIndex == -1) return;
+    final currentZone = _zones[zoneIndex];
+    final subtasks = currentZone.subtasks.map(_cloneTask).toList();
+    final taskIndex = subtasks.indexWhere((current) => _taskKey(currentZone, current) == _taskKey(zone, task));
+    if (taskIndex == -1) return;
+    final currentTask = subtasks[taskIndex];
+    final ids = List<String>.from(currentTask.assignedVolunteerIds);
+    final names = List<String>.from(currentTask.assignedVolunteerNames);
+    if (assigned) {
+      if (!ids.contains(volunteerId)) ids.add(volunteerId);
+      if (!names.contains(volunteerName)) names.add(volunteerName);
+    } else {
+      ids.removeWhere((id) => id == volunteerId);
+      names.removeWhere((name) => name == volunteerName);
+    }
+    final volunteers = assigned
+        ? currentTask.volunteers + (currentTask.assignedVolunteerIds.contains(volunteerId) ? 0 : 1)
+        : (currentTask.assignedVolunteerIds.contains(volunteerId)
+            ? (currentTask.volunteers - 1).clamp(0, 999)
+            : currentTask.volunteers);
+    subtasks[taskIndex] = currentTask.copyWith(
+      volunteers: volunteers,
+      assignedVolunteerIds: ids,
+      assignedVolunteerNames: names,
+    );
+    if (!mounted) return;
+    setState(() {
+      _zones[zoneIndex] = currentZone.copyWith(subtasks: subtasks);
+    });
+  }
+
+  void _setTaskProgress(Zone zone, ZoneTask task, double progress) {
+    final zoneIndex = _zones.indexWhere((current) => _zoneIdentity(current) == _zoneIdentity(zone));
+    if (zoneIndex == -1) return;
+    final currentZone = _zones[zoneIndex];
+    final subtasks = currentZone.subtasks.map(_cloneTask).toList();
+    final taskIndex = subtasks.indexWhere((current) => _taskKey(currentZone, current) == _taskKey(zone, task));
+    if (taskIndex == -1 || !mounted) return;
+    subtasks[taskIndex] = subtasks[taskIndex].copyWith(progress: progress);
+    setState(() {
+      _zones[zoneIndex] = currentZone.copyWith(subtasks: subtasks);
+    });
+  }
   String _fmtIso(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -273,16 +403,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
   bool _canJoin(AuthStore auth) {
     if (auth.isStaff) return true;
-    if (!auth.isApproved) return false;
-    final me = auth.me;
-    if (me == null) return false;
-    final now = DateTime.now();
-    final from =
-        me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
-    final to = me.volunteerTo != null ? DateTime.parse(me.volunteerTo!) : null;
-    if (from != null && now.isBefore(from)) return false;
-    if (to != null && now.isAfter(to)) return false;
-    return true;
+    return auth.isApproved && auth.me != null;
   }
 
   String _joinBlockReason(AuthStore auth) {
@@ -290,33 +411,12 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
     if (!auth.isApproved) {
       return 'Your account is not approved yet.';
     }
-    final me = auth.me;
-    if (me == null) return 'Please sign in to join tasks.';
-    final now = DateTime.now();
-    final from =
-        me.volunteerFrom != null ? DateTime.parse(me.volunteerFrom!) : null;
-    final to = me.volunteerTo != null ? DateTime.parse(me.volunteerTo!) : null;
-    if (from != null && now.isBefore(from)) {
-      return 'Your volunteering period has not started yet.';
-    }
-    if (to != null && now.isAfter(to)) {
-      return 'Your volunteering period has ended.';
-    }
-    return 'You cannot join this task right now.';
+    if (auth.me == null) return 'Please sign in to join tasks.';
+    return 'You need an approved stay for this shift date.';
   }
 
   String? _joinCountdownMessage(AuthStore auth) {
-    if (auth.isStaff || !auth.isApproved) return null;
-    final me = auth.me;
-    if (me == null || me.volunteerFrom == null) return null;
-    final now = DateTime.now();
-    final from = DateTime.parse(me.volunteerFrom!);
-    if (!now.isBefore(from)) return null;
-
-    final hours = from.difference(now).inHours;
-    final days = (hours / 24).ceil().clamp(1, 365);
-    if (days == 1) return 'You can join tasks tomorrow.';
-    return 'You can join tasks in $days days.';
+    return null;
   }
 
   void _showJoinBlocked(AuthStore auth) {
@@ -345,131 +445,228 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
 
   Future<void> _joinBackend(Zone zone, AuthStore auth) async {
     final token = auth.accessToken ?? '';
-    if (widget.shiftId == null || zone.taskId == null) return;
-    try {
-      await _service.joinTask(
+    final volunteerId = auth.me?.id;
+    final volunteerName = auth.me?.fullName ?? 'You';
+    if (widget.shiftId == null || zone.taskId == null || volunteerId == null) {
+      return;
+    }
+    final previous = _cloneZones();
+    _mutationRunner.run(
+      key: 'shift_join_${zone.taskId}',
+      applyOptimistic: () => _setZoneAssigned(
+        zone: zone,
+        volunteerId: volunteerId,
+        volunteerName: volunteerName,
+        assigned: true,
+      ),
+      sync: () => _service.joinTask(
         shiftId: widget.shiftId!,
         taskId: zone.taskId!,
         token: token,
-      );
-      widget.onReload?.call();
-    } on ApiException catch (e) {
-      _showJoinBlockedMessage(e.message);
-    }
+      ),
+      revertOptimistic: () => _restoreZones(previous),
+      onSuccess: widget.onReload,
+      onPermanentFailure: (error) {
+        final message =
+            error is ApiException ? error.message : 'Could not join task.';
+        _showJoinBlockedMessage(message);
+      },
+      isRetryable: _isRetryable,
+    );
   }
 
   Future<void> _leaveBackend(Zone zone, AuthStore auth) async {
     final token = auth.accessToken ?? '';
-    if (widget.shiftId == null || zone.taskId == null) return;
-    try {
-      await _service.leaveTask(
+    final volunteerId = auth.me?.id;
+    final volunteerName = auth.me?.fullName ?? 'You';
+    if (widget.shiftId == null || zone.taskId == null || volunteerId == null) {
+      return;
+    }
+    final previous = _cloneZones();
+    _mutationRunner.run(
+      key: 'shift_leave_${zone.taskId}',
+      applyOptimistic: () => _setZoneAssigned(
+        zone: zone,
+        volunteerId: volunteerId,
+        volunteerName: volunteerName,
+        assigned: false,
+      ),
+      sync: () => _service.leaveTask(
         shiftId: widget.shiftId!,
         taskId: zone.taskId!,
         token: token,
-      );
-      widget.onReload?.call();
-    } on ApiException catch (e) {
-      _showJoinBlockedMessage(e.message);
-    }
+      ),
+      revertOptimistic: () => _restoreZones(previous),
+      onSuccess: widget.onReload,
+      onPermanentFailure: (error) {
+        final message =
+            error is ApiException ? error.message : 'Could not leave task.';
+        _showJoinBlockedMessage(message);
+      },
+      isRetryable: _isRetryable,
+    );
   }
 
   Future<void> _completeBackend(Zone zone, AuthStore auth) async {
     final token = auth.accessToken ?? '';
     if (widget.shiftId == null || zone.taskId == null) return;
-    try {
-      await _service.completeTask(
+    final previous = _cloneZones();
+    _mutationRunner.run(
+      key: 'shift_complete_${zone.taskId}',
+      applyOptimistic: () => _setZoneProgress(zone, 1.0),
+      sync: () => _service.completeTask(
         shiftId: widget.shiftId!,
         taskId: zone.taskId!,
         token: token,
-      );
-      widget.onReload?.call();
-    } on ApiException catch (e) {
-      _showJoinBlockedMessage(e.message);
-    }
+      ),
+      revertOptimistic: () => _restoreZones(previous),
+      onSuccess: widget.onReload,
+      onPermanentFailure: (error) {
+        final message = error is ApiException
+            ? _friendlyCompleteError(error.message)
+            : 'Could not mark task done.';
+        _showErrorDialog('Cannot mark done', message);
+      },
+      isRetryable: _isRetryable,
+    );
   }
 
   Future<void> _reopenBackend(Zone zone, AuthStore auth) async {
     final token = auth.accessToken ?? '';
     if (widget.shiftId == null || zone.taskId == null) return;
-    try {
-      await _service.reopenTask(
+    final previous = _cloneZones();
+    _mutationRunner.run(
+      key: 'shift_reopen_${zone.taskId}',
+      applyOptimistic: () => _setZoneProgress(zone, 0.0),
+      sync: () => _service.reopenTask(
         shiftId: widget.shiftId!,
         taskId: zone.taskId!,
         token: token,
-      );
-      widget.onReload?.call();
-    } on ApiException catch (e) {
-      _showErrorDialog(
-        'Cannot mark done',
-        _friendlyCompleteError(e.message),
-      );
-    }
+      ),
+      revertOptimistic: () => _restoreZones(previous),
+      onSuccess: widget.onReload,
+      onPermanentFailure: (error) {
+        final message = error is ApiException
+            ? _friendlyCompleteError(error.message)
+            : 'Could not reopen task.';
+        _showErrorDialog('Cannot mark done', message);
+      },
+      isRetryable: _isRetryable,
+    );
   }
 
-  Future<void> _joinBackendTask(ZoneTask task, AuthStore auth) async {
+  Future<void> _joinBackendTask(Zone zone, ZoneTask task, AuthStore auth) async {
     final token = auth.accessToken ?? '';
-    if (widget.shiftId == null || task.id == null) return;
-    try {
-      await _service.joinTask(
+    final volunteerId = auth.me?.id;
+    final volunteerName = auth.me?.fullName ?? 'You';
+    if (widget.shiftId == null || task.id == null || volunteerId == null) {
+      return;
+    }
+    final previous = _cloneZones();
+    _mutationRunner.run(
+      key: 'shift_join_${task.id}',
+      applyOptimistic: () => _setTaskAssigned(
+        zone: zone,
+        task: task,
+        volunteerId: volunteerId,
+        volunteerName: volunteerName,
+        assigned: true,
+      ),
+      sync: () => _service.joinTask(
         shiftId: widget.shiftId!,
         taskId: task.id!,
         token: token,
-      );
-      widget.onReload?.call();
-    } on ApiException catch (e) {
-      _showJoinBlockedMessage(e.message);
-    }
+      ),
+      revertOptimistic: () => _restoreZones(previous),
+      onSuccess: widget.onReload,
+      onPermanentFailure: (error) {
+        final message =
+            error is ApiException ? error.message : 'Could not join task.';
+        _showJoinBlockedMessage(message);
+      },
+      isRetryable: _isRetryable,
+    );
   }
 
-  Future<void> _leaveBackendTask(ZoneTask task, AuthStore auth) async {
+  Future<void> _leaveBackendTask(Zone zone, ZoneTask task, AuthStore auth) async {
     final token = auth.accessToken ?? '';
-    if (widget.shiftId == null || task.id == null) return;
-    try {
-      await _service.leaveTask(
+    final volunteerId = auth.me?.id;
+    final volunteerName = auth.me?.fullName ?? 'You';
+    if (widget.shiftId == null || task.id == null || volunteerId == null) {
+      return;
+    }
+    final previous = _cloneZones();
+    _mutationRunner.run(
+      key: 'shift_leave_${task.id}',
+      applyOptimistic: () => _setTaskAssigned(
+        zone: zone,
+        task: task,
+        volunteerId: volunteerId,
+        volunteerName: volunteerName,
+        assigned: false,
+      ),
+      sync: () => _service.leaveTask(
         shiftId: widget.shiftId!,
         taskId: task.id!,
         token: token,
-      );
-      widget.onReload?.call();
-    } on ApiException catch (e) {
-      _showJoinBlockedMessage(e.message);
-    }
+      ),
+      revertOptimistic: () => _restoreZones(previous),
+      onSuccess: widget.onReload,
+      onPermanentFailure: (error) {
+        final message =
+            error is ApiException ? error.message : 'Could not leave task.';
+        _showJoinBlockedMessage(message);
+      },
+      isRetryable: _isRetryable,
+    );
   }
 
-  Future<void> _completeBackendTask(ZoneTask task, AuthStore auth) async {
+  Future<void> _completeBackendTask(Zone zone, ZoneTask task, AuthStore auth) async {
     final token = auth.accessToken ?? '';
     if (widget.shiftId == null || task.id == null) return;
-    try {
-      await _service.completeTask(
+    final previous = _cloneZones();
+    _mutationRunner.run(
+      key: 'shift_complete_${task.id}',
+      applyOptimistic: () => _setTaskProgress(zone, task, 1.0),
+      sync: () => _service.completeTask(
         shiftId: widget.shiftId!,
         taskId: task.id!,
         token: token,
-      );
-      widget.onReload?.call();
-    } on ApiException catch (e) {
-      _showErrorDialog(
-        'Cannot mark done',
-        _friendlyCompleteError(e.message),
-      );
-    }
+      ),
+      revertOptimistic: () => _restoreZones(previous),
+      onSuccess: widget.onReload,
+      onPermanentFailure: (error) {
+        final message = error is ApiException
+            ? _friendlyCompleteError(error.message)
+            : 'Could not mark task done.';
+        _showErrorDialog('Cannot mark done', message);
+      },
+      isRetryable: _isRetryable,
+    );
   }
 
-  Future<void> _reopenBackendTask(ZoneTask task, AuthStore auth) async {
+  Future<void> _reopenBackendTask(Zone zone, ZoneTask task, AuthStore auth) async {
     final token = auth.accessToken ?? '';
     if (widget.shiftId == null || task.id == null) return;
-    try {
-      await _service.reopenTask(
+    final previous = _cloneZones();
+    _mutationRunner.run(
+      key: 'shift_reopen_${task.id}',
+      applyOptimistic: () => _setTaskProgress(zone, task, 0.0),
+      sync: () => _service.reopenTask(
         shiftId: widget.shiftId!,
         taskId: task.id!,
         token: token,
-      );
-      widget.onReload?.call();
-    } on ApiException catch (e) {
-      _showErrorDialog(
-        'Cannot mark done',
-        _friendlyCompleteError(e.message),
-      );
-    }
+      ),
+      revertOptimistic: () => _restoreZones(previous),
+      onSuccess: widget.onReload,
+      onPermanentFailure: (error) {
+        final message = error is ApiException
+            ? _friendlyCompleteError(error.message)
+            : 'Could not reopen task.';
+        _showErrorDialog('Cannot mark done', message);
+      },
+      isRetryable: _isRetryable,
+    );
   }
 
   Future<void> _editZone(Zone zone, AuthStore auth) async {
@@ -854,13 +1051,14 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                   ),
                   if (auth.isStaff &&
                       widget.staffMode != ShiftZoneStaffMode.none)
-                    IconButton(
+                    InlineStaffActionButton(
                       onPressed: () => _handleZoneStaffAction(zone, auth),
-                      icon: Icon(_zoneStaffActionIcon()),
-                      color: widget.staffMode == ShiftZoneStaffMode.delete
+                      icon: _zoneStaffActionIcon()!,
+                      tooltip: _zoneStaffActionTooltip(),
+                      iconColor: widget.staffMode == ShiftZoneStaffMode.delete
                           ? ARAColors.danger
                           : pal.primary,
-                      tooltip: _zoneStaffActionTooltip(),
+                      backgroundColor: pal.overlay,
                     ),
                 ],
               ),
@@ -915,9 +1113,9 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
           }
           if (task.id != null && widget.shiftId != null) {
             if (isAssigned) {
-              _leaveBackendTask(task, auth);
+              _leaveBackendTask(zone, task, auth);
             } else {
-              _joinBackendTask(task, auth);
+              _joinBackendTask(zone, task, auth);
             }
             return;
           }
@@ -960,7 +1158,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                         return;
                       }
                       if (task.id != null && widget.shiftId != null) {
-                        _completeBackendTask(task, auth);
+                        _completeBackendTask(zone, task, auth);
                         return;
                       }
                       _updateSubtaskProgress(zone, task, 1.0);
@@ -976,7 +1174,7 @@ class _ZoneListScreenState extends State<ZoneListScreen> {
                     onPressed: () {
                       _pinAndPromoteZone(zone);
                       if (task.id != null && widget.shiftId != null) {
-                        _reopenBackendTask(task, auth);
+                        _reopenBackendTask(zone, task, auth);
                         return;
                       }
                       _updateSubtaskProgress(zone, task, 0.0);
@@ -1146,16 +1344,14 @@ class _ZoneCardState extends State<_ZoneCard> {
                     const SizedBox(width: 8),
                     if (widget.onStaffActionPressed != null &&
                         widget.staffActionIcon != null)
-                      IconButton(
-                        icon: Icon(widget.staffActionIcon),
+                      InlineStaffActionButton(
+                        icon: widget.staffActionIcon!,
                         tooltip: widget.staffActionTooltip,
-                        color: widget.staffActionIcon == Icons.delete_outline
+                        iconColor: widget.staffActionIcon == Icons.delete_outline
                             ? ARAColors.danger
                             : pal.primary,
-                        onPressed: widget.onStaffActionPressed,
-                        style: IconButton.styleFrom(
-                          backgroundColor: pal.overlay,
-                        ),
+                        onPressed: widget.onStaffActionPressed!,
+                        backgroundColor: pal.overlay,
                       )
                     else if (!widget.isDone)
                       IconButton(
@@ -1260,3 +1456,14 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+

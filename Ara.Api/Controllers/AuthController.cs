@@ -28,7 +28,12 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         var existsingUser = await db.Users.AnyAsync(u => u.Email == email);
         if (existsingUser)
         {
-            return Conflict(new { error = "Email already exists" });
+            return Conflict(new { error = "Account already exists. Please sign in to request a new stay." });
+        }
+
+        if (request.VolunteerTo < request.VolunteerFrom)
+        {
+            return BadRequest(new { error = "VolunteerTo must be on or after VolunteerFrom" });
         }
 
         var user = new User
@@ -39,12 +44,20 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Role.Volunteer,
             Status = VolunteerStatus.Pending,
-            CreatedAt = DateTime.UtcNow,
-            VolunteerFrom = request.VolunteerFrom,
-            VolunteerTo = request.VolunteerTo
+            CreatedAt = DateTime.UtcNow
         };
 
         db.Users.Add(user);
+        db.VolunteerStays.Add(
+            new VolunteerStay
+            {
+                User = user,
+                Status = VolunteerStayStatus.Pending,
+                VolunteerFrom = request.VolunteerFrom,
+                VolunteerTo = request.VolunteerTo,
+                RequestedAt = DateTime.UtcNow
+            }
+        );
         await db.SaveChangesAsync();
 
         return Created(
@@ -111,6 +124,48 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
         return Ok(BuildMeResponse(u));
     }
 
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userIdStr =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized(new { error = "Invalid token (no user id)." });
+
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Unauthorized(new { error = "User not found." });
+
+        var currentPassword = request.CurrentPassword.Trim();
+        var newPassword = request.NewPassword.Trim();
+
+        if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+        {
+            return Unauthorized(new { error = "Current password is incorrect." });
+        }
+
+        if (newPassword.Length < 6)
+        {
+            return BadRequest(new { error = "New password must be at least 6 characters." });
+        }
+
+        if (currentPassword == newPassword)
+        {
+            return BadRequest(
+                new { error = "New password must be different from the current password." }
+            );
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.RefreshTokenRevokedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Password updated." });
+    }
+
     [HttpPost("refresh")]
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponse>> Refresh([FromBody] RefreshRequest request)
@@ -173,9 +228,7 @@ public class AuthController(ARADbContext db, ITokenService tokens, IOptions<JwtO
             u.LastName,
             u.Email,
             u.Role.ToString(),
-            u.Status.ToString(),
-            u.VolunteerFrom,
-            u.VolunteerTo
+            u.Status.ToString()
         );
     }
 }

@@ -1,84 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../services/auth_store.dart';
 import '../../theme/ara_theme.dart';
 import '../../widgets/offline_banner.dart';
+import 'widgets/change_password_dialog.dart';
 
 class StaffAccountScreen extends StatelessWidget {
   const StaffAccountScreen({super.key});
 
-  void _showChangePasswordDialog(BuildContext context) {
-    final currentController = TextEditingController();
-    final newController = TextEditingController();
-    final confirmController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Change password'),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actionsAlignment: MainAxisAlignment.end,
-        actionsOverflowButtonSpacing: 10,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: currentController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current password',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: newController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New password',
-                prefixIcon: Icon(Icons.lock_reset),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirm new password',
-                prefixIcon: Icon(Icons.check_circle_outline),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Password updated'),
-                  backgroundColor: ARAColors.brand,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
-            },
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(140, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            ),
-            child: const Text('Update'),
-          ),
-        ],
+  void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: ARAColors.brand,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  Future<void> _handleChangePassword(BuildContext context) async {
+    final changed = await showChangePasswordDialog(context);
+    if (changed == true && context.mounted) {
+      _showSnack(context, 'Password updated');
+    }
   }
 
   @override
@@ -110,7 +56,7 @@ class StaffAccountScreen extends StatelessWidget {
                       title: 'Change password',
                       subtitle: 'Update your login details',
                       icon: Icons.lock_reset,
-                      onTap: () => _showChangePasswordDialog(context),
+                      onTap: () => _handleChangePassword(context),
                     ),
                     const SizedBox(height: 12),
                     _SettingsTile(
@@ -172,8 +118,11 @@ class _ProfileCard extends StatelessWidget {
             child: const CircleAvatar(
               radius: 36,
               backgroundColor: ARAColors.surfaceWarmTint,
-              child: Icon(Icons.admin_panel_settings,
-                  color: ARAColors.brandDark, size: 36),
+              child: Icon(
+                Icons.admin_panel_settings,
+                color: ARAColors.brandDark,
+                size: 36,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -219,7 +168,7 @@ class _SettingsTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap;
   final bool isDestructive;
 
   const _SettingsTile({
@@ -245,6 +194,7 @@ class _SettingsTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
+            color: ARAColors.cardBg,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
@@ -312,3 +262,4 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+

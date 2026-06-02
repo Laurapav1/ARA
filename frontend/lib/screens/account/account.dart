@@ -81,18 +81,6 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
     );
   }
 
-  void _clearRequestForm() {
-    _formKey.currentState?.reset();
-    _nameController.clear();
-    _lastNameController.clear();
-    _emailController.clear();
-    _passwordController.clear();
-    setState(() {
-      _startDate = null;
-      _endDate = null;
-    });
-  }
-
   Future<void> _submitRequest() async {
     final formOk = _formKey.currentState!.validate();
 
@@ -113,7 +101,7 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
 
     final auth = context.read<AuthStore>();
     try {
-      await auth.signUp(
+      await auth.submitPendingAccessRequest(
         firstName: _nameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
@@ -136,59 +124,8 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
       return;
     }
 
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Request submitted',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: ARAColors.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Your account is pending approval. You will get access once a staff member approves your request.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ARAColors.inkSoft,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Divider(color: Theme.of(context).dividerColor),
-              const SizedBox(height: 10),
-              Text(
-                'Stay dates: ${_fmt(_startDate!)} – ${_fmt(_endDate!)}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ARAColors.ink,
-                      fontWeight: FontWeight.w600,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 18),
-              FilledButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _clearRequestForm();
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: ARAColors.brand,
-                  foregroundColor: ARAColors.ink,
-                ),
-                child: const Text('Done'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    if (!mounted) return;
+    Navigator.of(context).pop();
   }
 
   Widget _dateCard({
@@ -695,6 +632,8 @@ class _StayDateRangeDialogState extends State<_StayDateRangeDialog> {
 
                 return InkWell(
                   borderRadius: BorderRadius.circular(20),
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
+                  splashFactory: NoSplash.splashFactory,
                   onTap: isDisabled ? null : () => _onDayTap(day),
                   child: Stack(
                     alignment: Alignment.center,

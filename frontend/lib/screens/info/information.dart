@@ -1,16 +1,19 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/api_client.dart';
 import '../../services/api_config.dart';
 import '../../services/auth_store.dart';
 import '../../services/information_service.dart';
+import '../../services/optimistic_mutation_runner.dart';
+import '../../services/optimistic_sync_store.dart';
 import '../../theme/ara_theme.dart';
 import '../../widgets/expandable_section_group.dart';
 import '../../widgets/info_section_list.dart';
 import '../../widgets/info_tile_card.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/screen_header.dart';
+import '../../widgets/staff_action_sheet.dart';
 
 part 'information_content.dart';
 part 'sections/info_section_enum.dart';
@@ -31,6 +34,8 @@ part 'widgets/material_icon_catalog.dart';
 final InformationService _informationService =
     InformationService(ApiClient(ApiConfig.baseUrl));
 
+enum _InformationStaffMode { none, edit, hide, delete }
+
 class InformationScreen extends StatefulWidget {
   const InformationScreen({super.key});
 
@@ -46,11 +51,22 @@ class _InformationScreenState extends State<InformationScreen> {
   String _headerTitle = _defaultHeaderTitle;
   String _headerSubtitle = _defaultHeaderSubtitle;
   bool _isLoading = true;
+  _InformationStaffMode _staffMode = _InformationStaffMode.none;
+  late final OptimisticMutationRunner _mutationRunner;
 
   @override
   void initState() {
     super.initState();
+    _mutationRunner = OptimisticMutationRunner(
+      context.read<OptimisticSyncStore>(),
+    );
     _loadCards();
+  }
+
+  @override
+  void dispose() {
+    _mutationRunner.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCards() async {
@@ -106,10 +122,32 @@ class _InformationScreenState extends State<InformationScreen> {
     final auth = context.read<AuthStore>();
     final token = auth.accessToken;
     if (!auth.isStaff || token == null || token.isEmpty) return;
-    await _informationService.saveDocument(
-      'cards',
-      _cards.map((card) => card.toJson()).toList(growable: false),
-      token: token,
+
+    final snapshot = _cards.map((card) => card.copy()).toList(growable: false);
+    final payload = _cards.map((card) => card.toJson()).toList(growable: false);
+    _mutationRunner.run(
+      key: 'information_cards',
+      applyOptimistic: () {},
+      sync: () => _informationService.saveDocument(
+        'cards',
+        payload,
+        token: token,
+      ),
+      revertOptimistic: () {
+        if (!mounted) return;
+        setState(() {
+          _cards = snapshot.map((card) => card.copy()).toList();
+        });
+      },
+      onPermanentFailure: (error) {
+        if (!mounted) return;
+        final message = error is ApiException
+            ? error.message
+            : 'Could not save information.';
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      },
     );
   }
 
@@ -117,7 +155,8 @@ class _InformationScreenState extends State<InformationScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStore>();
     final isStaff = auth.isStaff;
-    final visibleCards = _cards.where((card) => !card.deleted).toList();
+    final visibleCards = _cards.where((card) => !card.deleted && !card.hidden).toList();
+    final hiddenCards = _cards.where((card) => !card.deleted && card.hidden).toList();
 
     return Scaffold(
       backgroundColor: ARAColors.bg,
@@ -157,13 +196,17 @@ class _InformationScreenState extends State<InformationScreen> {
                                 final index = entry.key;
                                 final card = entry.value;
                                 final isTopRow = index < 2;
+                                final inlineEdit = isStaff && _staffMode == _InformationStaffMode.edit;
+                                final inlineHide = isStaff && _staffMode == _InformationStaffMode.hide;
+                                final inlineDelete = isStaff && _staffMode == _InformationStaffMode.delete;
+                                final canDelete = _canDeleteCard(card);
                                 return InfoTileCard(
                                   title: card.title,
                                   subtitle: card.subtitle,
                                   backgroundGradient:
                                       _sectionGradient(card.iconColor),
                                   textColor: ARAColors.cardBg,
-                                  showArrow: true,
+                                  showArrow: _staffMode == _InformationStaffMode.none,
                                   backgroundIcon: card.icon,
                                   backgroundIconColor: ARAColors.cardBg,
                                   backgroundIconSize: isTopRow ? 112 : 106,
@@ -172,12 +215,81 @@ class _InformationScreenState extends State<InformationScreen> {
                                   backgroundIconTop: isTopRow ? -14 : -6,
                                   backgroundIconAngle: isTopRow ? 0.05 : -0.04,
                                   pinTitleToBottom: true,
-                                  onTap: () => _openCard(card, isStaff: isStaff),
+                                  actionIcon: inlineHide
+                                      ? Icons.visibility_off_outlined
+                                      : (inlineDelete && canDelete
+                                          ? Icons.delete_outline
+                                          : (inlineEdit ? Icons.edit_outlined : null)),
+                                  actionTooltip: inlineHide
+                                      ? 'Hide card'
+                                      : (inlineDelete && canDelete
+                                          ? 'Delete card'
+                                          : (inlineEdit ? 'Edit card' : null)),
+                                  actionColor: inlineDelete && canDelete
+                                      ? ARAColors.danger
+                                      : ARAColors.ink,
+                                  onActionPressed: inlineHide
+                                      ? () => _hideCard(card)
+                                      : (inlineDelete && canDelete
+                                          ? () => _deleteCard(card)
+                                          : (inlineEdit ? () => _editCard(card) : null)),
+                                  onTap: () => _handleCardTap(card, isStaff: isStaff),
                                 );
                               }).toList(),
                             ),
                           ),
                         ),
+                        if (isStaff && hiddenCards.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 460),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'HIDDEN CARDS',
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                          color: ARAColors.subInk,
+                                          letterSpacing: 1.2,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  GridView.count(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 14,
+                                    mainAxisSpacing: 14,
+                                    childAspectRatio: 1.28,
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    children: hiddenCards.map((card) {
+                                      return InfoTileCard(
+                                        title: card.title,
+                                        subtitle: 'Hidden from volunteers',
+                                        backgroundColor: ARAColors.cardBg,
+                                        textColor: ARAColors.ink,
+                                        backgroundIcon: card.icon,
+                                        backgroundIconColor: card.iconColor.withValues(alpha: 0.45),
+                                        backgroundIconOpacity: 0.16,
+                                        backgroundIconSize: 106,
+                                        backgroundIconRight: -8,
+                                        backgroundIconTop: -6,
+                                        pinTitleToBottom: true,
+                                        actionIcon: Icons.visibility_outlined,
+                                        actionTooltip: 'Unhide card',
+                                        actionColor: ARAColors.ink,
+                                        onActionPressed: () => _unhideCard(card),
+                                        onTap: () => _openCard(card, isStaff: isStaff),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
             ),
@@ -188,58 +300,57 @@ class _InformationScreenState extends State<InformationScreen> {
   }
 
   Future<void> _openHomeActionsSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    final hasCards = _cards.where((card) => !card.deleted).isNotEmpty;
+    final items = <StaffActionSheetItem>[
+      StaffActionSheetItem(
+        label: 'Add card',
+        icon: Icons.add,
+        onTap: _addCard,
       ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.add),
-              title: const Text('Add card'),
-              onTap: () async {
-                Navigator.pop(ctx);
-                if (!mounted) return;
-                await _addCard();
-              },
-            ),
-            if (_cards.where((card) => !card.deleted).isNotEmpty)
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit card'),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  if (!mounted) return;
-                  await _openCardSelectionSheet(
-                    title: 'Edit card',
-                    onSelected: _editCard,
-                  );
-                },
-              ),
-            if (_cards.where((card) => !card.deleted).isNotEmpty)
-              ListTile(
-                leading:
-                    const Icon(Icons.delete_outline, color: ARAColors.danger),
-                title: const Text(
-                  'Delete card',
-                  style: TextStyle(color: ARAColors.danger),
-                ),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  if (!mounted) return;
-                  await _openCardSelectionSheet(
-                    title: 'Delete card',
-                    onSelected: _deleteCard,
-                    destructive: true,
-                  );
-                },
-              ),
-          ],
+      if (hasCards)
+        StaffActionSheetItem(
+          label: _staffMode == _InformationStaffMode.edit
+              ? 'Stop editing cards'
+              : 'Edit cards',
+          icon: _staffMode == _InformationStaffMode.edit
+              ? Icons.close
+              : Icons.edit_outlined,
+          onTap: () async {
+            _setStaffMode(_InformationStaffMode.edit);
+          },
         ),
-      ),
+      if (hasCards)
+        StaffActionSheetItem(
+          label: _staffMode == _InformationStaffMode.hide
+              ? 'Stop hiding cards'
+              : 'Hide cards',
+          icon: _staffMode == _InformationStaffMode.hide
+              ? Icons.close
+              : Icons.visibility_off_outlined,
+          onTap: () async {
+            _setStaffMode(_InformationStaffMode.hide);
+          },
+        ),
+      if (hasCards)
+        StaffActionSheetItem(
+          label: _staffMode == _InformationStaffMode.delete
+              ? 'Stop deleting cards'
+              : 'Delete cards',
+          icon: _staffMode == _InformationStaffMode.delete
+              ? Icons.close
+              : Icons.delete_outline,
+          color: _staffMode == _InformationStaffMode.delete
+              ? null
+              : ARAColors.danger,
+          onTap: () async {
+            _setStaffMode(_InformationStaffMode.delete);
+          },
+        ),
+    ];
+
+    await showStaffActionSheet(
+      context,
+      items: items,
     );
   }
 
@@ -289,6 +400,26 @@ class _InformationScreenState extends State<InformationScreen> {
     await _saveCardsToBackend();
   }
 
+  bool _canDeleteCard(_InformationCardModel card) {
+    return !card.isShelterMap;
+  }
+
+  Future<void> _hideCard(_InformationCardModel card) async {
+    if (!mounted) return;
+    setState(() {
+      card.hidden = true;
+    });
+    await _saveCardsToBackend();
+  }
+
+  Future<void> _unhideCard(_InformationCardModel card) async {
+    if (!mounted) return;
+    setState(() {
+      card.hidden = false;
+    });
+    await _saveCardsToBackend();
+  }
+
   Future<void> _deleteCard(_InformationCardModel card) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -321,61 +452,40 @@ class _InformationScreenState extends State<InformationScreen> {
     await _saveCardsToBackend();
   }
 
-  Future<void> _openCardSelectionSheet({
-    required String title,
-    required Future<void> Function(_InformationCardModel card) onSelected,
-    bool destructive = false,
-  }) async {
-    final visibleCards = _cards.where((card) => !card.deleted).toList();
-    if (visibleCards.isEmpty) return;
+  void _setStaffMode(_InformationStaffMode mode) {
+    if (!mounted) return;
+    setState(() {
+      _staffMode = _staffMode == mode ? _InformationStaffMode.none : mode;
+    });
+  }
 
-    await showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: ARAColors.inkStrong,
-                  ),
-                ),
-              ),
-            ),
-            ...visibleCards.map((card) {
-              return ListTile(
-                leading: Icon(
-                  destructive ? Icons.delete_outline : card.icon,
-                  color: destructive ? ARAColors.danger : null,
-                ),
-                title: Text(
-                  card.title,
-                  style: TextStyle(
-                    color: destructive ? ARAColors.danger : ARAColors.inkStrong,
-                  ),
-                ),
-                subtitle: card.subtitle.isEmpty ? null : Text(card.subtitle),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  if (!mounted) return;
-                  await onSelected(card);
-                },
-              );
-            }),
-          ],
-        ),
-      ),
-    );
+  Future<void> _handleCardTap(
+    _InformationCardModel card, {
+    required bool isStaff,
+  }) async {
+    switch (_staffMode) {
+      case _InformationStaffMode.edit:
+        if (!isStaff) return;
+        await _editCard(card);
+        return;
+      case _InformationStaffMode.hide:
+        if (!isStaff) return;
+        await _hideCard(card);
+        return;
+      case _InformationStaffMode.delete:
+        if (!isStaff) return;
+        if (!_canDeleteCard(card)) {
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            const SnackBar(content: Text('Shelter map can be hidden, but not deleted.')),
+          );
+          return;
+        }
+        await _deleteCard(card);
+        return;
+      case _InformationStaffMode.none:
+        await _openCard(card, isStaff: isStaff);
+        return;
+    }
   }
 
   Future<void> _openCard(
@@ -404,10 +514,10 @@ class _InformationScreenState extends State<InformationScreen> {
         MaterialPageRoute(
           builder: (_) => _InformationSectionScreen(
             title: card.title,
-            child: content,
             card: card,
             isStaff: isStaff,
             editorController: editorController,
+            child: content,
           ),
         ),
       );
@@ -447,3 +557,16 @@ class _InformationScreenState extends State<InformationScreen> {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

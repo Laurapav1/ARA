@@ -1,105 +1,133 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../services/api_client.dart';
 import '../../services/auth_store.dart';
+import '../../services/volunteers_service.dart';
 import '../../theme/ara_theme.dart';
 import '../../widgets/offline_banner.dart';
+import 'widgets/change_password_dialog.dart';
 
-class VolunteerStatusScreen extends StatelessWidget {
+class VolunteerStatusScreen extends StatefulWidget {
   const VolunteerStatusScreen({super.key});
 
-  String _fmt(DateTime d) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${d.day} ${months[d.month - 1]} ${d.year}';
+  @override
+  State<VolunteerStatusScreen> createState() => _VolunteerStatusScreenState();
+}
+
+class _VolunteerStatusScreenState extends State<VolunteerStatusScreen> {
+  final _service = VolunteersService();
+  List<MyVolunteerStay> _stays = [];
+  bool _loadingStays = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStays();
   }
 
-  String _fmtRange(DateTime start, DateTime end) =>
-      '${_fmt(start)} – ${_fmt(end)}';
+  Future<void> _loadStays() async {
+    final token = context.read<AuthStore>().accessToken;
+    if (token == null || token.isEmpty) {
+      setState(() => _loadingStays = false);
+      return;
+    }
 
-  void _showChangePasswordDialog(BuildContext context) {
-    final currentController = TextEditingController();
-    final newController = TextEditingController();
-    final confirmController = TextEditingController();
+    try {
+      final stays = await _service.getMine(token: token);
+      if (!mounted) return;
+      setState(() {
+        _stays = stays;
+        _loadingStays = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingStays = false);
+    }
+  }
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Change password'),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actionsAlignment: MainAxisAlignment.end,
-        actionsOverflowButtonSpacing: 10,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: currentController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current password',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: newController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New password',
-                prefixIcon: Icon(Icons.lock_reset),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirm new password',
-                prefixIcon: Icon(Icons.check_circle_outline),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Password updated'),
-                  backgroundColor: ARAColors.brand,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
-            },
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(140, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            ),
-            child: const Text('Update'),
-          ),
-        ],
+  String _fmtIso(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  DateTime? _parseDateOnly(String raw) {
+    try {
+      final parts = raw.split('-');
+      return DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: ARAColors.brand,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  Future<void> _handleChangePassword(BuildContext context) async {
+    final changed = await showChangePasswordDialog(context);
+    if (changed == true && context.mounted) {
+      _showSnack(context, 'Password updated');
+    }
+  }
+
+  Future<void> _handleRequestNewStay(BuildContext context) async {
+    final now = _dateOnly(DateTime.now());
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 730)),
+      helpText: 'Request new stay',
+      saveText: 'Request',
+      builder: (context, child) {
+        final theme = Theme.of(context);
+        return Theme(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
+              primary: ARAColors.brand,
+              onPrimary: ARAColors.ink,
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+
+    if (picked == null || !mounted) return;
+
+    final auth = this.context.read<AuthStore>();
+    final token = auth.accessToken ?? '';
+    try {
+      await _service.requestNewStay(
+        token: token,
+        volunteerFrom: _fmtIso(picked.start),
+        volunteerTo: _fmtIso(picked.end),
+      );
+      await auth.fetchMe();
+      await _loadStays();
+      if (mounted) {
+        _showSnack(this.context, 'Stay request submitted');
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        _showSnack(this.context, e.message);
+      }
+    } catch (_) {
+      if (mounted) {
+        _showSnack(this.context, 'Could not submit stay request.');
+      }
+    }
   }
 
   @override
@@ -108,6 +136,29 @@ class VolunteerStatusScreen extends StatelessWidget {
     final me = auth.me;
     final name = me?.fullName ?? 'Volunteer';
     final email = me?.email ?? '';
+    final today = _dateOnly(DateTime.now());
+    final approved = _stays.where((stay) => stay.isApproved).toList();
+    final pending = _stays.where((stay) => stay.isPending).toList()
+      ..sort((a, b) => a.volunteerFrom.compareTo(b.volunteerFrom));
+    final current = approved.where((stay) {
+      final start = _parseDateOnly(stay.volunteerFrom);
+      final end = _parseDateOnly(stay.volunteerTo);
+      if (start == null || end == null) return false;
+      return !today.isBefore(start) && !today.isAfter(end);
+    }).toList();
+    final upcoming = approved.where((stay) {
+      final start = _parseDateOnly(stay.volunteerFrom);
+      return start != null && start.isAfter(today);
+    }).toList()
+      ..sort((a, b) => a.volunteerFrom.compareTo(b.volunteerFrom));
+    final previous = approved.where((stay) {
+      final end = _parseDateOnly(stay.volunteerTo);
+      return end != null && end.isBefore(today);
+    }).toList()
+      ..sort((a, b) => b.volunteerTo.compareTo(a.volunteerTo));
+    final currentStay = current.isNotEmpty ? current.first : null;
+    final pendingStay = pending.isNotEmpty ? pending.first : null;
+    final upcomingStay = upcoming.isNotEmpty ? upcoming.first : null;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -126,22 +177,61 @@ class VolunteerStatusScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                     const _SectionLabel(title: 'Stay'),
                     const SizedBox(height: 12),
-                    _InfoCard(
-                      title: 'Current stay',
-                      value: me?.volunteerFrom != null &&
-                              me?.volunteerTo != null
-                          ? _fmtRange(
-                              DateTime.parse(me!.volunteerFrom!),
-                              DateTime.parse(me.volunteerTo!),
-                            )
-                          : 'No current stay scheduled',
-                      icon: Icons.event_available,
-                    ),
+                    if (_loadingStays)
+                      const Center(child: CircularProgressIndicator())
+                    else ...[
+                      _InfoCard(
+                        title: 'Current stay',
+                        value: currentStay != null
+                            ? currentStay.stayLabel
+                            : upcomingStay != null
+                                ? 'Next stay ${upcomingStay.stayLabel}'
+                                : 'No current stay scheduled',
+                        icon: Icons.event_available,
+                      ),
+                      if (pendingStay != null) ...[
+                        const SizedBox(height: 12),
+                        _InfoCard(
+                          title: 'Pending request',
+                          value: pendingStay.stayLabel,
+                          icon: Icons.pending_actions,
+                        ),
+                      ],
+                    ],
                     const SizedBox(height: 12),
                     _InfoCard(
-                      title: 'Previous stays',
-                      value: 'No previous stays',
+                      title: 'Last volunteered',
+                      value: previous.isEmpty
+                          ? 'No previous stays'
+                          : previous.first.stayLabel,
                       icon: Icons.history,
+                    ),
+                    if (previous.length > 1) ...[
+                      const SizedBox(height: 12),
+                      ...previous.skip(1).take(3).map(
+                            (stay) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _InfoCard(
+                                title: 'Previous stay',
+                                value: stay.stayLabel,
+                                icon: Icons.history_toggle_off,
+                              ),
+                            ),
+                          ),
+                    ],
+                    const SizedBox(height: 12),
+                    _SettingsTile(
+                      title: 'Request new stay',
+                      subtitle: pendingStay == null
+                          ? 'Ask staff to approve another volunteer period'
+                          : 'You already have a pending request',
+                      icon: Icons.event_repeat,
+                      onTap: pendingStay == null
+                          ? () => _handleRequestNewStay(context)
+                          : () async => _showSnack(
+                                context,
+                                'You already have a pending stay request.',
+                              ),
                     ),
                     const SizedBox(height: 24),
                     const _SectionLabel(title: 'Account'),
@@ -150,7 +240,7 @@ class VolunteerStatusScreen extends StatelessWidget {
                       title: 'Change password',
                       subtitle: 'Update your login details',
                       icon: Icons.lock_reset,
-                      onTap: () => _showChangePasswordDialog(context),
+                      onTap: () => _handleChangePassword(context),
                     ),
                     const SizedBox(height: 12),
                     _SettingsTile(
@@ -324,7 +414,7 @@ class _SettingsTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap;
   final bool isDestructive;
 
   const _SettingsTile({
@@ -350,6 +440,7 @@ class _SettingsTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
+            color: ARAColors.cardBg,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
@@ -417,3 +508,4 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+

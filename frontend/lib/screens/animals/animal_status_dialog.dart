@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import '../../models/animal.dart';
@@ -6,8 +7,9 @@ import '../../theme/ara_theme.dart';
 Future<void> showAnimalStatusDialog(
   BuildContext context,
   Animal currentAnimal,
-  Future<void> Function() onConfirm,
-) {
+  Future<void> Function() onConfirm, {
+  bool closeParentOnConfirm = true,
+}) {
   StatusChoice selection = StatusChoice.adopted;
   return showDialog(
     context: context,
@@ -57,11 +59,14 @@ Future<void> showAnimalStatusDialog(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            onPressed: () async {
+          FilledButton(onPressed: () async {
+              final dialogNavigator = Navigator.of(ctx);
+              final parentNavigator = Navigator.of(context);
               await onConfirm();
-              Navigator.pop(ctx);
-              Navigator.pop(context);
+              dialogNavigator.pop();
+              if (closeParentOnConfirm) {
+                parentNavigator.pop();
+              }
             },
             style: FilledButton.styleFrom(
               backgroundColor: ARAColors.brand,
@@ -152,3 +157,7 @@ class _StatusOption extends StatelessWidget {
     );
   }
 }
+
+
+
+
